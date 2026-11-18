@@ -91,6 +91,28 @@ export interface SchoolShowcaseItem {
   programmeGroups?: ProgrammeGroup[];
 }
 
+// Light, professional palette for the school cards: a soft tint background,
+// a muted accent for icons/text, and a matching border.
+export interface SchoolTheme {
+  accent: string;
+  soft: string;
+  border: string;
+}
+
+export const SCHOOL_THEMES: Record<string, SchoolTheme> = {
+  "quantum-ai": { accent: "#4338ca", soft: "#eef2ff", border: "#c7d2fe" },
+  "business-commerce": { accent: "#1d4ed8", soft: "#eff6ff", border: "#bfdbfe" },
+  "sports-health": { accent: "#7e22ce", soft: "#faf5ff", border: "#e9d5ff" },
+  "media-performing": { accent: "#be185d", soft: "#fdf2f8", border: "#fbcfe8" },
+  "liberal-arts": { accent: "#c2410c", soft: "#fff7ed", border: "#fed7aa" },
+  "applied-bio": { accent: "#047857", soft: "#ecfdf5", border: "#a7f3d0" },
+  sustainability: { accent: "#0e7490", soft: "#ecfeff", border: "#a5f3fc" },
+};
+
+const DEFAULT_SCHOOL_THEME: SchoolTheme = { accent: "#334155", soft: "#f8fafc", border: "#e2e8f0" };
+
+export const getSchoolTheme = (id: string): SchoolTheme => SCHOOL_THEMES[id] || DEFAULT_SCHOOL_THEME;
+
 export const RATHINAM_SCHOOLS: SchoolShowcaseItem[] = [
   {
     id: "quantum-ai",
@@ -1405,6 +1427,10 @@ export default function DepartmentManagementPage() {
               >
                 {filteredSchools.map((school) => {
                   const Icon = school.icon;
+                  const theme = getSchoolTheme(school.id);
+                  const restShadow = "0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.04)";
+                  const hoverShadow = "0 10px 24px -6px rgba(15, 23, 42, 0.14)";
+                  const staffActive = showStaffProfiles && expandedSchoolId === school.id;
                   const isSelected =
                     expandedSchoolId === school.id ||
                     activeDept.toLowerCase() === school.name.toLowerCase() ||
@@ -1418,32 +1444,32 @@ export default function DepartmentManagementPage() {
                           setActiveDept(school.name);
                         }}
                         style={{
-                          background: school.gradient,
-                          borderRadius: "22px",
-                          padding: "20px 22px",
-                          color: "#ffffff",
+                          background: `linear-gradient(180deg, ${theme.soft} 0%, #ffffff 100%)`,
+                          border: `1px solid ${isSelected ? theme.accent : theme.border}`,
+                          borderTop: `4px solid ${theme.accent}`,
+                          borderRadius: "18px",
+                          padding: "18px 20px 20px",
+                          color: "#0f172a",
                           cursor: "pointer",
                           minHeight: "155px",
                           display: "flex",
                           flexDirection: "column",
                           justifyContent: "space-between",
                           transition: "all 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
-                          boxShadow: isSelected
-                            ? `0 16px 36px -4px ${school.glow}, 0 0 0 3px #ffffff, 0 0 0 6px #4f46e5`
-                            : `0 10px 24px -4px ${school.glow}`,
-                          transform: isSelected ? "translateY(-4px) scale(1.02)" : "translateY(0)",
+                          boxShadow: isSelected ? `0 0 0 3px ${theme.border}, ${hoverShadow}` : restShadow,
+                          transform: isSelected ? "translateY(-3px)" : "translateY(0)",
                           position: "relative",
                         }}
                         onMouseEnter={(e) => {
                           if (!isSelected) {
-                            e.currentTarget.style.transform = "translateY(-4px)";
-                            e.currentTarget.style.boxShadow = `0 16px 32px -4px ${school.glow}`;
+                            e.currentTarget.style.transform = "translateY(-3px)";
+                            e.currentTarget.style.boxShadow = hoverShadow;
                           }
                         }}
                         onMouseLeave={(e) => {
                           if (!isSelected) {
                             e.currentTarget.style.transform = "translateY(0)";
-                            e.currentTarget.style.boxShadow = `0 10px 24px -4px ${school.glow}`;
+                            e.currentTarget.style.boxShadow = restShadow;
                           }
                         }}
                       >
@@ -1454,13 +1480,12 @@ export default function DepartmentManagementPage() {
                               width: "38px",
                               height: "38px",
                               borderRadius: "11px",
-                              background: "rgba(255, 255, 255, 0.22)",
-                              backdropFilter: "blur(8px)",
-                              border: "1px solid rgba(255, 255, 255, 0.35)",
+                              background: "#ffffff",
+                              border: `1px solid ${theme.border}`,
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
-                              color: "#ffffff",
+                              color: theme.accent,
                             }}
                           >
                             <Icon size={19} />
@@ -1468,14 +1493,13 @@ export default function DepartmentManagementPage() {
 
                           <span
                             style={{
-                              background: "rgba(255, 255, 255, 0.22)",
-                              backdropFilter: "blur(6px)",
-                              border: "1px solid rgba(255, 255, 255, 0.35)",
+                              background: "#ffffff",
+                              border: `1px solid ${theme.border}`,
                               padding: "4px 10px",
                               borderRadius: "12px",
                               fontSize: "11px",
                               fontWeight: 700,
-                              color: "#ffffff",
+                              color: theme.accent,
                               letterSpacing: "0.2px",
                             }}
                           >
@@ -1488,7 +1512,7 @@ export default function DepartmentManagementPage() {
                           style={{
                             fontSize: "16.5px",
                             fontWeight: 800,
-                            color: "#ffffff",
+                            color: "#0f172a",
                             lineHeight: 1.25,
                             marginTop: "16px",
                             marginBottom: "12px",
@@ -1509,29 +1533,28 @@ export default function DepartmentManagementPage() {
                             style={{
                               fontSize: "12px",
                               fontWeight: 700,
-                              color: "#ffffff",
+                              color: theme.accent,
                               display: "inline-flex",
                               alignItems: "center",
                               gap: "6px",
-                              background: "rgba(255, 255, 255, 0.2)",
+                              background: "#ffffff",
                               padding: "6px 12px",
                               borderRadius: "10px",
-                              backdropFilter: "blur(6px)",
-                              border: "1px solid rgba(255, 255, 255, 0.35)",
+                              border: `1px solid ${theme.border}`,
                               width: "fit-content",
                               cursor: "pointer",
                               transition: "all 0.2s ease",
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.background = "rgba(255, 255, 255, 0.35)";
-                              e.currentTarget.style.transform = "translateX(2px)";
+                              e.currentTarget.style.background = theme.soft;
+                              e.currentTarget.style.borderColor = theme.accent;
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
-                              e.currentTarget.style.transform = "translateX(0)";
+                              e.currentTarget.style.background = "#ffffff";
+                              e.currentTarget.style.borderColor = theme.border;
                             }}
                           >
-                            <BookOpen size={13} color="#ffffff" />
+                            <BookOpen size={13} color={theme.accent} />
                             <span>View Programmes</span>
                           </div>
                           {(
@@ -1553,29 +1576,26 @@ export default function DepartmentManagementPage() {
                               style={{
                                 fontSize: "12px",
                                 fontWeight: 700,
-                                color: "#ffffff",
+                                color: staffActive ? "#ffffff" : theme.accent,
                                 display: "inline-flex",
                                 alignItems: "center",
                                 gap: "6px",
-                                background: showStaffProfiles ? "rgba(0,0,0,0.28)" : "rgba(255, 255, 255, 0.2)",
+                                background: staffActive ? theme.accent : theme.soft,
                                 padding: "6px 12px",
                                 borderRadius: "10px",
-                                backdropFilter: "blur(6px)",
-                                border: "1px solid rgba(255, 255, 255, 0.35)",
+                                border: `1px solid ${staffActive ? theme.accent : theme.border}`,
                                 width: "fit-content",
                                 cursor: "pointer",
                                 transition: "all 0.2s ease",
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.background = "rgba(255, 255, 255, 0.35)";
-                                e.currentTarget.style.transform = "translateX(2px)";
+                                e.currentTarget.style.borderColor = theme.accent;
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.background = showStaffProfiles ? "rgba(0,0,0,0.28)" : "rgba(255, 255, 255, 0.2)";
-                                e.currentTarget.style.transform = "translateX(0)";
+                                e.currentTarget.style.borderColor = staffActive ? theme.accent : theme.border;
                               }}
                             >
-                              <Users size={13} color="#ffffff" />
+                              <Users size={13} color={staffActive ? "#ffffff" : theme.accent} />
                               <span>{showStaffProfiles && expandedSchoolId === school.id ? "Hide Staff Profiles" : "View Staff Profiles"}</span>
                             </div>
                           )}
@@ -3075,12 +3095,12 @@ export default function DepartmentManagementPage() {
                         width: "40px",
                         height: "40px",
                         borderRadius: "12px",
-                        background: selectedSchoolData.gradient,
+                        background: getSchoolTheme(selectedSchoolData.id).soft,
+                        border: `1px solid ${getSchoolTheme(selectedSchoolData.id).border}`,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        color: "#ffffff",
-                        boxShadow: `0 4px 14px ${selectedSchoolData.glow}`,
+                        color: getSchoolTheme(selectedSchoolData.id).accent,
                         flexShrink: 0,
                       }}
                     >
