@@ -71,13 +71,13 @@ function UnitWiseQuestionPreview({ questions }: { questions: any[] }) {
       {orderedGroups.map(([unit, unitQuestions], unitIndex) => {
         const title = /^unit\b/i.test(unit) || unit === "Unassigned" ? unit : `Unit ${unit}`;
         return (
-          <section key={unit} style={{ overflow: "hidden", border: "1px solid #d7e3f0", borderRadius: "14px", background: "#fff", boxShadow: "0 4px 14px rgba(20,52,86,.045)" }}>
+          <section key={unit} style={{ overflow: "hidden", border: "1px solid #d7e3f0", borderRadius: "14px", background: "#fff", boxShadow: "0 4px 14px rgba(75, 49, 31,.045)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "13px 16px", borderBottom: "1px solid #e5edf5", background: "linear-gradient(105deg,#eff6ff,#f8fbff)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
-                <span style={{ display: "grid", width: "34px", height: "34px", flex: "0 0 34px", placeItems: "center", borderRadius: "10px", background: "#dcecff", color: "#1d4e89", fontSize: "12px", fontWeight: 850 }}>{String(unitIndex + 1).padStart(2, "0")}</span>
-                <div style={{ minWidth: 0 }}><h4 style={{ margin: 0, color: "#173b68", fontSize: "14px", fontWeight: 850 }}>{title}</h4><div style={{ marginTop: "3px", color: "#71849a", fontSize: "11px" }}>Unit question bank</div></div>
+                <span style={{ display: "grid", width: "34px", height: "34px", flex: "0 0 34px", placeItems: "center", borderRadius: "10px", background: "#dcecff", color: "#7d5029", fontSize: "12px", fontWeight: 850 }}>{String(unitIndex + 1).padStart(2, "0")}</span>
+                <div style={{ minWidth: 0 }}><h4 style={{ margin: 0, color: "#5a3a25", fontSize: "14px", fontWeight: 850 }}>{title}</h4><div style={{ marginTop: "3px", color: "#9a8471", fontSize: "11px" }}>Unit question bank</div></div>
               </div>
-              <span style={{ padding: "5px 10px", border: "1px solid #c8dcf2", borderRadius: "999px", background: "#fff", color: "#285d96", fontSize: "11px", fontWeight: 800, whiteSpace: "nowrap" }}>{unitQuestions.length} {unitQuestions.length === 1 ? "question" : "questions"}</span>
+              <span style={{ padding: "5px 10px", border: "1px solid #c8dcf2", borderRadius: "999px", background: "#fff", color: "#8f5c30", fontSize: "11px", fontWeight: 800, whiteSpace: "nowrap" }}>{unitQuestions.length} {unitQuestions.length === 1 ? "question" : "questions"}</span>
             </div>
             <div style={{ display: "grid", gap: "14px", padding: "12px" }}>
               {(["MCQ", "Descriptive"] as const).map((questionKind) => {
@@ -90,19 +90,19 @@ function UnitWiseQuestionPreview({ questions }: { questions: any[] }) {
                 return (
                   <section key={`${unit}-${questionKind}`} style={{ overflow: "hidden", border: "1px solid #e1eaf4", borderRadius: "11px", background: "#f8fbff" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", padding: "10px 13px", borderBottom: "1px solid #e2eaf3", background: questionKind === "MCQ" ? "#eef6ff" : "#f3f6fb" }}>
-                      <h5 style={{ margin: 0, color: "#254d7b", fontSize: "12px", fontWeight: 850 }}>{questionKind === "MCQ" ? "Multiple Choice Questions" : "Descriptive Questions"}</h5>
-                      <span style={{ color: "#64778d", fontSize: "11px", fontWeight: 750 }}>{matchingQuestions.length} {matchingQuestions.length === 1 ? "question" : "questions"}</span>
+                      <h5 style={{ margin: 0, color: "#784d28", fontSize: "12px", fontWeight: 850 }}>{questionKind === "MCQ" ? "Multiple Choice Questions" : "Descriptive Questions"}</h5>
+                      <span style={{ color: "#8d7764", fontSize: "11px", fontWeight: 750 }}>{matchingQuestions.length} {matchingQuestions.length === 1 ? "question" : "questions"}</span>
                     </div>
                     <div style={{ display: "grid", gap: "8px", padding: "10px" }}>
                       {matchingQuestions.map((question, questionIndex) => (
                         <article key={question.id || `${unit}-${questionKind}-${questionIndex}`} style={{ padding: "13px 14px", border: "1px solid #e7edf4", borderRadius: "10px", background: questionIndex % 2 === 0 ? "#fff" : "#f9fbfd" }}>
                           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
-                            <div style={{ display: "flex", gap: "10px", minWidth: 0 }}><span style={{ color: "#4674a4", fontSize: "11px", fontWeight: 850, whiteSpace: "nowrap" }}>Q{questionIndex + 1}</span><div style={{ color: "#1e293b", fontSize: "13px", fontWeight: 650, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{question.question || question.statement}</div></div>
-                            <span style={{ padding: "4px 8px", borderRadius: "7px", background: "#eaf2fc", color: "#245a93", fontSize: "10px", fontWeight: 850, whiteSpace: "nowrap" }}>{Number(question.marks) || 2} marks</span>
+                            <div style={{ display: "flex", gap: "10px", minWidth: 0 }}><span style={{ color: "#a47246", fontSize: "11px", fontWeight: 850, whiteSpace: "nowrap" }}>Q{questionIndex + 1}</span><div style={{ color: "#1e293b", fontSize: "13px", fontWeight: 650, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{question.question || question.statement}</div></div>
+                            <span style={{ padding: "4px 8px", borderRadius: "7px", background: "#eaf2fc", color: "#89582e", fontSize: "10px", fontWeight: 850, whiteSpace: "nowrap" }}>{Number(question.marks) || 2} marks</span>
                           </div>
-                          {question.options?.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "7px 14px", margin: "10px 0 0 32px", color: "#475569", fontSize: "12px", lineHeight: 1.5 }}>{question.options.map((option: string, optionIndex: number) => <div key={`${question.id}-option-${optionIndex}`}><strong style={{ color: "#315d8b" }}>{String.fromCharCode(65 + optionIndex)}.</strong> {option}</div>)}</div>}
+                          {question.options?.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "7px 14px", margin: "10px 0 0 32px", color: "#475569", fontSize: "12px", lineHeight: 1.5 }}>{question.options.map((option: string, optionIndex: number) => <div key={`${question.id}-option-${optionIndex}`}><strong style={{ color: "#8b5b31" }}>{String.fromCharCode(65 + optionIndex)}.</strong> {option}</div>)}</div>}
                           <div style={{ display: "flex", flexWrap: "wrap", gap: "7px", margin: "10px 0 0 32px" }}>
-                            {[question.topic, questionKind, question.difficulty || "Medium"].filter(Boolean).map((meta, metaIndex) => <span key={`${question.id}-meta-${metaIndex}`} style={{ padding: "3px 8px", border: "1px solid #e1e8f0", borderRadius: "999px", color: "#64778d", background: "#fff", fontSize: "10px", fontWeight: 650 }}>{meta}</span>)}
+                            {[question.topic, questionKind, question.difficulty || "Medium"].filter(Boolean).map((meta, metaIndex) => <span key={`${question.id}-meta-${metaIndex}`} style={{ padding: "3px 8px", border: "1px solid #e1e8f0", borderRadius: "999px", color: "#8d7764", background: "#fff", fontSize: "10px", fontWeight: 650 }}>{meta}</span>)}
                           </div>
                         </article>
                       ))}
@@ -118,7 +118,7 @@ function UnitWiseQuestionPreview({ questions }: { questions: any[] }) {
   );
 }
 
-function OriginalQuestionBankPreview({ name, url, fileAvailable }: { name: string; url: string; fileAvailable: boolean }) {
+export function OriginalQuestionBankPreview({ name, url, fileAvailable }: { name: string; url: string; fileAvailable: boolean }) {
   const documentRef = useRef<HTMLDivElement>(null);
   const [renderError, setRenderError] = useState(false);
   const isWordDocument = /\.docx$/i.test(name);
@@ -152,11 +152,11 @@ function OriginalQuestionBankPreview({ name, url, fileAvailable }: { name: strin
 
   return (
     <section style={{ border: "1px solid #d8e1ec", borderRadius: "13px", background: "#e9eef5", overflow: "auto", padding: "18px", maxHeight: "62vh" }}>
-      <div style={{ maxWidth: "980px", minHeight: "52vh", margin: "0 auto", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff", boxShadow: "0 8px 24px rgba(15,23,42,.08)", overflow: "auto" }}>
+      <div style={{ maxWidth: "980px", minHeight: "52vh", margin: "0 auto", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff", boxShadow: "0 8px 24px rgba(40, 26, 17,.08)", overflow: "auto" }}>
         <div style={{ position: "sticky", top: 0, zIndex: 2, padding: "14px 24px", borderBottom: "1px solid #edf1f5", background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", color: "#64748b", fontSize: "11px", fontWeight: 700 }}><span>ORIGINAL WORD DOCUMENT</span><span>{name}</span></div>
         {fileAvailable && url && isWordDocument && !renderError ? <div ref={documentRef} style={{ padding: "20px", overflow: "auto" }} /> : (
-          <div style={{ minHeight: "40vh", display: "grid", placeItems: "center", padding: "28px", textAlign: "center", color: "#526174", fontSize: "13px", lineHeight: 1.65 }}>
-            {!fileAvailable ? <span>The original Word file is not stored for this earlier upload. Re-upload the .docx question bank in Academic Vault to view its original Word layout here.</span> : renderError ? <span>The Word file could not be rendered. <a href={url} download={name} style={{ color: "#1d4e89", fontWeight: 800 }}>Download the original file</a> to open it in Microsoft Word.</span> : <span>This file type cannot be previewed as a Word document. <a href={url} download={name} style={{ color: "#1d4e89", fontWeight: 800 }}>Download the original file</a>.</span>}
+          <div style={{ minHeight: "40vh", display: "grid", placeItems: "center", padding: "28px", textAlign: "center", color: "#746252", fontSize: "13px", lineHeight: 1.65 }}>
+            {!fileAvailable ? <span>The original Word file is not stored for this earlier upload. Re-upload the .docx question bank in Academic Vault to view its original Word layout here.</span> : renderError ? <span>The Word file could not be rendered. <a href={url} download={name} style={{ color: "#7d5029", fontWeight: 800 }}>Download the original file</a> to open it in Microsoft Word.</span> : <span>This file type cannot be previewed as a Word document. <a href={url} download={name} style={{ color: "#7d5029", fontWeight: 800 }}>Download the original file</a>.</span>}
           </div>
         )}
       </div>
@@ -262,7 +262,7 @@ export function ViewModal({
     if (typeof badge === "string") {
       const lower = badge.toLowerCase();
       let bg = "#e0e7ff";
-      let color = "#4338ca";
+      let color = "#c07d42";
 
       if (badgeColor === "green" || lower.includes("active") || lower.includes("success") || lower.includes("approv") || lower.includes("verif") || lower.includes("completed")) {
         bg = "#dcfce7";
@@ -275,7 +275,7 @@ export function ViewModal({
         color = "#d97706";
       } else if (badgeColor === "blue") {
         bg = "#eff6ff";
-        color = "#2563eb";
+        color = "#c3844d";
       }
       return { label: badge, bg, color };
     }
@@ -330,7 +330,7 @@ export function ViewModal({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "rgba(15, 23, 42, 0.65)",
+        background: "rgba(40, 26, 17, 0.65)",
         backdropFilter: "blur(6px)",
         padding: "16px",
       }}
@@ -344,7 +344,7 @@ export function ViewModal({
           maxHeight: "90vh",
           background: "#ffffff",
           borderRadius: "20px",
-          boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(226, 232, 240, 0.8)",
+          boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(240, 234, 226, 0.8)",
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
@@ -370,8 +370,8 @@ export function ViewModal({
                 width: "42px",
                 height: "42px",
                 borderRadius: "12px",
-                background: "linear-gradient(135deg, rgba(79, 70, 229, 0.15), rgba(99, 102, 241, 0.25))",
-                color: "#4f46e5",
+                background: "linear-gradient(135deg, rgba(202, 146, 97, 0.15), rgba(212, 167, 128, 0.25))",
+                color: "#ca9261",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -436,7 +436,7 @@ export function ViewModal({
                     borderRadius: "8px",
                     border: "none",
                     background: viewMode === "word" ? "#ffffff" : "transparent",
-                    color: viewMode === "word" ? "#2563eb" : "#64748b",
+                    color: viewMode === "word" ? "#c3844d" : "#64748b",
                     fontWeight: viewMode === "word" ? 700 : 500,
                     fontSize: "12px",
                     cursor: "pointer",
@@ -458,7 +458,7 @@ export function ViewModal({
                     borderRadius: "8px",
                     border: "none",
                     background: viewMode === "cards" ? "#ffffff" : "transparent",
-                    color: viewMode === "cards" ? "#2563eb" : "#64748b",
+                    color: viewMode === "cards" ? "#c3844d" : "#64748b",
                     fontWeight: viewMode === "cards" ? 700 : 500,
                     fontSize: "12px",
                     cursor: "pointer",
@@ -476,7 +476,7 @@ export function ViewModal({
               <button
                 type="button"
                 onClick={() => setViewMode("original")}
-                style={{ padding: "7px 11px", border: `1px solid ${viewMode === "original" ? "#2563eb" : "#cbd5e1"}`, borderRadius: "8px", background: viewMode === "original" ? "#eff6ff" : "#fff", color: "#1d4ed8", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}
+                style={{ padding: "7px 11px", border: `1px solid ${viewMode === "original" ? "#c3844d" : "#cbd5e1"}`, borderRadius: "8px", background: viewMode === "original" ? "#eff6ff" : "#fff", color: "#b8763d", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}
               >
                 View original upload
               </button>
@@ -587,8 +587,8 @@ export function ViewModal({
                     background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
                     borderRadius: "16px",
                     padding: "18px",
-                    border: "1px solid rgba(56, 189, 248, 0.3)",
-                    boxShadow: "0 8px 24px rgba(15, 23, 42, 0.25)",
+                    border: "1px solid rgba(204, 149, 100, 0.3)",
+                    boxShadow: "0 8px 24px rgba(40, 26, 17, 0.25)",
                     display: "flex",
                     flexDirection: "column",
                     gap: "12px",
@@ -597,16 +597,16 @@ export function ViewModal({
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <span style={{ fontSize: "18px" }}>🖼️</span>
-                      <strong style={{ color: "#38bdf8", fontSize: "13.5px", fontWeight: 700 }}>
+                      <strong style={{ color: "#cc9564", fontSize: "13.5px", fontWeight: 700 }}>
                         Attached Question Diagram / Figure
                       </strong>
-                      <span style={{ background: "rgba(56, 189, 248, 0.15)", color: "#38bdf8", padding: "2px 8px", borderRadius: "6px", fontSize: "11px", fontWeight: 700 }}>
+                      <span style={{ background: "rgba(204, 149, 100, 0.15)", color: "#cc9564", padding: "2px 8px", borderRadius: "6px", fontSize: "11px", fontWeight: 700 }}>
                         {data?.diagramType || data?.raw?.diagramType || "Illustration"}
                       </span>
                     </div>
                   </div>
 
-                  <div style={{ width: "100%", borderRadius: "12px", overflow: "hidden", background: "#020617", border: "1px solid rgba(255,255,255,0.1)", display: "flex", justifyContent: "center", alignItems: "center", padding: "12px" }}>
+                  <div style={{ width: "100%", borderRadius: "12px", overflow: "hidden", background: "#120b07", border: "1px solid rgba(255,255,255,0.1)", display: "flex", justifyContent: "center", alignItems: "center", padding: "12px" }}>
                     <img
                       src={data?.imageUrl || data?.raw?.imageUrl}
                       alt={data?.diagramTitle || "Question Diagram"}
@@ -665,7 +665,7 @@ export function ViewModal({
                       transform: "translate(-50%, -50%) rotate(-30deg)",
                       fontSize: "36px",
                       fontWeight: 800,
-                      color: "rgba(226, 232, 240, 0.6)",
+                      color: "rgba(240, 234, 226, 0.6)",
                       whiteSpace: "nowrap",
                       pointerEvents: "none",
                       letterSpacing: "4px",
@@ -811,7 +811,7 @@ export function ViewModal({
                   <div style={{ fontSize: "13px", fontWeight: 700, color: "#334155", marginBottom: "12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                       <span>Inspection Preview ({questionsList.length} Questions)</span>
-                      <span style={{ fontSize: "11px", background: "#e0e7ff", color: "#4338ca", padding: "2px 8px", borderRadius: "12px", fontWeight: 700 }}>
+                      <span style={{ fontSize: "11px", background: "#e0e7ff", color: "#c07d42", padding: "2px 8px", borderRadius: "12px", fontWeight: 700 }}>
                         Categorized by Marks
                       </span>
                     </div>
@@ -834,7 +834,7 @@ export function ViewModal({
                         if (markGroup.length === 0) return null;
 
                         const badgeBg = mVal <= 2 ? "#fef2f2" : mVal === 5 ? "#eff6ff" : mVal === 10 ? "#f0fdf4" : "#faf5ff";
-                        const badgeColor = mVal <= 2 ? "#dc2626" : mVal === 5 ? "#1d4ed8" : mVal === 10 ? "#15803d" : "#7e22ce";
+                        const badgeColor = mVal <= 2 ? "#dc2626" : mVal === 5 ? "#b8763d" : mVal === 10 ? "#15803d" : "#b4743c";
                         const badgeBorder = mVal <= 2 ? "#fca5a5" : mVal === 5 ? "#bfdbfe" : mVal === 10 ? "#bbf7d0" : "#e9d5ff";
 
                         return (
@@ -870,7 +870,7 @@ export function ViewModal({
                                   <span>Type: <strong>{q.type || "Descriptive"}</strong></span>
                                   <span>Difficulty: <strong>{q.difficulty || "Medium"}</strong></span>
                                   <span>Unit: <strong>{q.unit || "Unit I"}</strong></span>
-                                  {q.bloomLevel && <span style={{ color: "#7c3aed" }}>Bloom's: <strong>{q.bloomLevel}</strong></span>}
+                                  {q.bloomLevel && <span style={{ color: "#c9905e" }}>Bloom's: <strong>{q.bloomLevel}</strong></span>}
                                 </div>
 
                                 {q.options && q.options.length > 0 && (
@@ -994,12 +994,12 @@ export function ViewModal({
                   padding: "8px 18px",
                   borderRadius: "10px",
                   border: "none",
-                  background: "linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)",
+                  background: "linear-gradient(135deg, #ca9261 0%, #cc9565 100%)",
                   color: "#ffffff",
                   fontSize: "13px",
                   fontWeight: 600,
                   cursor: "pointer",
-                  boxShadow: "0 4px 12px rgba(79, 70, 229, 0.35)",
+                  boxShadow: "0 4px 12px rgba(202, 146, 97, 0.35)",
                 }}
               >
                 <Edit3 size={14} />
@@ -1107,7 +1107,7 @@ export function FormModal({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "rgba(15, 23, 42, 0.65)",
+        background: "rgba(40, 26, 17, 0.65)",
         backdropFilter: "blur(6px)",
         padding: "16px",
       }}
@@ -1120,7 +1120,7 @@ export function FormModal({
           maxHeight: "90vh",
           background: "#ffffff",
           borderRadius: "20px",
-          boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(226, 232, 240, 0.8)",
+          boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(240, 234, 226, 0.8)",
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
@@ -1143,8 +1143,8 @@ export function FormModal({
                 width: "40px",
                 height: "40px",
                 borderRadius: "12px",
-                background: "linear-gradient(135deg, rgba(79, 70, 229, 0.12), rgba(99, 102, 241, 0.2))",
-                color: "#4f46e5",
+                background: "linear-gradient(135deg, rgba(202, 146, 97, 0.12), rgba(212, 167, 128, 0.2))",
+                color: "#ca9261",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -1292,7 +1292,7 @@ export function FormModal({
                             }}
                           >
                             <div style={{ fontSize: "24px", marginBottom: "4px" }}>🖼️</div>
-                            <div style={{ fontSize: "12.5px", fontWeight: 700, color: "#3b82f6" }}>
+                            <div style={{ fontSize: "12.5px", fontWeight: 700, color: "#cc9565" }}>
                               Click or Drag & Drop Image/Diagram File
                             </div>
                             <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>
@@ -1430,12 +1430,12 @@ export function FormModal({
                 padding: "9px 22px",
                 borderRadius: "10px",
                 border: "none",
-                background: "linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)",
+                background: "linear-gradient(135deg, #ca9261 0%, #cc9565 100%)",
                 color: "#ffffff",
                 fontSize: "13px",
                 fontWeight: 600,
                 cursor: "pointer",
-                boxShadow: "0 4px 14px rgba(79, 70, 229, 0.4)",
+                boxShadow: "0 4px 14px rgba(202, 146, 97, 0.4)",
               }}
             >
               <Save size={15} />
@@ -1485,7 +1485,7 @@ export function DeleteModal({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "rgba(15, 23, 42, 0.65)",
+        background: "rgba(40, 26, 17, 0.65)",
         backdropFilter: "blur(6px)",
         padding: "16px",
       }}
@@ -1498,7 +1498,7 @@ export function DeleteModal({
           maxWidth: "460px",
           background: "#ffffff",
           borderRadius: "20px",
-          boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(226, 232, 240, 0.8)",
+          boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(240, 234, 226, 0.8)",
           overflow: "hidden",
         }}
         onClick={(e) => e.stopPropagation()}
@@ -1610,12 +1610,14 @@ export function ToastNotification({
   const isVisible = isOpen !== undefined ? isOpen : isVisProp !== undefined ? isVisProp : !!message;
   if (!isVisible || !message) return null;
 
-  const bg =
-    type === "danger" || type === "error"
-      ? "#dc2626"
-      : type === "info"
-      ? "#2563eb"
-      : "linear-gradient(112deg, #35105f 0%, #6b21a8 52%, #9d174d 100%)";
+  const isDanger = type === "danger" || type === "error";
+  // Professional brown palette: deep espresso surface, caramel accent stripe,
+  // cream text. Errors keep a muted red so they still read as errors.
+  const bg = isDanger
+    ? "linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)"
+    : "linear-gradient(135deg, #3b2416 0%, #4a2f1d 55%, #5a3a24 100%)";
+  const accent = isDanger ? "#fca5a5" : "#d6a26a";
+  const edge = isDanger ? "rgba(252, 165, 165, .4)" : "rgba(214, 162, 106, .45)";
 
   return (
     <div
@@ -1630,22 +1632,39 @@ export function ToastNotification({
         zIndex: 99999,
         display: "flex",
         alignItems: "center",
-        gap: "10px",
-        padding: "15px 22px",
-        borderRadius: "14px",
+        gap: "12px",
+        padding: "12px 16px 12px 18px",
+        borderRadius: "12px",
         background: bg,
-        border: "1px solid rgba(253, 230, 138, .9)",
+        borderStyle: "solid",
+        borderWidth: "1px 1px 1px 4px",
+        borderColor: `${edge} ${edge} ${edge} ${accent}`,
         overflow: "hidden",
-        color: "#ffffff",
+        color: "#f8eedb",
         fontSize: "14px",
-        fontWeight: 750,
+        fontWeight: 650,
         letterSpacing: ".1px",
         maxWidth: "min(520px, calc(100vw - 28px))",
         boxSizing: "border-box",
-        boxShadow: "0 16px 42px rgba(42, 11, 70, .42), 0 0 0 4px rgba(192, 132, 252, .18), 0 0 26px rgba(217, 70, 239, .28)",
+        boxShadow: "0 14px 36px rgba(30, 18, 10, .45), 0 2px 6px rgba(30, 18, 10, .25)",
       }}
     >
-      <CheckCircle2 size={16} color="#34d399" />
+      <span
+        style={{
+          flexShrink: 0,
+          width: "26px",
+          height: "26px",
+          borderRadius: "50%",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: isDanger ? "rgba(252, 165, 165, .18)" : "rgba(214, 162, 106, .2)",
+          border: `1px solid ${edge}`,
+          color: accent,
+        }}
+      >
+        {isDanger ? <X size={14} /> : <CheckCircle2 size={15} />}
+      </span>
       <span>{message}</span>
       <button
         type="button"
@@ -1653,9 +1672,9 @@ export function ToastNotification({
         style={{
           background: "transparent",
           border: "none",
-          color: "rgba(255, 255, 255, 0.7)",
+          color: "rgba(248, 238, 219, 0.65)",
           cursor: "pointer",
-          marginLeft: "8px",
+          marginLeft: "4px",
           display: "flex",
           alignItems: "center",
         }}
@@ -1687,146 +1706,50 @@ export function VerificationResultModal({
   remarks?: string;
 }) {
   if (!isOpen) return null;
+  const countLabel = verifiedCount > 0 ? `${verifiedCount} Question(s)` : "Syllabus";
 
+  // Brown & cream success pop-up with professional 3D motion (styles in
+  // globals.css under "Verification result pop-up"). All text is black.
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: "rgba(15, 23, 42, 0.75)",
-        backdropFilter: "blur(8px)",
-        zIndex: 99999,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          background: "#ffffff",
-          borderRadius: "24px",
-          width: "90%",
-          maxWidth: "480px",
-          padding: "32px",
-          textAlign: "center",
-          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)",
-          border: "1px solid rgba(124, 58, 237, 0.3)",
-          position: "relative",
-          animation: "scaleIn 0.25s ease-out",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          type="button"
-          onClick={onClose}
-          style={{
-            position: "absolute",
-            top: "18px",
-            right: "18px",
-            background: "#f1f5f9",
-            border: "none",
-            borderRadius: "50%",
-            width: "32px",
-            height: "32px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            color: "#64748b",
-          }}
-        >
+    <div className="vr-overlay" onClick={onClose}>
+      <div className="vr-card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="vr-title">
+        <button type="button" onClick={onClose} className="vr-close" aria-label="Close">
           <X size={16} />
         </button>
 
-        {/* Floating Glowing Icon */}
-        <div
-          style={{
-            width: "72px",
-            height: "72px",
-            borderRadius: "22px",
-            background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            margin: "0 auto 20px auto",
-            boxShadow: "0 10px 25px rgba(16, 185, 129, 0.45)",
-          }}
-        >
-          <CheckCircle2 size={40} color="#ffffff" style={{ filter: "drop-shadow(0 0 8px rgba(255,255,255,0.9))" }} />
+        <div className="vr-icon-wrap" aria-hidden="true">
+          <span className="vr-icon-ring" />
+          <span className="vr-icon">
+            <CheckCircle2 size={38} />
+          </span>
         </div>
 
-        <h3 style={{ fontSize: "21px", fontWeight: 800, color: "#0f172a", margin: "0 0 6px 0", letterSpacing: "-0.02em" }}>
-          {title}
-        </h3>
-        <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 20px 0" }}>
+        <h3 id="vr-title" className="vr-title">{title}</h3>
+        <p className="vr-subtitle">
           {itemName ? `Audit verification passed for "${itemName}"` : "Question repository passed AI quality audit."}
         </p>
 
-        {/* Verification Summary Card */}
-        <div
-          style={{
-            background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
-            border: "1px solid #bbf7d0",
-            borderRadius: "16px",
-            padding: "18px",
-            marginBottom: "22px",
-            textAlign: "left",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-            <span style={{ fontSize: "12px", fontWeight: 700, color: "#166534" }}>AI Verification Status</span>
-            <span
-              style={{
-                fontSize: "11.5px",
-                fontWeight: 800,
-                background: "#16a34a",
-                color: "#ffffff",
-                padding: "3px 10px",
-                borderRadius: "20px",
-                boxShadow: "0 2px 6px rgba(22, 163, 74, 0.3)",
-              }}
-            >
-              🤖 AI VERIFIED ({qualityScore}%)
-            </span>
+        <div className="vr-panel">
+          <div className="vr-panel-head">
+            <span className="vr-panel-label">AI Verification Status</span>
+            <span className="vr-badge">AI VERIFIED ({qualityScore}%)</span>
           </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "12px", color: "#15803d", fontWeight: 600 }}>
+          <div className="vr-stats">
             <div>
-              <span style={{ opacity: 0.8, display: "block", fontSize: "11px" }}>Verified Items:</span>
-              <strong>{verifiedCount} Question(s)</strong>
+              <span className="vr-stat-label">Verified Items:</span>
+              <strong>{countLabel}</strong>
             </div>
             <div>
-              <span style={{ opacity: 0.8, display: "block", fontSize: "11px" }}>Bloom's Level:</span>
+              <span className="vr-stat-label">Bloom&apos;s Level:</span>
               <strong>{bloomLevel}</strong>
             </div>
           </div>
-
-          <div style={{ marginTop: "12px", paddingTop: "10px", borderTop: "1px solid rgba(22, 163, 74, 0.2)", fontSize: "11.5px", color: "#166534", lineHeight: 1.4 }}>
-            💡 {remarks || "Questions phrasing syntax, distractor balance, and CO curriculum mapping successfully verified."}
+          <div className="vr-remarks">
+            {remarks || "Questions phrasing syntax, distractor balance, and CO curriculum mapping successfully verified."}
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onClose}
-          style={{
-            width: "100%",
-            padding: "12px",
-            borderRadius: "12px",
-            border: "none",
-            background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-            color: "#ffffff",
-            fontSize: "14px",
-            fontWeight: 700,
-            cursor: "pointer",
-            boxShadow: "0 4px 14px rgba(16, 185, 129, 0.4)",
-            transition: "all 0.2s ease",
-          }}
-        >
+        <button type="button" onClick={onClose} className="vr-ok">
           OK, Great!
         </button>
       </div>

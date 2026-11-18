@@ -29,13 +29,15 @@ import {
   Download,
   X,
 } from "lucide-react";
-import { examStore, QuestionItem, SyllabusUnit, SubjectItem, INSTITUTIONAL_SUBJECTS } from "../lib/examStore";
+import { examStore, QuestionItem, SyllabusUnit, SubjectItem, SyllabusApprovalItem, INSTITUTIONAL_SUBJECTS } from "../lib/examStore";
 import { saveQuestionBankDocument } from "../lib/questionBankDocuments";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
-import { extractDocxText, extractFileText } from "../lib/aiSyllabusParser";
+import { detectSubjectFromDocument, extractDocxText, extractFileText, extractSubjectHeader, inferDepartmentFromSubject } from "../lib/aiSyllabusParser";
 import JSZip from "jszip";
 import RoleGuard from "../components/RoleGuard";
-import { ToastNotification } from "../components/CrudModal";
+import { OriginalQuestionBankPreview, ToastNotification } from "../components/CrudModal";
+import MyUploadsList, { type MyUploadItem } from "../components/MyUploadsList";
+import { confirmDialog } from "../components/ConfirmDialog";
 import PortalFooter from "../components/PortalFooter";
 import PortalHeader from "../components/PortalHeader";
 import SyllabusDocumentPreview from "../components/SyllabusDocumentPreview";
@@ -339,11 +341,16 @@ export default function AcademicVaultPage() {
     return [];
   });
 
+  const [syllabusApprovalList, setSyllabusApprovalList] = useState<SyllabusApprovalItem[]>(() =>
+    typeof window !== "undefined" ? examStore.getSyllabusApprovals() : [],
+  );
+
   useEffect(() => {
     const loadData = () => {
       setQuestions(examStore.getQuestions() || []);
       setSubjects(examStore.getSubjects() || []);
       setUnits(examStore.getUnits() || []);
+      setSyllabusApprovalList(examStore.getSyllabusApprovals());
     };
     loadData();
     window.addEventListener("exam-cell-store-update", loadData);
@@ -359,12 +366,25 @@ export default function AcademicVaultPage() {
     const normalize = (value: string) => value.toLowerCase().replace(/\s*\([^)]*\)\s*/g, " ").replace(/[^a-z0-9]+/g, "");
     const assignedKeys = assigned.map(normalize).filter(Boolean);
 
-    return INSTITUTIONAL_SUBJECTS.filter((subject) => {
+    // Staff see the subjects a HOD/Dean allocated to them (name + code).
+    const allocated = INSTITUTIONAL_SUBJECTS.filter((subject) => {
       const subjectName = normalize(subject.name);
       const subjectCode = subject.code.toLowerCase().replace(/[^a-z0-9]+/g, "");
       return assignedKeys.some((key) => key.includes(subjectName) || subjectName.includes(key) || key.includes(subjectCode));
     });
+    if (allocated.length > 0) return allocated;
+
+    // Nothing allocated yet: fall back to the subjects of the staff member's
+    // own department (e.g. Visual Communication -> the VIS subjects).
+    const departmentKey = (value: string) => value.toLowerCase().replace(/^department of\s+/, "").replace(/[^a-z0-9]+/g, "");
+    const ownDepartment = departmentKey(currentUser.department || "");
+    if (!ownDepartment) return [];
+    return INSTITUTIONAL_SUBJECTS.filter((subject) => {
+      const subjectDepartment = departmentKey(subject.department);
+      return subjectDepartment === ownDepartment || subjectDepartment.includes(ownDepartment) || ownDepartment.includes(subjectDepartment);
+    });
   }, [currentUser, subjects]);
+  const noAssignedSubjects = currentUser.role === "STAFF" && availableSubjects.length === 0;
 
   // ---------------- SUBMITTER (HOD can upload for own subject or for a faculty) ----------------
   const [submitForId, setSubmitForId] = useState("self");
@@ -393,6 +413,24 @@ export default function AcademicVaultPage() {
   const [syllabusCode, setSyllabusCode] = useState("");
   const [syllabusSemester, setSyllabusSemester] = useState("Semester 1");
   const [syllabusDepartment, setSyllabusDepartment] = useState("");
+  // Subject of the uploaded syllabus (catalogue match or the document's own
+  // name/code). While a file is uploaded, the Subject Name / Code dropdowns
+  // offer only this subject; removing the file restores the normal list.
+  const [customSyllabusSubject, setCustomSyllabusSubject] = useState<{ name: string; code: string; department: string; semester?: string } | null>(null);
+  const syllabusSubjectOptions = React.useMemo(() => {
+    if (!customSyllabusSubject) return availableSubjects;
+    return [{ ...customSyllabusSubject, credits: 0, semester: customSyllabusSubject.semester || "" }];
+  }, [availableSubjects, customSyllabusSubject]);
+
+  // A staff member with exactly one allocated subject gets it pre-selected.
+  useEffect(() => {
+    if (currentUser.role !== "STAFF" || availableSubjects.length !== 1 || syllabusSubject) return;
+    const only = availableSubjects[0];
+    setSyllabusSubject(only.name);
+    setSyllabusCode(only.code);
+    setSyllabusDepartment(only.department.replace("Department of ", ""));
+    if (only.semester) setSyllabusSemester(only.semester);
+  }, [currentUser.role, availableSubjects, syllabusSubject]);
   const [syllabusFileName, setSyllabusFileName] = useState<string | null>(null);
   const [syllabusFile, setSyllabusFile] = useState<File | null>(null);
   const [syllabusFileUrl, setSyllabusFileUrl] = useState<string | null>(null);
@@ -420,20 +458,56 @@ export default function AcademicVaultPage() {
     setSyllabusFileName(file.name);
     setSyllabusFileUrl(URL.createObjectURL(file));
     setSyllabusPreviewText(null);
+    let documentText = "";
     if (extension === "docx") {
       try {
-        setSyllabusPreviewText(await extractDocxText(await file.arrayBuffer()));
+        documentText = await extractDocxText(await file.arrayBuffer());
+        setSyllabusPreviewText(documentText);
       } catch {
         setSyllabusPreviewText("Unable to read this Word document.");
       }
     } else if (extension === "doc") {
       setSyllabusPreviewText("Legacy .doc preview is not supported in the browser. Please upload the document as .docx.");
+    } else if (extension === "pdf" || extension === "xlsx") {
+      try {
+        documentText = await extractFileText(file);
+      } catch {
+        documentText = "";
+      }
     }
-    const baseName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
-    if (!syllabusSubject) {
-      setSyllabusSubject(baseName);
-      setSyllabusCode(`SUB-${Math.floor(100 + Math.random() * 900)}`);
-      setSyllabusDepartment("General Studies");
+
+    // Pick the subject (name + code) the uploaded syllabus belongs to: a known
+    // catalogue subject first, otherwise the document's own name and code.
+    setCustomSyllabusSubject(null);
+    const detected = detectSubjectFromDocument(file.name, documentText, INSTITUTIONAL_SUBJECTS);
+    const allowed = detected && availableSubjects.find((subject) => subject.code === detected.code);
+    if (allowed) {
+      setCustomSyllabusSubject({ name: allowed.name, code: allowed.code, department: allowed.department, semester: allowed.semester });
+      setSyllabusSubject(allowed.name);
+      setSyllabusCode(allowed.code);
+      setSyllabusDepartment(allowed.department.replace("Department of ", ""));
+      if (allowed.semester) setSyllabusSemester(allowed.semester);
+      showToast("Uploaded successfully.");
+      return;
+    }
+    if (detected) {
+      setSyllabusSubject("");
+      setSyllabusCode("");
+      showToast(`This syllabus is for ${detected.name} (${detected.code}), which is not assigned to you.`, "danger");
+      return;
+    }
+    const header = extractSubjectHeader(file.name, documentText);
+    if (header) {
+      // Department from the syllabus itself, else guessed from the subject
+      // name (e.g. Basic Mathematics -> Mathematics), else the uploader's.
+      const department = header.department || inferDepartmentFromSubject(header.name) || currentUser.department || "";
+      setCustomSyllabusSubject({ name: header.name, code: header.code, department, semester: header.semester });
+      setSyllabusSubject(header.name);
+      setSyllabusCode(header.code);
+      if (department) setSyllabusDepartment(department.replace("Department of ", ""));
+      if (header.semester) setSyllabusSemester(header.semester);
+      showToast("Uploaded successfully.");
+      return;
     }
     showToast("Uploaded successfully.");
   };
@@ -464,6 +538,7 @@ export default function AcademicVaultPage() {
     setSyllabusSubject("");
     setSyllabusCode("");
     setSyllabusDepartment("");
+    setCustomSyllabusSubject(null);
     if (syllabusFileRef.current) syllabusFileRef.current.value = "";
   };
 
@@ -592,6 +667,7 @@ export default function AcademicVaultPage() {
     setSyllabusSubject("");
     setSyllabusCode("");
     setSyllabusDepartment("");
+    setCustomSyllabusSubject(null);
     setSyllabusFile(null);
     showToast(`Syllabus "${subItem.name}" saved & ingested into Vault!`);
   };
@@ -601,7 +677,7 @@ export default function AcademicVaultPage() {
   const [bulkFileUrl, setBulkFileUrl] = useState<string | null>(null);
   const [bulkSourceText, setBulkSourceText] = useState<string | null>(null);
   const [bulkFormat, setBulkFormat] = useState<SyllabusUploadFormat>("excel");
-  const [bulkSubject, setBulkSubject] = useState(subjects[0]?.name || "General");
+  const [bulkSubject, setBulkSubject] = useState("");
   const bulkFileRef = useRef<HTMLInputElement>(null);
   const [parsedBulkCount, setParsedBulkCount] = useState(0);
   const [parsedBulkQuestions, setParsedBulkQuestions] = useState<ParsedBulkQuestion[]>([]);
@@ -609,11 +685,21 @@ export default function AcademicVaultPage() {
   const [isBulkDragOver, setIsBulkDragOver] = useState(false);
   const [showBulkPreview, setShowBulkPreview] = useState(false);
 
+  // Keep the question bank subject valid for this user. Only a single allowed
+  // subject is picked automatically; otherwise it comes from the uploaded file
+  // (see processBulkFile) or the user's choice in the Subject dropdown.
+  // While a question bank file is uploaded, its subject is the only option.
+  const [bulkUploadedSubject, setBulkUploadedSubject] = useState<{ name: string; code: string; department: string; semester?: string } | null>(null);
+  const bulkSubjectOptions = React.useMemo(
+    () => (bulkUploadedSubject ? [{ ...bulkUploadedSubject, credits: 0, semester: bulkUploadedSubject.semester || "" }] : availableSubjects),
+    [availableSubjects, bulkUploadedSubject],
+  );
   useEffect(() => {
-    if (availableSubjects.length > 0 && !availableSubjects.some((subject) => subject.name === bulkSubject)) {
-      setBulkSubject(availableSubjects[0].name);
-    }
-  }, [availableSubjects, bulkSubject]);
+    if (bulkSubject && bulkSubjectOptions.some((subject) => subject.name === bulkSubject)) return;
+    const next = bulkSubjectOptions.length === 1 ? bulkSubjectOptions[0].name : "";
+    if (next !== bulkSubject) setBulkSubject(next);
+  }, [bulkSubjectOptions, bulkSubject]);
+  const bulkSubjectInfo = bulkSubjectOptions.find((subject) => subject.name === bulkSubject) || null;
 
   // Manual Question state
   const [manualSubject, setManualSubject] = useState(subjects[0]?.name || "General");
@@ -644,6 +730,7 @@ export default function AcademicVaultPage() {
       return;
     }
     setBulkFileName(file.name);
+    setBulkUploadedSubject(null);
     setBulkFileUrl(URL.createObjectURL(file));
     setBulkSourceText(null);
     setParsedBulkQuestions([]);
@@ -665,7 +752,62 @@ export default function AcademicVaultPage() {
       if (!parsed.length) {
         showToast(`No question rows found in ${file.name}. Check the file format and Question column.`, "danger");
       } else {
-        showToast("Uploaded successfully.");
+        // Pick the subject (name + code) the question bank belongs to, from the
+        // file name, a Subject/Course column, or the question text itself.
+        const subjectColumn = parsed.map((question) => question.subject || "").filter(Boolean).join("\n");
+        const questionText = parsed.map((question) => question.question).join("\n");
+
+        // 1) A syllabus this staff member already uploaded wins, so the question
+        //    bank lands under exactly the same subject name and code as the
+        //    syllabus (e.g. "Basic_Mathematics_..._Bloom.docx" -> Basic Mathematics).
+        const submitterKey = (value: string) => value.toLowerCase().replace(/^(mr\.|mrs\.|ms\.|dr\.|prof\.)\s*/i, "").trim();
+        const ownSyllabusSubjects = Array.from(
+          new Map(
+            examStore
+              .getSyllabusApprovals()
+              .filter((item) =>
+                (submitter.email && (item.submitterEmail || "").toLowerCase() === submitter.email.toLowerCase()) ||
+                (submitter.name && submitterKey(item.submittedBy || "") === submitterKey(submitter.name)),
+              )
+              .filter((item) => item.courseName && item.courseCode)
+              .map((item) => [item.courseCode, { code: item.courseCode, name: item.courseName, department: item.department || "", semester: item.semester || "" }] as const),
+          ).values(),
+        );
+        const fromSyllabus =
+          detectSubjectFromDocument(file.name, subjectColumn, ownSyllabusSubjects) ||
+          detectSubjectFromDocument("", questionText.slice(0, 6000), ownSyllabusSubjects);
+        if (fromSyllabus) {
+          setBulkUploadedSubject({ name: fromSyllabus.name, code: fromSyllabus.code, department: fromSyllabus.department, semester: fromSyllabus.semester });
+          setBulkSubject(fromSyllabus.name);
+          showToast("Uploaded successfully.");
+          return;
+        }
+
+        // 2) Otherwise a catalogue subject, 3) otherwise the file's own name/code.
+        const detected =
+          detectSubjectFromDocument(file.name, subjectColumn, INSTITUTIONAL_SUBJECTS) ||
+          detectSubjectFromDocument("", questionText, INSTITUTIONAL_SUBJECTS);
+        const allowed = detected && availableSubjects.find((subject) => subject.code === detected.code);
+        if (allowed) {
+          setBulkUploadedSubject({ name: allowed.name, code: allowed.code, department: allowed.department, semester: allowed.semester });
+          setBulkSubject(allowed.name);
+          showToast("Uploaded successfully.");
+        } else if (detected) {
+          setBulkUploadedSubject(null);
+          setBulkSubject("");
+          showToast(`This question bank is for ${detected.name} (${detected.code}), which is not assigned to you.`, "danger");
+        } else {
+          // Not a catalogue subject: use the file's own name/code (Subject
+          // column or file name), e.g. "Basic Mathematics (311302)".
+          const header = extractSubjectHeader(file.name, subjectColumn ? `Subject Name: ${subjectColumn.split("\n")[0]}` : "");
+          if (header) {
+            setBulkUploadedSubject({ name: header.name, code: header.code, department: inferDepartmentFromSubject(header.name) || currentUser.department || "", semester: header.semester });
+            setBulkSubject(header.name);
+          } else {
+            setBulkUploadedSubject(null);
+          }
+          showToast("Uploaded successfully.");
+        }
       }
     } catch (error) {
       console.error("Bulk question parsing failed", error);
@@ -689,7 +831,11 @@ export default function AcademicVaultPage() {
       return;
     }
 
-    const targetSub = bulkSubject || (subjects[0]?.name ?? "General");
+    if (!bulkSubjectInfo) {
+      showToast("Please select the subject for these questions.", "danger");
+      return;
+    }
+    const targetSub = bulkSubjectInfo.name;
     const batchId = Date.now();
     const importedQuestions: QuestionItem[] = parsedBulkQuestions.map((parsed, index) => ({
       ...parsed,
@@ -716,6 +862,81 @@ export default function AcademicVaultPage() {
     if (bulkFileRef.current) bulkFileRef.current.value = "";
   };
 
+  // ---------------- "YOUR UPLOADS": saved syllabi & question banks ----------------
+  // Lets a staff member delete what they saved earlier (even after a reload);
+  // deletion also removes it from the HOD / Dean / COE review screens.
+  const ownerKey = (value: string) => value.toLowerCase().replace(/^(mr\.|mrs\.|ms\.|dr\.|prof\.)\s*/i, "").trim();
+  const isMine = (email?: string, name?: string) =>
+    Boolean(
+      (currentUser.email && email && email.toLowerCase() === currentUser.email.toLowerCase()) ||
+        (currentUser.name && name && ownerKey(name) === ownerKey(currentUser.name)),
+    );
+  const myQuestionBanks: MyUploadItem[] = React.useMemo(() => {
+    const groups = new Map<string, { subject: string; total: number; approved: number; finalized: number }>();
+    questions
+      .filter((q) => q.sourceFile && isMine(q.email, q.uploadedBy))
+      .forEach((q) => {
+        const key = q.sourceFile as string;
+        const group = groups.get(key) || { subject: q.subject || "—", total: 0, approved: 0, finalized: 0 };
+        group.total += 1;
+        if (q.status === "Approved") group.approved += 1;
+        if (q.status === "Approved" && (q.verifiedRole || "").toUpperCase() === "COE") group.finalized += 1;
+        groups.set(key, group);
+      });
+    return [...groups.entries()].map(([fileName, g]) => ({
+      id: fileName,
+      fileName,
+      subject: g.subject,
+      detail: `${g.total} question${g.total === 1 ? "" : "s"}`,
+      status: g.finalized > 0 ? "Final approval complete" : g.approved > 0 ? `${g.approved} approved` : "Awaiting review",
+      locked: g.finalized > 0,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questions, currentUser]);
+  const mySyllabi: MyUploadItem[] = React.useMemo(
+    () =>
+      syllabusApprovalList
+        .filter((item) => isMine(item.submitterEmail, item.submittedBy))
+        .map((item) => ({
+          id: item.id,
+          fileName: item.documentName || item.courseName,
+          subject: `${item.courseName}${item.courseCode ? ` (${item.courseCode})` : ""}`,
+          detail: item.semester || "Syllabus",
+          status: item.coeStatus === "Approved" ? "Final approval complete" : item.hodStatus === "Approved" ? "Verified by HOD" : "Awaiting review",
+          locked: item.coeStatus === "Approved",
+        })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [syllabusApprovalList, currentUser],
+  );
+
+  const handleDeleteSavedQuestionBank = async (item: MyUploadItem) => {
+    if (!(await confirmDialog(`Delete the question bank "${item.fileName}" (${item.detail})? It will also be removed from the HOD, Dean and COE review pages.`, { danger: true }))) return;
+    const removed = examStore.deleteQuestionsBySource(item.fileName, currentUser.email, currentUser.name);
+    if (bulkFileName === item.fileName) {
+      setBulkFileName(null);
+      setBulkFileUrl(null);
+      setBulkSourceText(null);
+      setParsedBulkCount(0);
+      setParsedBulkQuestions([]);
+      setBulkUploadedSubject(null);
+      setBulkSubject("");
+    }
+    setQuestions(examStore.getQuestions());
+    showToast(`Question bank "${item.fileName}" deleted (${removed} questions).`, "danger");
+  };
+
+  const handleDeleteSavedSyllabus = async (item: MyUploadItem) => {
+    if (!(await confirmDialog(`Delete the syllabus "${item.fileName}"? It will also be removed from the HOD, Dean and COE review pages.`, { danger: true }))) return;
+    const record = syllabusApprovalList.find((entry) => entry.id === item.id);
+    examStore.deleteSyllabusApproval(item.id);
+    if (record?.courseName) examStore.deleteSubjectSyllabus(record.courseName);
+    if (savedSyllabus && record && (savedSyllabus.code === record.courseCode || savedSyllabus.name === record.courseName)) {
+      setSavedSyllabus(null);
+    }
+    setSyllabusApprovalList(examStore.getSyllabusApprovals());
+    showToast(`Syllabus "${item.fileName}" deleted.`, "danger");
+  };
+
   const handleDeleteBulkUpload = () => {
     if (!bulkFileName && parsedBulkQuestions.length === 0) {
       showToast("No question bank upload to delete.", "danger");
@@ -736,6 +957,8 @@ export default function AcademicVaultPage() {
     setParsedBulkCount(0);
     setParsedBulkQuestions([]);
     setShowBulkPreview(false);
+    setBulkUploadedSubject(null);
+    setBulkSubject("");
     if (bulkFileRef.current) bulkFileRef.current.value = "";
     showToast(sourceFile ? `Question bank "${sourceFile}" deleted.` : "Question bank upload removed.", "danger");
   };
@@ -804,19 +1027,19 @@ export default function AcademicVaultPage() {
           display: "flex",
           height: "100vh",
           maxHeight: "100vh",
-          background: "#080d1a",
+          background: "var(--workspace-canvas)",
           fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-          color: "#f8fafc",
+          color: "var(--workspace-ink)",
           width: "100%",
           maxWidth: "100vw",
           overflow: "hidden",
         }}
       >
         {/* ================================= SIDEBAR ================================= */}
-        <aside
+        <aside className="digital-vfx-sidebar"
           style={{
             width: "260px",
-            background: "linear-gradient(180deg, #090e1f 0%, #060914 100%)",
+            background: "linear-gradient(180deg, #1c120c 0%, #120c08 100%)",
             color: "#94a3b8",
             display: "flex",
             flexDirection: "column",
@@ -832,16 +1055,7 @@ export default function AcademicVaultPage() {
           <div>
             {/* RGU Logo with 3D ambient glow */}
             <div style={{ padding: "6px 10px 24px 10px", position: "relative" }}>
-              <img
-                src="/images/rgu-logo.svg"
-                alt="Rathinam Global (Deemed to be University)"
-                style={{
-                  maxHeight: "38px",
-                  width: "auto",
-                  objectFit: "contain",
-                  filter: "drop-shadow(0 0 12px rgba(99, 102, 241, 0.35))",
-                }}
-              />
+              <div className="brand-orbit-logo" aria-label="Rathinam Global (Deemed to be University)"><span className="brand-orbit-mark">RG</span><span className="brand-orbit-name">Rathinam Global</span></div>
             </div>
 
             {/* Navigation Items with 3D Glow Icons and Animations */}
@@ -983,8 +1197,8 @@ export default function AcademicVaultPage() {
               </div>
 
               {currentUser.role === "HOD" && (
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px", borderRadius: "12px", background: "#ffffff", border: "1px solid #c7d2fe", boxShadow: "0 1px 4px rgba(15,23,42,0.04)" }}>
-                  <label htmlFor="vault-submit-for" style={{ fontSize: "11px", fontWeight: 800, color: "#4338ca", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px", borderRadius: "12px", background: "#ffffff", border: "1px solid #c7d2fe", boxShadow: "0 1px 4px rgba(40, 26, 17,0.04)" }}>
+                  <label htmlFor="vault-submit-for" style={{ fontSize: "11px", fontWeight: 800, color: "#c07d42", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
                     Submitting for
                   </label>
                   <select
@@ -1023,18 +1237,18 @@ export default function AcademicVaultPage() {
               {/* ========================================================= */}
               {/* LEFT PARTITION: SYLLABUS UPLOAD                           */}
               {/* ========================================================= */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px", height: "100%" }}>
+              <div className="vault-panel vault-panel-syllabus" style={{ display: "flex", flexDirection: "column", gap: "16px", height: "100%" }}>
                 {/* 1. Left Header Banner */}
                 <div
                   style={{
-                    background: "linear-gradient(135deg, #4338ca 0%, #3730a3 100%)",
+                    background: "linear-gradient(135deg, var(--vp-grad-a) 0%, var(--vp-grad-b) 100%)",
                     borderRadius: "14px",
                     padding: "14px 18px",
                     color: "#ffffff",
                     display: "flex",
                     alignItems: "center",
                     gap: "10px",
-                    boxShadow: "0 4px 14px rgba(67, 56, 202, 0.25)",
+                    boxShadow: "0 4px 14px var(--vp-glow)",
                   }}
                 >
                   <div
@@ -1077,7 +1291,7 @@ export default function AcademicVaultPage() {
                       ["pdf", "PDF", ".pdf"],
                       ["diagram", "Diagram", ".png/.jpg"],
                     ] as const).map(([value, label, extension]) => (
-                      <button key={value} type="button" onClick={() => { setSyllabusFormat(value); setSyllabusFile(null); setSyllabusFileName(null); setSyllabusFileUrl(null); setSyllabusPreviewText(null); if (syllabusFileRef.current) syllabusFileRef.current.value = ""; }} style={{ padding: "7px 4px", borderRadius: "7px", border: syllabusFormat === value ? "1px solid #6366f1" : "1px solid #e2e8f0", background: syllabusFormat === value ? "#eef2ff" : "#ffffff", color: syllabusFormat === value ? "#4338ca" : "#64748b", fontSize: "10.5px", fontWeight: 800, cursor: "pointer" }}>
+                      <button key={value} type="button" onClick={() => { setSyllabusFormat(value); setSyllabusFile(null); setSyllabusFileName(null); setSyllabusFileUrl(null); setSyllabusPreviewText(null); if (syllabusFileRef.current) syllabusFileRef.current.value = ""; }} style={{ padding: "7px 4px", borderRadius: "7px", border: syllabusFormat === value ? "1px solid var(--vp-accent)" : "1px solid #e2e8f0", background: syllabusFormat === value ? "var(--vp-soft)" : "#ffffff", color: syllabusFormat === value ? "var(--vp-text)" : "#64748b", fontSize: "10.5px", fontWeight: 800, cursor: "pointer" }}>
                         {label}<span style={{ display: "block", fontSize: "9px", fontWeight: 600, marginTop: "2px" }}>{extension}</span>
                       </button>
                     ))}
@@ -1095,7 +1309,7 @@ export default function AcademicVaultPage() {
                     onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsSyllabusDragOver(false); }}
                     onDrop={(event) => { event.preventDefault(); setIsSyllabusDragOver(false); const file = event.dataTransfer.files?.[0]; if (file) void processSyllabusFile(file); }}
                     style={{
-                      border: "2px dashed #c7d2fe",
+                      border: "2px dashed var(--vp-border)",
                       borderRadius: "12px",
                       padding: "36px 20px",
                       textAlign: "center",
@@ -1119,8 +1333,8 @@ export default function AcademicVaultPage() {
                       accept={syllabusFormat === "excel" ? ".xlsx,.xls" : syllabusFormat === "word" ? ".docx,.doc" : syllabusFormat === "pdf" ? ".pdf" : ".png,.jpg,.jpeg,.svg,.webp"}
                       style={{ display: "none" }}
                     />
-                    <div className="question-bank-file-orb syllabus-file-orb"><UploadCloud size={24} color="#0284c7" className="question-bank-file-glyph" /></div>
-                    <div style={{ fontSize: "13px", fontWeight: 800, color: syllabusFileName ? "#15803d" : "#334155" }}>
+                    <div className="question-bank-file-orb syllabus-file-orb"><UploadCloud size={24} className="question-bank-file-glyph" /></div>
+                    <div style={{ fontSize: "13px", fontWeight: 800, color: syllabusFileName ? "var(--vp-uploaded)" : "#334155" }}>
                       {syllabusFileName ? "Uploaded" : `Click or Drag & Drop ${syllabusFormat === "excel" ? "Excel" : syllabusFormat === "word" ? "Word" : syllabusFormat === "pdf" ? "PDF" : "Diagram"} file`}
                     </div>
                     <div style={{ fontSize: "11px", color: "#64748b" }}>
@@ -1129,8 +1343,8 @@ export default function AcademicVaultPage() {
                   </div>
 
                   {syllabusFileName && syllabusFileUrl && (
-                    <div onClick={() => setShowSyllabusFilePreview(true)} title="View uploaded document" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", padding: "9px 11px", marginBottom: "14px", borderRadius: "10px", background: "linear-gradient(110deg, #f5f3ff, #eff6ff)", border: "1px solid #c4b5fd", boxShadow: "0 4px 12px rgba(79,70,229,.08)", cursor: "pointer" }}>
-                      <div style={{ minWidth: 0, fontSize: "11.5px", color: "#4338ca", fontWeight: 750, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>📄 {syllabusFileName}</div>
+                    <div onClick={() => setShowSyllabusFilePreview(true)} title="View uploaded document" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", padding: "9px 11px", marginBottom: "14px", borderRadius: "10px", background: "var(--vp-soft)", border: "1px solid var(--vp-border)", boxShadow: "0 4px 12px var(--vp-glow)", cursor: "pointer" }}>
+                      <div style={{ minWidth: 0, fontSize: "11.5px", color: "var(--vp-text)", fontWeight: 750, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>📄 {syllabusFileName}</div>
                       <button type="button" onClick={(event) => { event.stopPropagation(); handleDeleteSyllabusUpload(); }} title="Remove uploaded syllabus" aria-label="Remove uploaded syllabus" style={{ display: "grid", placeItems: "center", flex: "0 0 30px", width: "30px", height: "30px", borderRadius: "9px", border: "1px solid #fecaca", background: "linear-gradient(145deg, #fff1f2, #ffe4e6)", color: "#be123c", cursor: "pointer", boxShadow: "0 2px 7px rgba(190,18,60,.12)", transition: "all .18s ease" }}><Trash2 size={14} /></button>
                     </div>
                   )}
@@ -1148,7 +1362,7 @@ export default function AcademicVaultPage() {
                             onChange={(e) => {
                               const val = e.target.value;
                               setSyllabusSubject(val);
-                              const match = availableSubjects.find((s) => s.name === val);
+                              const match = syllabusSubjectOptions.find((s) => s.name === val);
                               if (match) {
                                 setSyllabusCode(match.code);
                                 setSyllabusDepartment(match.department.replace("Department of ", ""));
@@ -1167,13 +1381,20 @@ export default function AcademicVaultPage() {
                               cursor: "pointer",
                             }}
                           >
-                            <option value="">-- Select Subject from Dropdown --</option>
-                            {availableSubjects.map((s) => (
+                            <option value="">
+                              {noAssignedSubjects ? "-- No subjects assigned to you yet --" : "-- Select Subject from Dropdown --"}
+                            </option>
+                            {syllabusSubjectOptions.map((s) => (
                               <option key={s.code} value={s.name}>
                                 {s.name} ({s.code})
                               </option>
                             ))}
                           </select>
+                          {noAssignedSubjects && (
+                            <div style={{ marginTop: "4px", fontSize: "10.5px", color: "#8a7260", lineHeight: 1.35 }}>
+                              Ask your HOD to allocate your subject (Staff Faculty → Allocate Subjects).
+                            </div>
+                          )}
                         </div>
 
                         <div>
@@ -1185,7 +1406,7 @@ export default function AcademicVaultPage() {
                             onChange={(e) => {
                               const val = e.target.value;
                               setSyllabusCode(val);
-                              const match = availableSubjects.find((s) => s.code === val);
+                              const match = syllabusSubjectOptions.find((s) => s.code === val);
                               if (match) {
                                 setSyllabusSubject(match.name);
                                 setSyllabusDepartment(match.department.replace("Department of ", ""));
@@ -1205,8 +1426,8 @@ export default function AcademicVaultPage() {
                               cursor: "pointer",
                             }}
                           >
-                            <option value="">-- Select Code --</option>
-                            {availableSubjects.map((s) => (
+                            <option value="">{noAssignedSubjects ? "-- No code assigned --" : "-- Select Code --"}</option>
+                            {syllabusSubjectOptions.map((s) => (
                               <option key={s.code} value={s.code}>
                                 {s.code} — {s.name}
                               </option>
@@ -1286,13 +1507,13 @@ export default function AcademicVaultPage() {
                           gap: "6px",
                           padding: "9px 20px",
                           borderRadius: "8px",
-                          background: "linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)",
+                          background: "linear-gradient(135deg, var(--vp-grad-a) 0%, var(--vp-grad-b) 100%)",
                           color: "#ffffff",
                           border: "none",
                           fontSize: "12.5px",
                           fontWeight: 700,
                           cursor: "pointer",
-                          boxShadow: "0 2px 8px rgba(79, 70, 229, 0.3)",
+                          boxShadow: "0 2px 8px var(--vp-glow)",
                         }}
                       >
                         <CheckCircle2 size={15} />
@@ -1300,24 +1521,25 @@ export default function AcademicVaultPage() {
                       </button>
                     </div>
                   </form>
+                  <MyUploadsList title="Your uploaded syllabi" items={mySyllabi.filter((item) => !item.locked)} onDelete={handleDeleteSavedSyllabus} />
                 </div>
               </div>
 
               {/* ========================================================= */}
               {/* RIGHT PARTITION: QUESTION BANK UPLOAD                     */}
               {/* ========================================================= */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px", height: "100%" }}>
+              <div className="vault-panel vault-panel-qb" style={{ display: "flex", flexDirection: "column", gap: "16px", height: "100%" }}>
                 {/* 1. Right Header Banner */}
                 <div
                   style={{
-                    background: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
+                    background: "linear-gradient(135deg, var(--vp-grad-a) 0%, var(--vp-grad-b) 100%)",
                     borderRadius: "14px",
                     padding: "14px 18px",
                     color: "#ffffff",
                     display: "flex",
                     alignItems: "center",
                     gap: "10px",
-                    boxShadow: "0 4px 14px rgba(2, 132, 199, 0.25)",
+                    boxShadow: "0 4px 14px var(--vp-glow)",
                   }}
                 >
                   <div
@@ -1363,7 +1585,7 @@ export default function AcademicVaultPage() {
                         padding: "8px 12px",
                         borderRadius: "8px",
                         border: "none",
-                        background: qbUploadMode === "bulk" ? "linear-gradient(135deg, #0284c7, #0369a1)" : "#f1f5f9",
+                        background: qbUploadMode === "bulk" ? "linear-gradient(135deg, var(--vp-grad-a) 0%, var(--vp-grad-b) 100%)" : "#f1f5f9",
                         color: qbUploadMode === "bulk" ? "#ffffff" : "#475569",
                         fontSize: "12.5px",
                         fontWeight: 700,
@@ -1387,7 +1609,7 @@ export default function AcademicVaultPage() {
                         padding: "8px 12px",
                         borderRadius: "8px",
                         border: "none",
-                        background: qbUploadMode === "manual" ? "linear-gradient(135deg, #0284c7, #0369a1)" : "#f1f5f9",
+                        background: qbUploadMode === "manual" ? "linear-gradient(135deg, var(--vp-grad-a) 0%, var(--vp-grad-b) 100%)" : "#f1f5f9",
                         color: qbUploadMode === "manual" ? "#ffffff" : "#475569",
                         fontSize: "12.5px",
                         fontWeight: 700,
@@ -1425,9 +1647,9 @@ export default function AcademicVaultPage() {
                             style={{
                               padding: "8px 4px",
                               borderRadius: "8px",
-                              border: bulkFormat === value ? "1px solid #0284c7" : "1px solid #cbd5e1",
-                              background: bulkFormat === value ? "#e0f2fe" : "#ffffff",
-                              color: bulkFormat === value ? "#0369a1" : "#64748b",
+                              border: bulkFormat === value ? "1px solid var(--vp-accent)" : "1px solid #cbd5e1",
+                              background: bulkFormat === value ? "var(--vp-soft)" : "#ffffff",
+                              color: bulkFormat === value ? "var(--vp-text)" : "#64748b",
                               fontSize: "11px",
                               fontWeight: 800,
                               cursor: "pointer",
@@ -1448,7 +1670,7 @@ export default function AcademicVaultPage() {
                         onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsBulkDragOver(false); }}
                         onDrop={(event) => { event.preventDefault(); setIsBulkDragOver(false); const file = event.dataTransfer.files?.[0]; if (file) void processBulkFile(file); }}
                         style={{
-                          border: "2px dashed #38bdf8",
+                          border: "2px dashed #cc9564",
                           borderRadius: "12px",
                           padding: "36px 20px",
                           textAlign: "center",
@@ -1484,16 +1706,16 @@ export default function AcademicVaultPage() {
                             width: "48px",
                             height: "48px",
                             borderRadius: "12px",
-                            background: "#e0f2fe",
+                            background: "var(--vp-soft)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                             marginBottom: "2px",
                           }}
                         >
-                          <FileSpreadsheet size={26} color="#0284c7" className="question-bank-file-glyph" />
+                          <FileSpreadsheet size={26} className="question-bank-file-glyph" />
                         </div>
-                        <div style={{ fontSize: "14px", fontWeight: 800, color: bulkFileName ? "#15803d" : "#0369a1" }}>
+                        <div style={{ fontSize: "14px", fontWeight: 800, color: bulkFileName ? "var(--vp-uploaded)" : "var(--vp-text)" }}>
                           {bulkFileName
                             ? "Uploaded"
                             : `Click to Browse Question Bank (${bulkFormat === "excel" ? "Excel" : bulkFormat === "word" ? "Word" : bulkFormat === "pdf" ? "PDF" : "Diagram"})`}
@@ -1501,7 +1723,7 @@ export default function AcademicVaultPage() {
                         <div style={{ fontSize: "11.5px", color: "#64748b", maxWidth: "340px", lineHeight: 1.4 }}>
                           Upload one {bulkFormat === "excel" ? "Excel (.xlsx/.xls)" : bulkFormat === "word" ? "Word (.docx/.doc)" : bulkFormat === "pdf" ? "PDF (.pdf)" : "Diagram (.png/.jpg/.jpeg/.svg/.webp)"} question bank file. All questions will be previewed together before saving.
                         </div>
-                        {isParsingBulk && <div style={{ fontSize: "12px", fontWeight: 700, color: "#0369a1" }}>Reading every question from the file...</div>}
+                        {isParsingBulk && <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--vp-text)" }}>Reading every question from the file...</div>}
                         {!isParsingBulk && (parsedBulkCount > 0 || bulkSourceText !== null) && (
                           <div style={{ fontSize: "12px", fontWeight: 800, color: "#15803d" }}>
                             ✓ {parsedBulkCount} questions found and ready to insert
@@ -1520,9 +1742,9 @@ export default function AcademicVaultPage() {
                               gap: "6px",
                               padding: "7px 12px",
                               borderRadius: "7px",
-                              border: "1px solid #7dd3fc",
+                              border: "1px solid #deba9b",
                               background: "#ffffff",
-                              color: "#0369a1",
+                              color: "var(--vp-text)",
                               fontSize: "12px",
                               fontWeight: 800,
                               cursor: "pointer",
@@ -1536,12 +1758,59 @@ export default function AcademicVaultPage() {
 
                       {bulkFileName && bulkFileUrl && !isParsingBulk && (
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", padding: "9px 11px", borderRadius: "8px", background: "#f0f9ff", border: "1px solid #bae6fd" }}>
-                          <div style={{ minWidth: 0, fontSize: "11.5px", color: "#0369a1", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>📊 {bulkFileName}</div>
+                          <div style={{ minWidth: 0, fontSize: "11.5px", color: "var(--vp-text)", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>📊 {bulkFileName}</div>
                           <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
-                            <button type="button" onClick={() => setShowBulkPreview(true)} style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "6px 10px", borderRadius: "7px", border: "1px solid #7dd3fc", background: "#ffffff", color: "#0369a1", fontSize: "11px", fontWeight: 800, cursor: "pointer" }}>
+                            <button type="button" onClick={() => setShowBulkPreview(true)} style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "6px 10px", borderRadius: "7px", border: "1px solid #deba9b", background: "#ffffff", color: "var(--vp-text)", fontSize: "11px", fontWeight: 800, cursor: "pointer" }}>
                               <Eye size={13} /> View Original File
                             </button>
                           </div>
+                        </div>
+                      )}
+
+                      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "10px", marginTop: "4px" }}>
+                        <div>
+                          <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#475569", marginBottom: "3px" }}>
+                            Subject Name *
+                          </label>
+                          <select
+                            value={bulkSubject}
+                            onChange={(e) => setBulkSubject(e.target.value)}
+                            style={{ width: "100%", padding: "8px 12px", borderRadius: "7px", border: "1px solid #cbd5e1", fontSize: "12.5px", boxSizing: "border-box", fontWeight: 600, background: "#ffffff", cursor: "pointer" }}
+                          >
+                            <option value="">
+                              {noAssignedSubjects ? "-- No subjects assigned to you yet --" : "-- Select Subject from Dropdown --"}
+                            </option>
+                            {bulkSubjectOptions.map((s) => (
+                              <option key={s.code} value={s.name}>
+                                {s.name} ({s.code})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#475569", marginBottom: "3px" }}>
+                            Subject Code *
+                          </label>
+                          <select
+                            value={bulkSubjectInfo?.code || ""}
+                            onChange={(e) => {
+                              const match = bulkSubjectOptions.find((s) => s.code === e.target.value);
+                              setBulkSubject(match ? match.name : "");
+                            }}
+                            style={{ width: "100%", padding: "8px 12px", borderRadius: "7px", border: "1px solid #cbd5e1", fontSize: "12.5px", boxSizing: "border-box", fontWeight: 600, background: "#ffffff", cursor: "pointer" }}
+                          >
+                            <option value="">{noAssignedSubjects ? "-- No code assigned --" : "-- Select Code --"}</option>
+                            {bulkSubjectOptions.map((s) => (
+                              <option key={s.code} value={s.code}>
+                                {s.code} — {s.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      {noAssignedSubjects && (
+                        <div style={{ fontSize: "10.5px", color: "#8a7260", lineHeight: 1.35 }}>
+                          Ask your HOD to allocate your subject (Staff Faculty → Allocate Subjects).
                         </div>
                       )}
 
@@ -1567,20 +1836,21 @@ export default function AcademicVaultPage() {
                             gap: "6px",
                             padding: "9px 20px",
                             borderRadius: "8px",
-                            background: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
+                            background: "linear-gradient(135deg, var(--vp-grad-a) 0%, var(--vp-grad-b) 100%)",
                             color: "#ffffff",
                             border: "none",
                             fontSize: "12.5px",
                             fontWeight: 700,
                             cursor: isParsingBulk ? "not-allowed" : "pointer",
                             opacity: isParsingBulk ? 0.55 : 1,
-                            boxShadow: "0 2px 8px rgba(2, 132, 199, 0.3)",
+                            boxShadow: "0 2px 8px var(--vp-glow)",
                           }}
                         >
                           <CheckCircle2 size={15} />
                           <span>{parsedBulkCount ? `Save & Ingest ${parsedBulkCount} Questions` : "Save & Ingest Questions"}</span>
                         </button>
                       </div>
+                      <MyUploadsList title="Your uploaded question banks" items={myQuestionBanks.filter((item) => !item.locked)} onDelete={handleDeleteSavedQuestionBank} />
                     </div>
                   )}
 
@@ -1688,13 +1958,13 @@ export default function AcademicVaultPage() {
                             gap: "6px",
                             padding: "9px 20px",
                             borderRadius: "8px",
-                            background: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
+                            background: "linear-gradient(135deg, var(--vp-grad-a) 0%, var(--vp-grad-b) 100%)",
                             color: "#ffffff",
                             border: "none",
                             fontSize: "12.5px",
                             fontWeight: 700,
                             cursor: "pointer",
-                            boxShadow: "0 2px 8px rgba(2, 132, 199, 0.3)",
+                            boxShadow: "0 2px 8px var(--vp-glow)",
                           }}
                         >
                           <CheckCircle2 size={15} />
@@ -1719,7 +1989,7 @@ export default function AcademicVaultPage() {
             position: "fixed",
             inset: 0,
             zIndex: 1000,
-            background: "rgba(15, 23, 42, 0.56)",
+            background: "rgba(40, 26, 17, 0.56)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -1733,7 +2003,7 @@ export default function AcademicVaultPage() {
               maxHeight: "90vh",
               background: "#f8fafc",
               borderRadius: "18px",
-              boxShadow: "0 24px 80px rgba(15, 23, 42, 0.35)",
+              boxShadow: "0 24px 80px rgba(40, 26, 17, 0.35)",
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
@@ -1741,7 +2011,7 @@ export default function AcademicVaultPage() {
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 22px", borderBottom: "1px solid #e2e8f0" }}>
               <div>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}><span style={{ width: "38px", height: "38px", borderRadius: "11px", display: "grid", placeItems: "center", color: "#0e7490", background: "linear-gradient(145deg, #cffafe, #e0f2fe)" }}><FileText size={19} /></span><span style={{ fontSize: "18px", fontWeight: 850, color: "#0f172a" }}>Question Bank Preview</span></div>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}><span style={{ width: "38px", height: "38px", borderRadius: "11px", display: "grid", placeItems: "center", color: "#774c28", background: "linear-gradient(145deg, #cffafe, #e0f2fe)" }}><FileText size={19} /></span><span style={{ fontSize: "18px", fontWeight: 850, color: "#0f172a" }}>Question Bank Preview</span></div>
                 <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>{bulkFileName} · {parsedBulkCount} questions</div>
               </div>
               <button type="button" onClick={() => setShowBulkPreview(false)} aria-label="Close preview" style={{ border: "none", background: "#f1f5f9", color: "#475569", borderRadius: "8px", width: "34px", height: "34px", cursor: "pointer", display: "grid", placeItems: "center" }}>
@@ -1750,9 +2020,12 @@ export default function AcademicVaultPage() {
             </div>
             <div style={{ overflow: "auto", padding: "20px 22px 24px" }}>
               <div style={{ marginBottom: "16px", padding: "12px 15px", borderRadius: "10px", border: "1px solid #dbeafe", background: "linear-gradient(100deg, #eff6ff, #f0fdfa)", color: "#475569", fontSize: "12px" }}><strong style={{ color: "#0f172a" }}>Check before importing.</strong> Review the uploaded file or inspect the questions that will be added to the bank.</div>
-              {bulkSourceText !== null && (
+              {/* Word question banks: show the original document exactly as uploaded */}
+              {bulkFileUrl && /\.docx$/i.test(bulkFileName) ? (
+                <OriginalQuestionBankPreview name={bulkFileName} url={bulkFileUrl} fileAvailable />
+              ) : bulkSourceText !== null && (
                 <section style={{ border: "1px solid #d8e1ec", borderRadius: "13px", background: "#e9eef5", overflow: "hidden", padding: "18px" }}>
-                  <div style={{ maxWidth: "900px", margin: "0 auto", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#ffffff", boxShadow: "0 8px 24px rgba(15,23,42,.08)", overflow: "hidden" }}>
+                  <div style={{ maxWidth: "900px", margin: "0 auto", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#ffffff", boxShadow: "0 8px 24px rgba(40, 26, 17,.08)", overflow: "hidden" }}>
                     <div style={{ padding: "14px 24px", borderBottom: "1px solid #edf1f5", display: "flex", justifyContent: "space-between", gap: "12px", color: "#64748b", fontSize: "11px", fontWeight: 700 }}><span>DOCUMENT TEXT PREVIEW</span><span>{bulkFileName}</span></div>
                     <div style={{ padding: "24px clamp(18px, 5vw, 52px) 36px", maxHeight: "58vh", overflow: "auto", color: "#1e293b" }}>
                       {(bulkSourceText || "No readable text was found in this Word document.").split(/\r?\n/).filter((line) => line.trim()).map((line, lineIndex) => {
@@ -1766,10 +2039,10 @@ export default function AcademicVaultPage() {
                         return <div key={`${lineIndex}-${value}`} style={{
                           marginTop: isTitle ? 0 : isUnit ? 26 : isSection ? 16 : isQuestion ? 18 : isOption ? 6 : isSummary ? 10 : 9,
                           padding: isTitle ? "0 0 8px" : isUnit ? "12px 14px" : isSection ? "2px 0 6px" : isQuestion ? "12px 14px" : isSummary ? "9px 12px" : isOption ? "0 0 0 22px" : "0",
-                          borderLeft: isUnit ? "3px solid #0f8b8d" : isQuestion ? "3px solid #cbd5e1" : "none",
+                          borderLeft: isUnit ? "3px solid #754b27" : isQuestion ? "3px solid #cbd5e1" : "none",
                           borderRadius: isUnit ? "0 9px 9px 0" : isQuestion ? "0 9px 9px 0" : 0,
                           background: isUnit ? "linear-gradient(90deg, #ecfeff, #f8fafc)" : isQuestion ? "#f8fafc" : isSummary ? "#f8fafc" : "transparent",
-                          color: isUnit ? "#0f4c5c" : isSection ? "#0e7490" : isOption ? "#526174" : isSummary ? "#526174" : "#1e293b",
+                          color: isUnit ? "#4c311f" : isSection ? "#774c28" : isOption ? "#746252" : isSummary ? "#746252" : "#1e293b",
                           fontSize: isTitle ? "21px" : isUnit ? "15px" : isSection ? "13px" : isQuestion ? "14px" : "13px",
                           fontWeight: isTitle || isUnit || isSection || isQuestion ? 750 : isSummary ? 600 : 450,
                           lineHeight: 1.65,
@@ -1788,12 +2061,12 @@ export default function AcademicVaultPage() {
       )}
 
       {showSyllabusFilePreview && syllabusFileUrl && syllabusFileName && (
-        <div onClick={() => setShowSyllabusFilePreview(false)} style={{ position: "fixed", inset: 0, zIndex: 1100, background: "rgba(15, 23, 42, 0.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-          <div onClick={(event) => event.stopPropagation()} style={{ width: "min(1080px, 100%)", height: "min(92vh, 900px)", background: "#ffffff", borderRadius: "16px", overflow: "hidden", boxShadow: "0 24px 80px rgba(15, 23, 42, 0.4)", display: "flex", flexDirection: "column" }}>
+        <div onClick={() => setShowSyllabusFilePreview(false)} style={{ position: "fixed", inset: 0, zIndex: 1100, background: "rgba(40, 26, 17, 0.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+          <div onClick={(event) => event.stopPropagation()} style={{ width: "min(1080px, 100%)", height: "min(92vh, 900px)", background: "#ffffff", borderRadius: "16px", overflow: "hidden", boxShadow: "0 24px 80px rgba(40, 26, 17, 0.4)", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "12px 18px", borderBottom: "1px solid #e2e8f0" }}>
               <div style={{ fontSize: "14px", fontWeight: 800, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>📄 {syllabusFileName}</div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <a href={syllabusFileUrl} download={syllabusFileName} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "7px 10px", borderRadius: "8px", border: "1px solid #c7d2fe", background: "#eef2ff", color: "#4338ca", fontSize: "11px", fontWeight: 800, textDecoration: "none" }}><Download size={14} /> Download original</a>
+                <a href={syllabusFileUrl} download={syllabusFileName} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "7px 10px", borderRadius: "8px", border: "1px solid #c7d2fe", background: "#eef2ff", color: "#c07d42", fontSize: "11px", fontWeight: 800, textDecoration: "none" }}><Download size={14} /> Download original</a>
                 <button type="button" onClick={() => setShowSyllabusFilePreview(false)} aria-label="Close file preview" style={{ width: "32px", height: "32px", border: "none", borderRadius: "7px", background: "#f1f5f9", color: "#475569", cursor: "pointer", display: "grid", placeItems: "center" }}><X size={17} /></button>
               </div>
             </div>
@@ -1808,10 +2081,10 @@ export default function AcademicVaultPage() {
             />
             {false && (syllabusPreviewText !== null ? (
               <div style={{ flex: 1, overflow: "auto", padding: "32px 24px 48px", background: "linear-gradient(135deg, #e8edf5 0%, #f8fafc 55%, #e9eef8 100%)" }}>
-                <div style={{ maxWidth: "850px", minHeight: "100%", margin: "0 auto", background: "#ffffff", border: "1px solid #dbe3ee", borderRadius: "4px", boxShadow: "0 12px 30px rgba(15, 23, 42, 0.12)", overflow: "hidden" }}>
+                <div style={{ maxWidth: "850px", minHeight: "100%", margin: "0 auto", background: "#ffffff", border: "1px solid #dbe3ee", borderRadius: "4px", boxShadow: "0 12px 30px rgba(40, 26, 17, 0.12)", overflow: "hidden" }}>
                   <div style={{ padding: "34px 46px 28px", borderBottom: "1px solid #dbe3ee", background: "linear-gradient(135deg, #f8fafc, #eef2ff)" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", marginBottom: "24px" }}><div style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: "#6366f1" }}>Official Academic Document</div><div style={{ padding: "5px 9px", borderRadius: "999px", background: "#e0e7ff", color: "#4338ca", fontSize: "10px", fontWeight: 800 }}>FULL PREVIEW</div></div>
-                    <div style={{ fontSize: "24px", fontWeight: 850, lineHeight: 1.25, color: "#172554" }}>Syllabus Document</div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", marginBottom: "24px" }}><div style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: "#d4a780" }}>Official Academic Document</div><div style={{ padding: "5px 9px", borderRadius: "999px", background: "#e0e7ff", color: "#c07d42", fontSize: "10px", fontWeight: 800 }}>FULL PREVIEW</div></div>
+                    <div style={{ fontSize: "24px", fontWeight: 850, lineHeight: 1.25, color: "#4c311f" }}>Syllabus Document</div>
                     <div style={{ marginTop: "8px", fontSize: "12px", color: "#64748b" }}>{syllabusFileName}</div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", marginTop: "22px" }}>
                       {[["SUBJECT", syllabusSubject || "Academic syllabus"], ["SEMESTER", syllabusSemester], ["FORMAT", syllabusFormat.toUpperCase()]].map(([label, value]) => <div key={label} style={{ padding: "9px 10px", borderRadius: "9px", background: "rgba(255,255,255,0.72)", border: "1px solid #dbe3ee" }}><div style={{ fontSize: "9px", color: "#94a3b8", fontWeight: 800, letterSpacing: "0.08em" }}>{label}</div><div style={{ marginTop: "3px", color: "#334155", fontSize: "11px", fontWeight: 750, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</div></div>)}
@@ -1841,8 +2114,8 @@ export default function AcademicVaultPage() {
                       const outcomeNumber = isCourseOutcome ? `${currentOutcomeNumber}` : "";
                       const displayValue = isCourseOutcome ? value.replace(/^CO\s*\d+\s*[:.)-]?\s*/i, "") : value;
                       return (
-                        <div key={`${value}-${index}`} style={{ display: "flex", alignItems: "flex-start", gap: (isTopic || isCourseOutcome) ? "12px" : 0, marginTop: isUnit ? "26px" : 0, marginBottom: isTitle ? "22px" : isUnit ? "12px" : isLabel ? "6px" : "14px", padding: isUnit ? "13px 16px" : isLabel ? "8px 10px" : (isTopic || isCourseOutcome) ? "7px 10px" : 0, borderLeft: isUnit ? "5px solid #4f46e5" : isLabel ? "3px solid #818cf8" : (isTopic || isCourseOutcome) ? "3px solid #c7d2fe" : "none", borderBottom: isUnit || isLabel ? "1px solid #dbe3ee" : "none", borderRadius: isUnit ? "8px" : (isTopic || isCourseOutcome) ? "6px" : 0, background: isUnit ? "linear-gradient(135deg, #eef2ff, #f8fafc)" : isLabel ? "#f8faff" : (isTopic || isCourseOutcome) ? "#fbfdff" : "transparent", color: isTitle ? "#1e3a8a" : isUnit ? "#312e81" : isLabel ? "#4338ca" : "#334155", fontSize: isTitle ? "20px" : isUnit ? "15px" : isLabel ? "11px" : "13px", fontWeight: isTitle || isUnit || isLabel ? 800 : 500, letterSpacing: isUnit || isLabel ? "0.06em" : "normal", textTransform: isUnit || isLabel ? "uppercase" : "none", lineHeight: 1.7, whiteSpace: "pre-wrap", wordBreak: "break-word", boxShadow: isUnit ? "0 3px 10px rgba(79, 70, 229, 0.08)" : "none" }}>
-                          {(isTopic || isCourseOutcome) && <span style={{ flex: "0 0 32px", display: "inline-flex", alignItems: "center", justifyContent: "center", minHeight: "24px", borderRadius: "6px", background: isCourseOutcome ? "#dcfce7" : "#e0e7ff", color: isCourseOutcome ? "#166534" : "#4338ca", fontSize: "11px", fontWeight: 800, letterSpacing: 0 }}>{isCourseOutcome ? outcomeNumber : topicNumber}</span>}
+                        <div key={`${value}-${index}`} style={{ display: "flex", alignItems: "flex-start", gap: (isTopic || isCourseOutcome) ? "12px" : 0, marginTop: isUnit ? "26px" : 0, marginBottom: isTitle ? "22px" : isUnit ? "12px" : isLabel ? "6px" : "14px", padding: isUnit ? "13px 16px" : isLabel ? "8px 10px" : (isTopic || isCourseOutcome) ? "7px 10px" : 0, borderLeft: isUnit ? "5px solid #ca9261" : isLabel ? "3px solid #deba9b" : (isTopic || isCourseOutcome) ? "3px solid #c7d2fe" : "none", borderBottom: isUnit || isLabel ? "1px solid #dbe3ee" : "none", borderRadius: isUnit ? "8px" : (isTopic || isCourseOutcome) ? "6px" : 0, background: isUnit ? "linear-gradient(135deg, #eef2ff, #f8fafc)" : isLabel ? "#f8faff" : (isTopic || isCourseOutcome) ? "#fbfdff" : "transparent", color: isTitle ? "#7e512a" : isUnit ? "#81552e" : isLabel ? "#c07d42" : "#334155", fontSize: isTitle ? "20px" : isUnit ? "15px" : isLabel ? "11px" : "13px", fontWeight: isTitle || isUnit || isLabel ? 800 : 500, letterSpacing: isUnit || isLabel ? "0.06em" : "normal", textTransform: isUnit || isLabel ? "uppercase" : "none", lineHeight: 1.7, whiteSpace: "pre-wrap", wordBreak: "break-word", boxShadow: isUnit ? "0 3px 10px rgba(202, 146, 97, 0.08)" : "none" }}>
+                          {(isTopic || isCourseOutcome) && <span style={{ flex: "0 0 32px", display: "inline-flex", alignItems: "center", justifyContent: "center", minHeight: "24px", borderRadius: "6px", background: isCourseOutcome ? "#dcfce7" : "#e0e7ff", color: isCourseOutcome ? "#166534" : "#c07d42", fontSize: "11px", fontWeight: 800, letterSpacing: 0 }}>{isCourseOutcome ? outcomeNumber : topicNumber}</span>}
                           <span style={{ flex: 1 }}>{displayValue}</span>
                         </div>
                       );

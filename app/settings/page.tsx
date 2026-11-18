@@ -108,7 +108,7 @@ export default function SettingsPage() {
       description: "Configure general system settings, site details and preferences.",
       icon: Settings,
       iconBg: "#f5f3ff",
-      iconColor: "#7c3aed",
+      iconColor: "#c9905e",
     },
     {
       id: "users",
@@ -116,7 +116,7 @@ export default function SettingsPage() {
       description: "Add, edit and manage system users and their roles.",
       icon: Users,
       iconBg: "#eff6ff",
-      iconColor: "#2563eb",
+      iconColor: "#c3844d",
     },
     {
       id: "roles",
@@ -148,7 +148,7 @@ export default function SettingsPage() {
       description: "Configure email, in-app and SMS notification preferences.",
       icon: Bell,
       iconBg: "#eff6ff",
-      iconColor: "#4f46e5",
+      iconColor: "#ca9261",
     },
     {
       id: "preferences",
@@ -156,7 +156,7 @@ export default function SettingsPage() {
       description: "Customize system preferences and display options.",
       icon: SlidersHorizontal,
       iconBg: "#f0f9ff",
-      iconColor: "#0284c7",
+      iconColor: "#976132",
     },
     {
       id: "backup",
@@ -164,7 +164,7 @@ export default function SettingsPage() {
       description: "Create backup and restore system data when needed.",
       icon: Cloud,
       iconBg: "#f0fdfa",
-      iconColor: "#0d9488",
+      iconColor: "#794e28",
     },
     {
       id: "security",
@@ -180,7 +180,7 @@ export default function SettingsPage() {
       description: "Configure third-party integrations and API settings.",
       icon: LinkIcon,
       iconBg: "#faf5ff",
-      iconColor: "#9333ea",
+      iconColor: "#c78b56",
     },
     {
       id: "import-export",
@@ -196,7 +196,7 @@ export default function SettingsPage() {
       description: "Manage audit log settings and activity tracking.",
       icon: FileCheck,
       iconBg: "#f0fdfa",
-      iconColor: "#0f766e",
+      iconColor: "#5e3d27",
     },
   ];
 
@@ -470,12 +470,12 @@ export default function SettingsPage() {
           transform: translateY(-6px) scale(1.015);
         }
         .stat-card-blue {
-          background: linear-gradient(135deg, #4338ca 0%, #3b82f6 50%, #6366f1 100%);
-          box-shadow: 0 14px 30px -5px rgba(79, 70, 229, 0.4);
+          background: linear-gradient(135deg, #c07d42 0%, #cc9565 50%, #d4a780 100%);
+          box-shadow: 0 14px 30px -5px rgba(202, 146, 97, 0.4);
         }
         .stat-card-cyan {
-          background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 50%, #38bdf8 100%);
-          box-shadow: 0 14px 30px -5px rgba(14, 165, 233, 0.4);
+          background: linear-gradient(135deg, #976132 0%, #b9773e 50%, #cc9564 100%);
+          box-shadow: 0 14px 30px -5px rgba(185, 119, 62, 0.4);
         }
         .stat-card-emerald {
           background: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%);
@@ -505,10 +505,10 @@ export default function SettingsPage() {
         }
 
         .glow-blue {
-          box-shadow: 0 0 20px rgba(99, 102, 241, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.4);
+          box-shadow: 0 0 20px rgba(212, 167, 128, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.4);
         }
         .glow-cyan {
-          box-shadow: 0 0 20px rgba(14, 165, 233, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.4);
+          box-shadow: 0 0 20px rgba(185, 119, 62, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.4);
         }
         .glow-emerald {
           box-shadow: 0 0 20px rgba(16, 185, 129, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.4);
@@ -556,7 +556,7 @@ export default function SettingsPage() {
         }
         .primary-btn-3d:hover {
           transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(79, 70, 229, 0.45);
+          box-shadow: 0 6px 20px rgba(202, 146, 97, 0.45);
         }
 
         .action-mini-icon-blue {
@@ -564,17 +564,17 @@ export default function SettingsPage() {
           height: 32px;
           border-radius: 10px;
           background: #eff6ff;
-          color: #2563eb;
+          color: #c3844d;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 2px 6px rgba(37, 99, 235, 0.15);
+          box-shadow: 0 2px 6px rgba(195, 132, 77, 0.15);
           transition: all 0.2s ease;
         }
         .action-mini-icon-blue:hover {
           transform: scale(1.1);
           background: #dbeafe;
-          box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+          box-shadow: 0 4px 12px rgba(195, 132, 77, 0.3);
         }
 
         .action-mini-icon-purple {
@@ -582,17 +582,17 @@ export default function SettingsPage() {
           height: 32px;
           border-radius: 10px;
           background: #f5f3ff;
-          color: #7c3aed;
+          color: #c9905e;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 2px 6px rgba(124, 58, 237, 0.15);
+          box-shadow: 0 2px 6px rgba(201, 144, 94, 0.15);
           transition: all 0.2s ease;
         }
         .action-mini-icon-purple:hover {
           transform: scale(1.1);
           background: #ede9fe;
-          box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+          box-shadow: 0 4px 12px rgba(201, 144, 94, 0.3);
         }
 
         .action-mini-icon-cyan {
@@ -600,17 +600,17 @@ export default function SettingsPage() {
           height: 32px;
           border-radius: 10px;
           background: #f0f9ff;
-          color: #0284c7;
+          color: #976132;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 2px 6px rgba(2, 132, 199, 0.15);
+          box-shadow: 0 2px 6px rgba(151, 97, 50, 0.15);
           transition: all 0.2s ease;
         }
         .action-mini-icon-cyan:hover {
           transform: scale(1.1);
           background: #e0f2fe;
-          box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+          box-shadow: 0 4px 12px rgba(151, 97, 50, 0.3);
         }
 
         .action-mini-icon-emerald {
@@ -682,7 +682,7 @@ export default function SettingsPage() {
         .category-card-3d:hover {
           transform: translateY(-4px);
           border-color: #c7d2fe !important;
-          box-shadow: 0 10px 24px rgba(99, 102, 241, 0.12) !important;
+          box-shadow: 0 10px 24px rgba(212, 167, 128, 0.12) !important;
         }
 
         .table-row-3d {
@@ -694,10 +694,10 @@ export default function SettingsPage() {
       `}</style>
 
       {/* ================================= SIDEBAR ================================= */}
-      <aside
+      <aside className="digital-vfx-sidebar"
         style={{
           width: "260px",
-          background: "linear-gradient(180deg, #090e1f 0%, #060914 100%)",
+          background: "linear-gradient(180deg, #1c120c 0%, #120c08 100%)",
           color: "#94a3b8",
           display: "flex",
           flexDirection: "column",
@@ -712,11 +712,7 @@ export default function SettingsPage() {
         <div>
           {/* RGU Logo */}
           <div style={{ padding: "6px 10px 24px 10px" }}>
-            <img
-              src="/images/rgu-logo.svg"
-              alt="Rathinam Global (Deemed to be University)"
-              style={{ maxHeight: "38px", width: "auto", objectFit: "contain" }}
-            />
+            <div className="brand-orbit-logo" aria-label="Rathinam Global (Deemed to be University)"><span className="brand-orbit-mark">RG</span><span className="brand-orbit-name">Rathinam Global</span></div>
           </div>
 
           {/* Navigation Items */}
@@ -747,10 +743,10 @@ export default function SettingsPage() {
                     fontWeight: isActive ? 600 : 500,
                     color: isActive ? "#ffffff" : "#94a3b8",
                     background: isActive
-                      ? "linear-gradient(90deg, #3b82f6 0%, #6366f1 100%)"
+                      ? "linear-gradient(90deg, #cc9565 0%, #d4a780 100%)"
                       : "transparent",
                     boxShadow: isActive
-                      ? "0 4px 18px rgba(99, 102, 241, 0.45)"
+                      ? "0 4px 18px rgba(212, 167, 128, 0.45)"
                       : "none",
                     transition: "all 0.25s ease",
                     textAlign: "left",
@@ -766,7 +762,7 @@ export default function SettingsPage() {
                     <span
                       className="badge-neon-3d"
                       style={{
-                        background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                        background: "linear-gradient(135deg, #d4a780 0%, #d4a67e 100%)",
                         color: "#ffffff",
                         fontSize: "10px",
                         fontWeight: 700,
@@ -774,7 +770,7 @@ export default function SettingsPage() {
                         borderRadius: "10px",
                         textTransform: "uppercase",
                         letterSpacing: "0.5px",
-                        boxShadow: "0 2px 8px rgba(99, 102, 241, 0.4)",
+                        boxShadow: "0 2px 8px rgba(212, 167, 128, 0.4)",
                       }}
                     >
                       {item.badge}
@@ -792,7 +788,7 @@ export default function SettingsPage() {
         <div
           className="support-card-3d"
           style={{
-            background: "linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%)",
+            background: "linear-gradient(180deg, rgba(59, 42, 30, 0.7) 0%, rgba(40, 26, 17, 0.9) 100%)",
             border: "1px solid rgba(255, 255, 255, 0.1)",
             borderRadius: "16px",
             padding: "16px",
@@ -806,13 +802,13 @@ export default function SettingsPage() {
               width: "36px",
               height: "36px",
               borderRadius: "50%",
-              background: "linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)",
+              background: "linear-gradient(135deg, #7e512a 0%, #c3844d 100%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               marginBottom: "12px",
-              color: "#60a5fa",
-              boxShadow: "0 0 15px rgba(59, 130, 246, 0.5)",
+              color: "#d6aa84",
+              boxShadow: "0 0 15px rgba(204, 149, 101, 0.5)",
             }}
           >
             <Shield size={18} />
@@ -894,8 +890,8 @@ export default function SettingsPage() {
                     width: "32px",
                     height: "32px",
                     borderRadius: "10px",
-                    background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
-                    boxShadow: "0 4px 14px rgba(124, 58, 237, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.5)",
+                    background: "linear-gradient(135deg, #ca9261 0%, #c9905e 100%)",
+                    boxShadow: "0 4px 14px rgba(201, 144, 94, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.5)",
                     color: "#ffffff",
                     animation: "float3D 4s infinite ease-in-out",
                   }}
@@ -903,7 +899,7 @@ export default function SettingsPage() {
                   <Settings
                     size={18}
                     style={{
-                      filter: "drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 10px rgba(124, 58, 237, 0.8))",
+                      filter: "drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 10px rgba(201, 144, 94, 0.8))",
                       animation: "spinSlow 12s linear infinite",
                     }}
                   />
@@ -942,7 +938,7 @@ export default function SettingsPage() {
                 }}
               >
                 <div className="stat-icon-3d-box glow-purple">
-                  <Settings size={23} color="#ffffff" style={{ filter: "drop-shadow(0 0 8px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(124, 58, 237, 0.8))" }} />
+                  <Settings size={23} color="#ffffff" style={{ filter: "drop-shadow(0 0 8px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(201, 144, 94, 0.8))" }} />
                 </div>
                 <div className="stat-arrow-btn-3d">
                   <ArrowRight size={15} color="#ffffff" />
@@ -971,7 +967,7 @@ export default function SettingsPage() {
                 }}
               >
                 <div className="stat-icon-3d-box glow-cyan">
-                  <Users size={23} color="#ffffff" style={{ filter: "drop-shadow(0 0 8px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(6, 182, 212, 0.8))" }} />
+                  <Users size={23} color="#ffffff" style={{ filter: "drop-shadow(0 0 8px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(164, 105, 55, 0.8))" }} />
                 </div>
                 <div className="stat-arrow-btn-3d">
                   <ArrowRight size={15} color="#ffffff" />
@@ -1056,7 +1052,7 @@ export default function SettingsPage() {
                 style={{
                   background: "#ffffff",
                   borderRadius: "20px",
-                  border: "1px solid rgba(226, 232, 240, 0.9)",
+                  border: "1px solid rgba(240, 234, 226, 0.9)",
                   padding: "24px",
                   boxShadow: "0 10px 30px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)",
                 }}
@@ -1165,7 +1161,7 @@ export default function SettingsPage() {
                 style={{
                   background: "#ffffff",
                   borderRadius: "20px",
-                  border: "1px solid rgba(226, 232, 240, 0.9)",
+                  border: "1px solid rgba(240, 234, 226, 0.9)",
                   padding: "24px",
                   boxShadow: "0 10px 30px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)",
                 }}
@@ -1187,7 +1183,7 @@ export default function SettingsPage() {
 
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                     <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>
-                      Total: <strong style={{ color: "#4f46e5" }}>{storeActivities.length}</strong> logged actions
+                      Total: <strong style={{ color: "#ca9261" }}>{storeActivities.length}</strong> logged actions
                     </div>
                     <button
                       type="button"
@@ -1200,12 +1196,12 @@ export default function SettingsPage() {
                         padding: "6px 14px",
                         borderRadius: "10px",
                         border: "none",
-                        background: "linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)",
+                        background: "linear-gradient(135deg, #ca9261 0%, #cc9565 100%)",
                         color: "#ffffff",
                         fontSize: "12px",
                         fontWeight: 600,
                         cursor: "pointer",
-                        boxShadow: "0 4px 12px rgba(79, 70, 229, 0.35)",
+                        boxShadow: "0 4px 12px rgba(202, 146, 97, 0.35)",
                       }}
                     >
                       <Plus size={14} />
@@ -1217,7 +1213,7 @@ export default function SettingsPage() {
                 <div id="recent-activities-table" className="no-scrollbar" style={{ overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                     <thead>
-                      <tr style={{ borderBottom: "1px solid #e2e8f0", background: "rgba(248, 250, 252, 0.6)" }}>
+                      <tr style={{ borderBottom: "1px solid #e2e8f0", background: "rgba(252, 250, 248, 0.6)" }}>
                         <th style={{ padding: "12px 12px", fontSize: "12px", fontWeight: 700, color: "#475569", letterSpacing: "0.02em", borderRadius: "8px 0 0 8px" }}>
                           ACTIVITY
                         </th>
@@ -1270,7 +1266,7 @@ export default function SettingsPage() {
                                   height: "22px",
                                   borderRadius: "50%",
                                   background: row.performedBy === "System" ? "#e0e7ff" : "#dbeafe",
-                                  color: row.performedBy === "System" ? "#4f46e5" : "#2563eb",
+                                  color: row.performedBy === "System" ? "#ca9261" : "#c3844d",
                                   fontSize: "10px",
                                   fontWeight: 700,
                                   display: "flex",
@@ -1438,7 +1434,7 @@ export default function SettingsPage() {
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(15, 23, 42, 0.65)",
+            background: "rgba(40, 26, 17, 0.65)",
             backdropFilter: "blur(6px)",
             display: "flex",
             alignItems: "center",
@@ -1551,7 +1547,7 @@ export default function SettingsPage() {
                             fontSize: "11px",
                             fontWeight: 700,
                             background: u.role === "Administrator" ? "#ede9fe" : "#eff6ff",
-                            color: u.role === "Administrator" ? "#7c3aed" : "#2563eb",
+                            color: u.role === "Administrator" ? "#c9905e" : "#c3844d",
                           }}
                         >
                           {u.role}
@@ -1633,7 +1629,7 @@ export default function SettingsPage() {
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(15, 23, 42, 0.65)",
+            background: "rgba(40, 26, 17, 0.65)",
             backdropFilter: "blur(6px)",
             display: "flex",
             alignItems: "center",
@@ -1721,7 +1717,7 @@ export default function SettingsPage() {
                     padding: "9px 16px",
                     borderRadius: "10px",
                     border: "none",
-                    background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)",
+                    background: "linear-gradient(135deg, #ca9261 0%, #d4a780 100%)",
                     color: "#ffffff",
                     fontSize: "12.5px",
                     fontWeight: 700,
@@ -1763,7 +1759,7 @@ export default function SettingsPage() {
                     cursor: "pointer",
                   }}
                 >
-                  <Upload size={14} color="#0284c7" />
+                  <Upload size={14} color="#976132" />
                   <span>Choose JSON Backup File</span>
                   <input
                     type="file"

@@ -153,7 +153,7 @@ export default function RoleGuard({ route, children }: RoleGuardProps) {
                   width: "32px",
                   height: "32px",
                   borderRadius: "50%",
-                  background: user.avatarBg || "#6366f1",
+                  background: user.avatarBg || "#d4a780",
                   color: "#ffffff",
                   display: "flex",
                   alignItems: "center",
@@ -176,7 +176,7 @@ export default function RoleGuard({ route, children }: RoleGuardProps) {
                 padding: "3px 10px",
                 borderRadius: "10px",
                 background: "#e0e7ff",
-                color: "#3730a3",
+                color: "#9e6635",
               }}
             >
               {user.role}
@@ -199,9 +199,9 @@ export default function RoleGuard({ route, children }: RoleGuardProps) {
                   style={{
                     padding: "8px 4px",
                     borderRadius: "8px",
-                    border: r === user.role ? "2px solid #6366f1" : "1px solid #cbd5e1",
+                    border: r === user.role ? "2px solid #d4a780" : "1px solid #cbd5e1",
                     background: r === user.role ? "#e0e7ff" : "#ffffff",
-                    color: r === user.role ? "#4338ca" : "#334155",
+                    color: r === user.role ? "#c07d42" : "#334155",
                     fontSize: "11.5px",
                     fontWeight: 700,
                     cursor: "pointer",
@@ -232,7 +232,7 @@ export default function RoleGuard({ route, children }: RoleGuardProps) {
               fontWeight: 600,
               border: "none",
               cursor: "pointer",
-              boxShadow: "0 4px 14px rgba(15, 23, 42, 0.2)",
+              boxShadow: "0 4px 14px rgba(40, 26, 17, 0.2)",
               transition: "all 0.2s ease",
             }}
           >

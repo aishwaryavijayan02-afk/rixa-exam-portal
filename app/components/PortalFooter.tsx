@@ -83,12 +83,12 @@ export default function PortalFooter({ onContactSupport }: PortalFooterProps) {
               width: "40px",
               height: "40px",
               borderRadius: "50%",
-              background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+              background: "linear-gradient(135deg, #cc9565 0%, #c3844d 100%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               color: "#ffffff",
-              boxShadow: "0 4px 12px rgba(37, 99, 235, 0.35)",
+              boxShadow: "0 4px 12px rgba(195, 132, 77, 0.35)",
               flexShrink: 0,
             }}
           >
@@ -148,7 +148,7 @@ export default function PortalFooter({ onContactSupport }: PortalFooterProps) {
             e.currentTarget.style.transform = "none";
           }}
         >
-          <Headphones size={15} color="#2563eb" />
+          <Headphones size={15} color="#c3844d" />
           <span>Contact Support</span>
         </button>
       </div>
@@ -183,7 +183,7 @@ export default function PortalFooter({ onContactSupport }: PortalFooterProps) {
               color: "#94a3b8",
               transition: "color 0.2s",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#4f46e5")}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#ca9261")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "#94a3b8")}
           >
             Privacy Policy
@@ -200,7 +200,7 @@ export default function PortalFooter({ onContactSupport }: PortalFooterProps) {
               color: "#94a3b8",
               transition: "color 0.2s",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#4f46e5")}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#ca9261")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "#94a3b8")}
           >
             Terms of Service
@@ -215,7 +215,7 @@ export default function PortalFooter({ onContactSupport }: PortalFooterProps) {
             position: "fixed",
             inset: 0,
             zIndex: 99999,
-            backgroundColor: "rgba(15, 23, 42, 0.65)",
+            backgroundColor: "rgba(40, 26, 17, 0.65)",
             backdropFilter: "blur(6px)",
             display: "flex",
             alignItems: "center",
@@ -256,8 +256,8 @@ export default function PortalFooter({ onContactSupport }: PortalFooterProps) {
                     width: "36px",
                     height: "36px",
                     borderRadius: "10px",
-                    background: "rgba(37, 99, 235, 0.1)",
-                    color: "#2563eb",
+                    background: "rgba(195, 132, 77, 0.1)",
+                    color: "#c3844d",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -309,7 +309,7 @@ export default function PortalFooter({ onContactSupport }: PortalFooterProps) {
                     transition: "all 0.2s",
                   }}
                 >
-                  <div style={{ color: "#2563eb", marginTop: "2px" }}>
+                  <div style={{ color: "#c3844d", marginTop: "2px" }}>
                     <Phone size={16} />
                   </div>
                   <div>
@@ -334,7 +334,7 @@ export default function PortalFooter({ onContactSupport }: PortalFooterProps) {
                     transition: "all 0.2s",
                   }}
                 >
-                  <div style={{ color: "#7c3aed", marginTop: "2px" }}>
+                  <div style={{ color: "#c9905e", marginTop: "2px" }}>
                     <Mail size={16} />
                   </div>
                   <div>
@@ -449,12 +449,12 @@ export default function PortalFooter({ onContactSupport }: PortalFooterProps) {
                         padding: "10px",
                         borderRadius: "10px",
                         border: "none",
-                        background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
+                        background: "linear-gradient(135deg, #c3844d 0%, #b8763d 100%)",
                         color: "#ffffff",
                         fontWeight: 600,
                         fontSize: "13px",
                         cursor: "pointer",
-                        boxShadow: "0 2px 8px rgba(37, 99, 235, 0.3)",
+                        boxShadow: "0 2px 8px rgba(195, 132, 77, 0.3)",
                       }}
                     >
                       <Send size={14} />
@@ -475,7 +475,7 @@ export default function PortalFooter({ onContactSupport }: PortalFooterProps) {
             position: "fixed",
             inset: 0,
             zIndex: 99999,
-            backgroundColor: "rgba(15, 23, 42, 0.65)",
+            backgroundColor: "rgba(40, 26, 17, 0.65)",
             backdropFilter: "blur(6px)",
             display: "flex",
             alignItems: "center",
@@ -510,7 +510,7 @@ export default function PortalFooter({ onContactSupport }: PortalFooterProps) {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <ShieldCheck size={20} color="#2563eb" />
+                <ShieldCheck size={20} color="#c3844d" />
                 <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "#0f172a" }}>
                   Exam Cell Privacy & Confidentiality Policy
                 </h3>
@@ -557,7 +557,7 @@ export default function PortalFooter({ onContactSupport }: PortalFooterProps) {
             position: "fixed",
             inset: 0,
             zIndex: 99999,
-            backgroundColor: "rgba(15, 23, 42, 0.65)",
+            backgroundColor: "rgba(40, 26, 17, 0.65)",
             backdropFilter: "blur(6px)",
             display: "flex",
             alignItems: "center",
@@ -592,7 +592,7 @@ export default function PortalFooter({ onContactSupport }: PortalFooterProps) {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <FileText size={20} color="#2563eb" />
+                <FileText size={20} color="#c3844d" />
                 <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "#0f172a" }}>
                   Terms of Service & Usage Guidelines
                 </h3>

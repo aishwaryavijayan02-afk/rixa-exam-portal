@@ -27,8 +27,8 @@ const facultyList = [
     id: "vignesh",
     name: "Vignesh",
     dept: "Viscom & VFX",
-    avatarBg: "linear-gradient(135deg, #7c3aed, #a855f7)",
-    underline: "#7c3aed",
+    avatarBg: "linear-gradient(135deg, #c9905e, #d3a37a)",
+    underline: "#c9905e",
   },
   {
     id: "saravanan",
@@ -48,8 +48,8 @@ const facultyList = [
     id: "gayathri",
     name: "Gayathri",
     dept: "Fashion Design",
-    avatarBg: "linear-gradient(135deg, #0284c7, #38bdf8)",
-    underline: "#0284c7",
+    avatarBg: "linear-gradient(135deg, #976132, #cc9564)",
+    underline: "#976132",
   },
   {
     id: "karthik",
@@ -62,15 +62,15 @@ const facultyList = [
     id: "praveen",
     name: "Praveen",
     dept: "VISCOM",
-    avatarBg: "linear-gradient(135deg, #6366f1, #818cf8)",
-    underline: "#6366f1",
+    avatarBg: "linear-gradient(135deg, #d4a780, #deba9b)",
+    underline: "#d4a780",
   },
   {
     id: "deepika",
     name: "Deepika",
     dept: "VISCOM & VFX",
-    avatarBg: "linear-gradient(135deg, #0d9488, #14b8a6)",
-    underline: "#0d9488",
+    avatarBg: "linear-gradient(135deg, #794e28, #996333)",
+    underline: "#794e28",
   },
   {
     id: "manoj",
@@ -93,13 +93,10 @@ export default function FacultyPage() {
   return (
     <div className="institution-page">
       {/* ================= LEFT SIDEBAR ================= */}
-      <aside className="institution-sidebar">
+      <aside className="institution-sidebar digital-vfx-sidebar">
         {/* RGU Logo */}
         <div className="sidebar-logo">
-          <img
-            src="/images/rgu-logo.svg"
-            alt="Rathinam Global (Deemed to be University)"
-          />
+          <div className="brand-orbit-logo" aria-label="Rathinam Global (Deemed to be University)"><span className="brand-orbit-mark">RG</span><span className="brand-orbit-name">Rathinam Global</span></div>
         </div>
 
         {/* Vertical Step Navigation */}
@@ -316,7 +313,7 @@ export default function FacultyPage() {
                 <div className="why-list-item">
                   <div
                     className="why-item-icon"
-                    style={{ background: "#ede9fe", color: "#6366f1" }}
+                    style={{ background: "#ede9fe", color: "#d4a780" }}
                   >
                     <Star size={16} />
                   </div>
@@ -329,7 +326,7 @@ export default function FacultyPage() {
                 <div className="why-list-item">
                   <div
                     className="why-item-icon"
-                    style={{ background: "#dbeafe", color: "#2563eb" }}
+                    style={{ background: "#dbeafe", color: "#c3844d" }}
                   >
                     <UserCheck size={16} />
                   </div>
@@ -342,7 +339,7 @@ export default function FacultyPage() {
                 <div className="why-list-item">
                   <div
                     className="why-item-icon"
-                    style={{ background: "#e0e7ff", color: "#4f46e5" }}
+                    style={{ background: "#e0e7ff", color: "#ca9261" }}
                   >
                     <GraduationCap size={16} />
                   </div>
@@ -373,7 +370,7 @@ export default function FacultyPage() {
         <footer className="institution-bottom">
           <div className="cant-find-banner">
             <div className="cant-find-text">
-              <Info size={18} color="#2563eb" />
+              <Info size={18} color="#c3844d" />
               <div>
                 <strong>Can't find your profile?</strong>
                 <span>Contact your administrator or exam cell support.</span>

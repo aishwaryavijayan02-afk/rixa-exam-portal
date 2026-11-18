@@ -61,6 +61,7 @@ import {
   CrudActionButtons,
 } from "../components/CrudModal";
 import PortalFooter from "../components/PortalFooter";
+import { confirmDialog } from "../components/ConfirmDialog";
 import PortalHeader from "../components/PortalHeader";
 import Pagination from "../components/Pagination";
 
@@ -702,9 +703,9 @@ export default function VerifyQuestionsPage() {
     triggerToast(`${selectedRows.length} question(s) rejected.`, "info");
   };
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     if (selectedRows.length === 0) return;
-    if (confirm(`Delete ${selectedRows.length} selected question(s)?`)) {
+    if (await confirmDialog(`Delete ${selectedRows.length} selected question(s)?`, { danger: true })) {
       examStore.bulkDeleteQuestions(selectedRows.map(Number));
       setSelectedRows([]);
       triggerToast(`${selectedRows.length} question(s) removed.`, "error");
@@ -809,10 +810,10 @@ export default function VerifyQuestionsPage() {
       }}
     >
       {/* ================================= SIDEBAR ================================= */}
-      <aside
+      <aside className="digital-vfx-sidebar"
         style={{
           width: "260px",
-          background: "linear-gradient(180deg, #090e1f 0%, #060914 100%)",
+          background: "linear-gradient(180deg, #1c120c 0%, #120c08 100%)",
           color: "#94a3b8",
           display: "flex",
           flexDirection: "column",
@@ -827,11 +828,7 @@ export default function VerifyQuestionsPage() {
         <div>
           {/* RGU Logo */}
           <div style={{ padding: "6px 10px 24px 10px" }}>
-            <img
-              src="/images/rgu-logo.svg"
-              alt="Rathinam Global (Deemed to be University)"
-              style={{ maxHeight: "38px", width: "auto", objectFit: "contain" }}
-            />
+            <div className="brand-orbit-logo" aria-label="Rathinam Global (Deemed to be University)"><span className="brand-orbit-mark">RG</span><span className="brand-orbit-name">Rathinam Global</span></div>
           </div>
 
           {/* Navigation Items */}
@@ -877,7 +874,7 @@ export default function VerifyQuestionsPage() {
                   {item.badge && (
                     <span
                       style={{
-                        background: "linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)",
+                        background: "linear-gradient(135deg, #ec4899 0%, #d4a67e 100%)",
                         color: "#ffffff",
                         fontSize: "10px",
                         fontWeight: 700,
@@ -908,7 +905,7 @@ export default function VerifyQuestionsPage() {
         {/* Need Help Box */}
         <div className="support-card-3d" style={{ marginTop: "20px" }}>
           <div className="shield-icon-3d">
-            <Shield size={20} style={{ filter: "drop-shadow(0 0 4px rgba(96, 165, 250, 0.8))" }} />
+            <Shield size={20} style={{ filter: "drop-shadow(0 0 4px rgba(214, 170, 132, 0.8))" }} />
           </div>
           <strong style={{ display: "block", color: "#ffffff", fontSize: "14px", marginBottom: "4px", fontWeight: 700 }}>
             Need Help?
@@ -987,13 +984,13 @@ export default function VerifyQuestionsPage() {
                     width: "32px",
                     height: "32px",
                     borderRadius: "10px",
-                    background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-                    boxShadow: "0 4px 14px rgba(37, 99, 235, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.5)",
+                    background: "linear-gradient(135deg, #cc9565 0%, #c3844d 100%)",
+                    boxShadow: "0 4px 14px rgba(195, 132, 77, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.5)",
                     color: "#ffffff",
                     animation: "float3D 4s infinite ease-in-out",
                   }}
                 >
-                  <ShieldCheck size={20} style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 10px rgba(59, 130, 246, 0.8))" }} />
+                  <ShieldCheck size={20} style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 10px rgba(204, 149, 101, 0.8))" }} />
                 </div>
               </h1>
               <p style={{ fontSize: "13.5px", color: "#64748b", margin: 0 }}>
@@ -1028,7 +1025,7 @@ export default function VerifyQuestionsPage() {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        boxShadow: "0 6px 16px rgba(37, 99, 235, 0.35)",
+                        boxShadow: "0 6px 16px rgba(195, 132, 77, 0.35)",
                       }}
                     >
                       <Search size={18} color="#ffffff" />
@@ -1055,12 +1052,12 @@ export default function VerifyQuestionsPage() {
                         padding: "7px 16px",
                         borderRadius: "10px",
                         border: "none",
-                        background: "linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)",
+                        background: "linear-gradient(135deg, #c9905e 0%, #ec4899 100%)",
                         color: "#ffffff",
                         fontSize: "12.5px",
                         fontWeight: 700,
                         cursor: "pointer",
-                        boxShadow: "0 4px 14px rgba(124, 58, 237, 0.4)",
+                        boxShadow: "0 4px 14px rgba(201, 144, 94, 0.4)",
                       }}
                     >
                       <Sparkles size={15} style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.8))" }} />
@@ -1070,11 +1067,11 @@ export default function VerifyQuestionsPage() {
                       style={{
                         fontSize: "11.5px",
                         fontWeight: 700,
-                        color: "#2563eb",
+                        color: "#c3844d",
                         background: "#eff6ff",
                         padding: "4px 12px",
                         borderRadius: "100px",
-                        boxShadow: "0 2px 6px rgba(37, 99, 235, 0.15)",
+                        boxShadow: "0 2px 6px rgba(195, 132, 77, 0.15)",
                       }}
                     >
                       {filteredQuestions.length} Questions Shown
@@ -1090,7 +1087,7 @@ export default function VerifyQuestionsPage() {
                     background: "linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%)",
                     borderRadius: "16px",
                     border: "1.5px solid #bfdbfe",
-                    boxShadow: "0 4px 16px rgba(37, 99, 235, 0.08)",
+                    boxShadow: "0 4px 16px rgba(195, 132, 77, 0.08)",
                   }}
                 >
                   <div
@@ -1141,7 +1138,7 @@ export default function VerifyQuestionsPage() {
                           color: "#334155",
                         }}
                       >
-                        Active Role: <strong style={{ color: "#2563eb" }}>{currentUser.name} ({currentUser.role})</strong>
+                        Active Role: <strong style={{ color: "#c3844d" }}>{currentUser.name} ({currentUser.role})</strong>
                       </span>
                     </div>
                   </div>
@@ -1199,12 +1196,12 @@ export default function VerifyQuestionsPage() {
                         padding: "10px 12px",
                         borderRadius: "10px",
                         background: currentUser.role === "HOD" ? "#eff6ff" : "#ffffff",
-                        border: currentUser.role === "HOD" ? "2px solid #2563eb" : "1px solid #e2e8f0",
-                        boxShadow: currentUser.role === "HOD" ? "0 4px 12px rgba(37, 99, 235, 0.15)" : "0 2px 6px rgba(0,0,0,0.03)",
+                        border: currentUser.role === "HOD" ? "2px solid #c3844d" : "1px solid #e2e8f0",
+                        boxShadow: currentUser.role === "HOD" ? "0 4px 12px rgba(195, 132, 77, 0.15)" : "0 2px 6px rgba(0,0,0,0.03)",
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
-                        <span style={{ fontSize: "10.5px", fontWeight: 700, color: currentUser.role === "HOD" ? "#1d4ed8" : "#475569" }}>
+                        <span style={{ fontSize: "10.5px", fontWeight: 700, color: currentUser.role === "HOD" ? "#b8763d" : "#475569" }}>
                           2. HOD VERIFY
                         </span>
                         <span
@@ -1240,19 +1237,19 @@ export default function VerifyQuestionsPage() {
                         padding: "10px 12px",
                         borderRadius: "10px",
                         background: currentUser.role === "DEAN" ? "#f5f3ff" : "#ffffff",
-                        border: currentUser.role === "DEAN" ? "2px solid #7c3aed" : "1px solid #e2e8f0",
-                        boxShadow: currentUser.role === "DEAN" ? "0 4px 12px rgba(124, 58, 237, 0.15)" : "0 2px 6px rgba(0,0,0,0.03)",
+                        border: currentUser.role === "DEAN" ? "2px solid #c9905e" : "1px solid #e2e8f0",
+                        boxShadow: currentUser.role === "DEAN" ? "0 4px 12px rgba(201, 144, 94, 0.15)" : "0 2px 6px rgba(0,0,0,0.03)",
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
-                        <span style={{ fontSize: "10.5px", fontWeight: 700, color: currentUser.role === "DEAN" ? "#6d28d9" : "#475569" }}>
+                        <span style={{ fontSize: "10.5px", fontWeight: 700, color: currentUser.role === "DEAN" ? "#c07c41" : "#475569" }}>
                           3. DEAN APPROVAL
                         </span>
                         <span
                           style={{
                             fontSize: "10px",
                             fontWeight: 800,
-                            color: questions.filter((q) => q.status === "Verified").length > 0 ? "#4338ca" : "#64748b",
+                            color: questions.filter((q) => q.status === "Verified").length > 0 ? "#c07d42" : "#64748b",
                             background: questions.filter((q) => q.status === "Verified").length > 0 ? "#e0e7ff" : "#f1f5f9",
                             padding: "1px 6px",
                             borderRadius: "10px",
@@ -1281,12 +1278,12 @@ export default function VerifyQuestionsPage() {
                         padding: "10px 12px",
                         borderRadius: "10px",
                         background: currentUser.role === "COE" ? "#fdf4ff" : "#ffffff",
-                        border: currentUser.role === "COE" ? "2px solid #c026d3" : "1px solid #e2e8f0",
-                        boxShadow: currentUser.role === "COE" ? "0 4px 12px rgba(192, 38, 211, 0.15)" : "0 2px 6px rgba(0,0,0,0.03)",
+                        border: currentUser.role === "COE" ? "2px solid #bb783e" : "1px solid #e2e8f0",
+                        boxShadow: currentUser.role === "COE" ? "0 4px 12px rgba(187, 120, 62, 0.15)" : "0 2px 6px rgba(0,0,0,0.03)",
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
-                        <span style={{ fontSize: "10.5px", fontWeight: 700, color: currentUser.role === "COE" ? "#a21caf" : "#475569" }}>
+                        <span style={{ fontSize: "10.5px", fontWeight: 700, color: currentUser.role === "COE" ? "#986233" : "#475569" }}>
                           4. COE FINAL SIGN-OFF
                         </span>
                         <span
@@ -1326,7 +1323,7 @@ export default function VerifyQuestionsPage() {
                       marginBottom: "16px",
                     }}
                   >
-                    <span style={{ fontSize: "13px", fontWeight: 700, color: "#1e40af" }}>
+                    <span style={{ fontSize: "13px", fontWeight: 700, color: "#9a6333" }}>
                       {selectedRows.length} question(s) selected
                     </span>
                     <div style={{ display: "flex", gap: "8px" }}>
@@ -1337,7 +1334,7 @@ export default function VerifyQuestionsPage() {
                           padding: "6px 14px",
                           fontSize: "12px",
                           fontWeight: 700,
-                          background: "linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)",
+                          background: "linear-gradient(135deg, #c9905e 0%, #ec4899 100%)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: "8px",
@@ -1360,9 +1357,9 @@ export default function VerifyQuestionsPage() {
                             currentUser.role === "HOD"
                               ? "#16a34a"
                               : currentUser.role === "DEAN"
-                              ? "#4f46e5"
+                              ? "#ca9261"
                               : currentUser.role === "COE"
-                              ? "#c026d3"
+                              ? "#bb783e"
                               : "#16a34a",
                           color: "#ffffff",
                           border: "none",
@@ -1446,7 +1443,7 @@ export default function VerifyQuestionsPage() {
                     />
                     <Search
                       size={16}
-                      color="#2563eb"
+                      color="#c3844d"
                       style={{ position: "absolute", right: "14px", top: "50%", transform: "translateY(-50%)" }}
                     />
                   </div>
@@ -1469,7 +1466,7 @@ export default function VerifyQuestionsPage() {
                       boxShadow: "0 2px 6px rgba(0, 0, 0, 0.04)",
                     }}
                   >
-                    <Download size={14} color="#2563eb" />
+                    <Download size={14} color="#c3844d" />
                     <span>Export CSV</span>
                   </button>
 
@@ -1506,12 +1503,12 @@ export default function VerifyQuestionsPage() {
                       padding: "10px 18px",
                       borderRadius: "12px",
                       border: "none",
-                      background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
+                      background: "linear-gradient(135deg, #c3844d 0%, #b8763d 100%)",
                       fontSize: "13px",
                       fontWeight: 700,
                       color: "#ffffff",
                       cursor: "pointer",
-                      boxShadow: "0 4px 14px rgba(37, 99, 235, 0.4)",
+                      boxShadow: "0 4px 14px rgba(195, 132, 77, 0.4)",
                     }}
                   >
                     <Plus size={15} />
@@ -1540,7 +1537,7 @@ export default function VerifyQuestionsPage() {
                         borderRadius: "7px",
                         border: "none",
                         background: viewMode === "cards" ? "#eff6ff" : "transparent",
-                        color: viewMode === "cards" ? "#4f46e5" : "#94a3b8",
+                        color: viewMode === "cards" ? "#ca9261" : "#94a3b8",
                         cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
@@ -1559,7 +1556,7 @@ export default function VerifyQuestionsPage() {
                         borderRadius: "7px",
                         border: "none",
                         background: viewMode === "table" ? "#eff6ff" : "transparent",
-                        color: viewMode === "table" ? "#4f46e5" : "#94a3b8",
+                        color: viewMode === "table" ? "#ca9261" : "#94a3b8",
                         cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
@@ -1789,7 +1786,7 @@ export default function VerifyQuestionsPage() {
                               type="checkbox"
                               checked={selectedRows.length === questions.length}
                               onChange={toggleSelectAll}
-                              style={{ cursor: "pointer", width: "16px", height: "16px", accentColor: "#2563eb" }}
+                              style={{ cursor: "pointer", width: "16px", height: "16px", accentColor: "#c3844d" }}
                             />
                           </th>
                           <th style={{ padding: "8px 12px", fontSize: "11.5px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px" }}>
@@ -1837,7 +1834,7 @@ export default function VerifyQuestionsPage() {
                                 borderRadius: "12px",
                                 cursor: "pointer",
                                 boxShadow: isSelected
-                                  ? "0 4px 14px rgba(37, 99, 235, 0.12), inset 0 0 0 1.5px #3b82f6"
+                                  ? "0 4px 14px rgba(195, 132, 77, 0.12), inset 0 0 0 1.5px #cc9565"
                                   : "0 2px 6px rgba(0,0,0,0.02)",
                                 border: "1px solid #f1f5f9",
                               }}
@@ -1850,7 +1847,7 @@ export default function VerifyQuestionsPage() {
                                   type="checkbox"
                                   checked={isChecked}
                                   onChange={() => toggleRow(q.id)}
-                                  style={{ cursor: "pointer", width: "16px", height: "16px", accentColor: "#2563eb", marginTop: "3px" }}
+                                  style={{ cursor: "pointer", width: "16px", height: "16px", accentColor: "#c3844d", marginTop: "3px" }}
                                 />
                               </td>
 
@@ -1871,7 +1868,7 @@ export default function VerifyQuestionsPage() {
                                   {q.question}
                                 </div>
                                 <div style={{ display: "flex", gap: "6px", marginTop: "6px", alignItems: "center", flexWrap: "wrap" }}>
-                                  <span style={{ fontSize: "10.5px", color: "#2563eb", fontWeight: 700 }}>
+                                  <span style={{ fontSize: "10.5px", color: "#c3844d", fontWeight: 700 }}>
                                     #{q.id}
                                   </span>
                                   {q.marks !== undefined && (
@@ -1913,7 +1910,7 @@ export default function VerifyQuestionsPage() {
                                         q.status === "Approved"
                                           ? "#166534"
                                           : q.status === "Verified"
-                                          ? "#0369a1"
+                                          ? "#7b4f29"
                                           : q.status === "Rejected"
                                           ? "#991b1b"
                                           : "#92400e",
@@ -2089,9 +2086,9 @@ export default function VerifyQuestionsPage() {
                             background: isSelected ? "#eff6ff" : isChecked ? "#f8fafc" : "#ffffff",
                             borderRadius: "16px",
                             border: isSelected
-                              ? "1.5px solid #2563eb"
+                              ? "1.5px solid #c3844d"
                               : isChecked
-                              ? "1.5px solid #93c5fd"
+                              ? "1.5px solid #e3c6ad"
                               : "1px solid #e2e8f0",
                             padding: "18px",
                             display: "flex",
@@ -2100,7 +2097,7 @@ export default function VerifyQuestionsPage() {
                             gap: "14px",
                             cursor: "pointer",
                             boxShadow: isSelected
-                              ? "0 8px 24px rgba(37, 99, 235, 0.18)"
+                              ? "0 8px 24px rgba(195, 132, 77, 0.18)"
                               : "0 4px 14px rgba(0, 0, 0, 0.03)",
                             transition: "all 0.2s ease",
                           }}
@@ -2123,9 +2120,9 @@ export default function VerifyQuestionsPage() {
                                   type="checkbox"
                                   checked={isChecked}
                                   onChange={() => toggleRow(q.id)}
-                                  style={{ cursor: "pointer", width: "16px", height: "16px", accentColor: "#2563eb" }}
+                                  style={{ cursor: "pointer", width: "16px", height: "16px", accentColor: "#c3844d" }}
                                 />
-                                <span style={{ fontSize: "11px", fontWeight: 700, color: "#2563eb", background: "#eff6ff", padding: "2px 7px", borderRadius: "6px" }}>
+                                <span style={{ fontSize: "11px", fontWeight: 700, color: "#c3844d", background: "#eff6ff", padding: "2px 7px", borderRadius: "6px" }}>
                                   #{q.id}
                                 </span>
                                 <span
@@ -2228,7 +2225,7 @@ export default function VerifyQuestionsPage() {
                                       q.status === "Approved"
                                         ? "#166534"
                                         : q.status === "Verified"
-                                        ? "#0369a1"
+                                        ? "#7b4f29"
                                         : q.status === "Rejected"
                                         ? "#991b1b"
                                         : "#92400e",
@@ -2372,7 +2369,7 @@ export default function VerifyQuestionsPage() {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          boxShadow: "0 4px 12px rgba(37, 99, 235, 0.35)",
+                          boxShadow: "0 4px 12px rgba(195, 132, 77, 0.35)",
                         }}
                       >
                         <Eye size={16} color="#ffffff" style={{ filter: "drop-shadow(0 0 4px rgba(255,255,255,0.8))" }} />
@@ -2438,12 +2435,12 @@ export default function VerifyQuestionsPage() {
                           style={{
                             fontSize: "11px",
                             fontWeight: 700,
-                            color: "#6366f1",
+                            color: "#d4a780",
                             background: "linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)",
                             padding: "3px 9px",
                             borderRadius: "7px",
                             flexShrink: 0,
-                            boxShadow: "0 2px 6px rgba(99, 102, 241, 0.2)",
+                            boxShadow: "0 2px 6px rgba(212, 167, 128, 0.2)",
                           }}
                         >
                           {currentPreview.type}
@@ -2511,7 +2508,7 @@ export default function VerifyQuestionsPage() {
                             lineHeight: 1.5,
                           }}
                         >
-                          <Info size={16} color="#2563eb" style={{ display: "inline", marginRight: "6px", verticalAlign: "text-bottom" }} />
+                          <Info size={16} color="#c3844d" style={{ display: "inline", marginRight: "6px", verticalAlign: "text-bottom" }} />
                           Descriptive Question: Students are expected to provide detailed explanations with examples.
                         </div>
                       )}
@@ -2626,7 +2623,7 @@ export default function VerifyQuestionsPage() {
                                     currentPreview?.status === "Approved"
                                       ? "#166534"
                                       : currentPreview?.status === "Verified"
-                                      ? "#0369a1"
+                                      ? "#7b4f29"
                                       : currentPreview?.status === "Rejected"
                                       ? "#991b1b"
                                       : "#92400e",
@@ -2668,7 +2665,7 @@ export default function VerifyQuestionsPage() {
                         borderRadius: "10px",
                         border: "1px solid #bfdbfe",
                         background: "#ffffff",
-                        color: "#2563eb",
+                        color: "#c3844d",
                         fontSize: "13px",
                         fontWeight: 700,
                         cursor: "pointer",
@@ -2691,19 +2688,12 @@ export default function VerifyQuestionsPage() {
                         padding: "10px 18px",
                         borderRadius: "10px",
                         border: "none",
-                        background:
-                          currentUser.role === "HOD"
-                            ? "linear-gradient(135deg, #059669 0%, #10b981 100%)"
-                            : currentUser.role === "DEAN"
-                            ? "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)"
-                            : currentUser.role === "COE"
-                            ? "linear-gradient(135deg, #c026d3 0%, #db2777 100%)"
-                            : "linear-gradient(135deg, #059669 0%, #10b981 100%)",
+                        background: "linear-gradient(135deg, #3b2416 0%, #5a3a24 100%)",
                         color: "#ffffff",
                         fontSize: "13px",
                         fontWeight: 700,
                         cursor: "pointer",
-                        boxShadow: "0 4px 14px rgba(16, 185, 129, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.5)",
+                        boxShadow: "0 6px 16px rgba(42, 26, 15, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.14)",
                         transition: "all 0.2s ease",
                       }}
                       onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px) scale(1.02)")}
@@ -2861,7 +2851,7 @@ export default function VerifyQuestionsPage() {
             left: 0,
             right: 0,
             bottom: 0,
-            background: "rgba(15, 23, 42, 0.75)",
+            background: "rgba(40, 26, 17, 0.75)",
             backdropFilter: "blur(8px)",
             zIndex: 9999,
             display: "flex",
@@ -2878,7 +2868,7 @@ export default function VerifyQuestionsPage() {
               width: "90%",
               textAlign: "center",
               boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)",
-              border: "1px solid rgba(139, 92, 246, 0.3)",
+              border: "1px solid rgba(212, 166, 126, 0.3)",
             }}
           >
             <div
@@ -2886,12 +2876,12 @@ export default function VerifyQuestionsPage() {
                 width: "70px",
                 height: "70px",
                 borderRadius: "22px",
-                background: "linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)",
+                background: "linear-gradient(135deg, #c9905e 0%, #ec4899 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 margin: "0 auto 20px auto",
-                boxShadow: "0 10px 25px rgba(124, 58, 237, 0.5)",
+                boxShadow: "0 10px 25px rgba(201, 144, 94, 0.5)",
               }}
             >
               <Sparkles size={36} color="#ffffff" style={{ filter: "drop-shadow(0 0 8px rgba(255,255,255,0.9))" }} />
@@ -2909,14 +2899,14 @@ export default function VerifyQuestionsPage() {
                 style={{
                   height: "100%",
                   width: aiScanStep === 1 ? "35%" : aiScanStep === 2 ? "70%" : "98%",
-                  background: "linear-gradient(90deg, #7c3aed 0%, #ec4899 100%)",
+                  background: "linear-gradient(90deg, #c9905e 0%, #ec4899 100%)",
                   transition: "width 0.4s ease-in-out",
                   borderRadius: "10px",
                 }}
               />
             </div>
 
-            <div style={{ fontSize: "12px", fontWeight: 700, color: "#7c3aed" }}>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: "#c9905e" }}>
               {aiScanStep === 1 && "🔍 Step 1: Parsing Question Syntax & Ambiguity..."}
               {aiScanStep === 2 && "🧠 Step 2: Evaluating Bloom's Taxonomy & Difficulty Level..."}
               {aiScanStep === 3 && "✅ Step 3: Finalizing AI Audit Quality Score..."}

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import SupabaseSync from "./components/SupabaseSync";
+import PenCursor from "./components/PenCursor";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -20,7 +21,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: "cover",
-  themeColor: "#030712",
+  themeColor: "#1f140d",
 };
 
 export const metadata: Metadata = {
@@ -34,7 +35,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${plusJakarta.variable}`}>
+    // The portal is always shown in the light cream & brown theme (no `dark-theme`).
+    // suppressHydrationWarning: page code may add the class again on the client.
+    <html lang="en" className={`${inter.variable} ${plusJakarta.variable}`} suppressHydrationWarning>
       <head>
         <link rel="icon" href="/images/rathinam-logo.svg" />
         <script
@@ -42,10 +45,7 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  var isDark = localStorage.getItem('exam_cell_dark_mode') === 'true';
-                  if (isDark) {
-                    document.documentElement.classList.add('dark-theme');
-                  }
+                  document.documentElement.classList.remove('dark-theme');
                 } catch (e) {}
               })();
             `,
@@ -54,6 +54,7 @@ export default function RootLayout({
       </head>
       <body>
         <SupabaseSync />
+        <PenCursor />
         {children}
       </body>
     </html>

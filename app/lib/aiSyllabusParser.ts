@@ -55,13 +55,22 @@ export async function extractDocxText(arrayBuffer: ArrayBuffer): Promise<string>
       const body = xmlDoc.getElementsByTagName("w:body")[0];
       const lines: string[] = [];
 
+      // Text of a paragraph in document order. Tab stops (<w:tab/>) are kept as
+      // "\t" so tab-aligned rows (e.g. a mark-distribution list typed with Tab
+      // keys instead of a Word table) can still be shown as table columns.
       const paragraphText = (p: Element) => {
-        const textNodes = p.getElementsByTagName("w:t");
         let pText = "";
-        for (let j = 0; j < textNodes.length; j++) {
-          pText += textNodes[j].textContent || "";
+        const nodes = p.getElementsByTagName("*");
+        for (let j = 0; j < nodes.length; j++) {
+          const name = nodes[j].nodeName;
+          if (name === "w:t") pText += nodes[j].textContent || "";
+          else if (name === "w:tab" && nodes[j].parentNode?.nodeName === "w:r") pText += "\t";
         }
-        return pText.replace(/\s+/g, " ").trim();
+        return pText
+          .replace(/[^\S\t]+/g, " ")
+          .replace(/ *\t[\t ]*/g, "\t")
+          .replace(/^\t+|\t+$/g, "")
+          .trim();
       };
 
       const childElements = (el: Element, name: string) =>
@@ -148,9 +157,208 @@ export async function extractDocxText(arrayBuffer: ArrayBuffer): Promise<string>
 /**
  * Main file text extractor handling DOCX, PDF, and plain text formats.
  */
+/** Reads the cell text of an .xlsx workbook (shared strings + inline strings). */
+export async function extractXlsxText(arrayBuffer: ArrayBuffer): Promise<string> {
+  try {
+    const zip = await JSZip.loadAsync(arrayBuffer);
+    const parts: string[] = [];
+    const files = [zip.file("xl/sharedStrings.xml"), ...zip.file(/xl\/worksheets\/sheet\d*\.xml/i)].filter(Boolean);
+    for (const entry of files) {
+      const xml = await entry!.async("string");
+      for (const match of xml.matchAll(/<t[^>]*>([^<]*)<\/t>/g)) parts.push(match[1]);
+    }
+    return parts.join("\n").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'");
+  } catch {
+    return "";
+  }
+}
+
+export interface SubjectCandidate {
+  code: string;
+  name: string;
+}
+
+/**
+ * Finds which known subject an uploaded document belongs to, using the file
+ * name and the document text. A subject code (e.g. "VIS-301", "VIS 301",
+ * "VIS301") wins over a name match; among name matches the longest wins.
+ */
+export function detectSubjectFromDocument<T extends SubjectCandidate>(
+  fileName: string,
+  text: string,
+  subjects: readonly T[],
+): T | null {
+  const baseName = fileName.replace(/\.[^/.]+$/, "");
+  const haystack = `${baseName}\n${text || ""}`;
+  // "&" and "and" are dropped so "Cinematography & Lighting" matches
+  // "Cinematography_Lighting" and "Cinematography and Lighting".
+  const flat = (value: string) => value.toLowerCase().replace(/&/g, " ").replace(/\band\b/g, " ").replace(/[^a-z0-9]+/g, "");
+
+  let best: { subject: T; position: number } | null = null;
+  for (const subject of subjects) {
+    const [prefix, number] = subject.code.split(/[-\s]+/);
+    if (!prefix || !number) continue;
+    const pattern = new RegExp(`(^|[^a-z0-9])${prefix}[\\s\\-_]*${number}(?![0-9])`, "i");
+    const found = pattern.exec(haystack);
+    if (found && (!best || found.index < best.position)) best = { subject, position: found.index };
+  }
+  if (best) return best.subject;
+
+  const flatHaystack = flat(haystack);
+  let byName: T | null = null;
+  for (const subject of subjects) {
+    const key = flat(subject.name);
+    if (key.length >= 6 && flatHaystack.includes(key) && (!byName || key.length > flat(byName.name).length)) byName = subject;
+  }
+  return byName;
+}
+
+export interface SubjectHeader {
+  name: string;
+  code: string;
+  /** True when no code was written in the document and one was derived from the name. */
+  codeGenerated: boolean;
+  semester?: string;
+  /** Department written in the document, e.g. "Mathematics" (without "Department of"). */
+  department?: string;
+}
+
+const titleCase = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/\b([a-z])/g, (m) => m.toUpperCase())
+    .replace(/\b(And|Of|In|For|The|&)\b/g, (m) => m.toLowerCase())
+    .replace(/^./, (m) => m.toUpperCase());
+
+/** "DEPARTMENT OF MATHEMATICS" / "Dept. of Computer Science" -> "Mathematics" / "Computer Science". */
+export function cleanDepartmentName(value: string): string {
+  const cleaned = (value || "")
+    .replace(/^(?:the\s+)?(?:department|dept\.?)\s+of\s+/i, "")
+    .replace(/^(?:diploma|bachelor(?:'s)?|master(?:'s)?|b\.?\s?sc\.?|m\.?\s?sc\.?|b\.?\s?e\.?|b\.?\s?tech\.?|m\.?\s?tech\.?|b\.?\s?a\.?|m\.?\s?a\.?|b\.?\s?com\.?|m\.?\s?com\.?|bca|mca|bba|mba)\s+(?:of\s+|in\s+)?/i, "")
+    .replace(/\s*(?:\(|,|\||-\s|–|—|\bsemester\b|\bcourse\b|\bregulation\b|\bscheme\b|\byear\b).*$/i, "")
+    .replace(/[^a-zA-Z&\s.]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!cleaned || cleaned.length < 3 || cleaned.split(" ").length > 6) return "";
+  if (/^[A-Z&.]{2,5}$/.test(cleaned)) return cleaned; // acronym such as "MBA", "ECE"
+  return cleaned === cleaned.toUpperCase() || cleaned === cleaned.toLowerCase() ? titleCase(cleaned) : cleaned;
+}
+
+const DEPARTMENT_KEYWORDS: Array<[RegExp, string]> = [
+  [/\b(math|mathematics|calculus|algebra|statistics|trigonometry|geometry|differential|integral|probability)\b/i, "Mathematics"],
+  [/\b(physics|mechanics|optics|thermodynamics|electromagnet)/i, "Physics"],
+  [/\b(chemistry|chemical|organic|inorganic)\b/i, "Chemistry"],
+  [/\b(computer|programming|software|data structures?|algorithms?|database|operating systems?|java|python|c\+\+|web|network|artificial intelligence|machine learning|cyber)\b/i, "Computer Science"],
+  [/\b(english|communication skills|literature|grammar)\b/i, "English"],
+  [/\b(commerce|accounting|accountancy|taxation|banking|auditing)\b/i, "Commerce"],
+  [/\b(management|marketing|finance|business|economics|entrepreneurship|hrm)\b/i, "Management"],
+  [/\b(biology|botany|zoology|microbiology|biotechnology|biochemistry)\b/i, "Life Sciences"],
+  [/\b(electrical|electronics|circuits?|signals?|microprocessor|embedded)\b/i, "Electronics"],
+  [/\b(mechanical|manufacturing|machine design|fluid|automobile)\b/i, "Mechanical Engineering"],
+  [/\b(civil|surveying|structural|construction)\b/i, "Civil Engineering"],
+  [/\b(fashion|textile|apparel|garment)\b/i, "Fashion Design"],
+  [/\b(visual|cinematography|animation|graphic design|photography|vfx|film|media)\b/i, "Visual Communication"],
+  [/\b(psychology|sociology|history|political|philosophy)\b/i, "Humanities"],
+];
+
+/** Best-guess department for a subject name when the document does not state one. */
+export function inferDepartmentFromSubject(subjectName: string): string {
+  const match = DEPARTMENT_KEYWORDS.find(([pattern]) => pattern.test(subjectName || ""));
+  return match ? match[1] : "";
+}
+
+const FILENAME_NOISE = new Set([
+  "syllabus", "syllabi", "unit", "units", "wise", "unitwise", "co", "cos", "po", "pos", "scheme", "k", "i", "regulation", "reg",
+  "outline", "curriculum", "course", "final", "revised", "updated", "draft", "copy", "new", "latest", "v", "ver", "version", "doc", "docx", "pdf",
+  "question", "questions", "bank", "qb", "paper", "papers", "mcq", "mcqs", "set", "test", "upload", "file", "xlsx", "xls",
+  "ques", "qns", "bloom", "blooms", "bloom's", "taxonomy", "answer", "answers", "key", "no", "with", "without", "only", "level", "levels",
+]);
+
+/**
+ * Reads a syllabus' own subject name and code: labelled fields in the document
+ * first ("Course Code: 22MA101", "Course Title: Basic Mathematics", including
+ * label/value table cells), then the file name. When the document has no code,
+ * a stable one is derived from the name's initials (e.g. "BM-101").
+ */
+export function extractSubjectHeader(fileName: string, text: string): SubjectHeader | null {
+  const lines = (text || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean).slice(0, 80);
+  const cellsOf = (line: string) => line.split("\t").map((cell) => cell.trim());
+  const codeLabel = /^(?:course|subject|paper)\s*code\b|^code$/i;
+  const nameLabel = /^(?:course|subject|paper)\s*(?:name|title)\b|^(?:subject|course|paper|title)$/i;
+  const codeToken = /\b([A-Z]{0,3}\d{2}[A-Z]{2,5}\d{2,4}[A-Z]?|[A-Z]{2,5}[-\s]?\d{3,4}[A-Z]?)\b/;
+  // Labelled values may also be purely numeric (e.g. MSBTE K-scheme "312301").
+  const labelledCodeToken = new RegExp(`${codeToken.source}|\\b(\\d{5,7})\\b`);
+  const cleanValue = (value: string) => value.replace(/^[\s:\-–—=]+/, "").trim();
+
+  let name = "";
+  let code = "";
+  let semester = "";
+  let department = "";
+  const departmentLabel = /^(?:department|dept\.?|programme|program|branch|discipline)(?:\s*name)?$/i;
+  for (const line of lines) {
+    if (!department) {
+      // Heading such as "DEPARTMENT OF MATHEMATICS" anywhere in the header lines.
+      const heading = line.replace(/\t/g, " ").match(/\b(?:department|dept\.?)\s+of\s+([A-Za-z&.\s]{3,60})/i);
+      if (heading) department = cleanDepartmentName(heading[1]);
+    }
+    const cells = cellsOf(line);
+    cells.forEach((cell, index) => {
+      const inline = cell.match(/^([A-Za-z ]{3,24}?)\s*[:\-–—]\s*(.+)$/);
+      const label = inline ? inline[1].trim() : cell.replace(/[:\-–—]+$/, "").trim();
+      const value = cleanValue(inline ? inline[2] : cells.slice(index + 1).find(Boolean) || "");
+      if (!value) return;
+      if (!code && codeLabel.test(label)) {
+        const token = value.toUpperCase().match(labelledCodeToken);
+        if (token) code = (token[1] || token[2]).replace(/\s+/g, "-");
+      } else if (!name && nameLabel.test(label) && /[a-z]{3,}/i.test(value)) {
+        name = cleanSubjectName(value).replace(/\s*\([^)]*\)\s*$/, "").trim();
+      } else if (!department && departmentLabel.test(label)) {
+        department = cleanDepartmentName(value);
+      } else if (!semester && /^semester$|^sem$/i.test(label)) {
+        const number = value.match(/\b([1-8]|i{1,3}|iv|v|vi{0,3})\b/i);
+        if (number) {
+          const roman: Record<string, string> = { i: "1", ii: "2", iii: "3", iv: "4", v: "5", vi: "6", vii: "7", viii: "8" };
+          semester = `Semester ${roman[number[1].toLowerCase()] || number[1]}`;
+        }
+      }
+    });
+    if (name && code && semester && department) break;
+  }
+
+  if (!name) {
+    const words = fileName
+      .replace(/\.[^/.]+$/, "")
+      .split(/[\s_\-.]+/)
+      .filter((word) => !new RegExp(`^${codeToken.source}$`).test(word.toUpperCase()))
+      // "100ques" -> "ques" (then dropped as filler)
+      .map((word) => (/^\d+[a-z]/i.test(word) ? word.replace(/^\d+/, "") : word))
+      .filter((word) => word && !FILENAME_NOISE.has(word.toLowerCase()) && !/^\d+$/.test(word));
+    name = words.map((word) => (word === word.toUpperCase() && word.length > 3 ? word[0] + word.slice(1).toLowerCase() : word)).join(" ").trim();
+  }
+  if (!code) {
+    const fromName = fileName.toUpperCase().match(codeToken);
+    if (fromName) code = fromName[1].replace(/\s+/g, "-");
+  }
+  if (!name) return null;
+
+  let codeGenerated = false;
+  if (!code) {
+    const initials = name.split(/\s+/).filter((word) => /^[a-z]/i.test(word) && !/^(and|of|the|for|in|to|&)$/i.test(word)).map((word) => word[0].toUpperCase()).join("").slice(0, 4);
+    code = `${initials || "SUB"}-101`;
+    codeGenerated = true;
+  }
+  return { name, code, codeGenerated, semester: semester || undefined, department: department || undefined };
+}
+
 export async function extractFileText(file: File): Promise<string> {
   const fileName = file.name.toLowerCase();
   const arrayBuffer = await file.arrayBuffer();
+
+  // 0. Excel workbook cell text
+  if (fileName.endsWith(".xlsx")) {
+    const xlsxText = await extractXlsxText(arrayBuffer);
+    if (xlsxText.trim().length > 0) return xlsxText;
+  }
 
   // 1. DOCX Handling
   if (fileName.endsWith(".docx") || fileName.endsWith(".doc")) {

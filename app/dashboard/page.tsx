@@ -317,25 +317,25 @@ export default function DashboardPage() {
   const getDesignationBadge = (desig: string) => {
     if (desig.toLowerCase().includes("head") || desig.toLowerCase().includes("hod")) {
       return {
-        bg: "linear-gradient(135deg, rgba(79, 70, 229, 0.12) 0%, rgba(99, 102, 241, 0.2) 100%)",
-        border: "1px solid rgba(79, 70, 229, 0.35)",
-        color: "#4338ca",
+        bg: "linear-gradient(135deg, rgba(202, 146, 97, 0.12) 0%, rgba(212, 167, 128, 0.2) 100%)",
+        border: "1px solid rgba(202, 146, 97, 0.35)",
+        color: "#c07d42",
         label: "🏛️ " + desig,
       };
     }
     if (desig.toLowerCase().includes("associate professor")) {
       return {
-        bg: "linear-gradient(135deg, rgba(147, 51, 234, 0.12) 0%, rgba(168, 85, 247, 0.2) 100%)",
-        border: "1px solid rgba(147, 51, 234, 0.35)",
-        color: "#7e22ce",
+        bg: "linear-gradient(135deg, rgba(199, 139, 86, 0.12) 0%, rgba(211, 163, 122, 0.2) 100%)",
+        border: "1px solid rgba(199, 139, 86, 0.35)",
+        color: "#b4743c",
         label: "🌟 " + desig,
       };
     }
     if (desig.toLowerCase().includes("assistant professor")) {
       return {
-        bg: "linear-gradient(135deg, rgba(2, 132, 199, 0.12) 0%, rgba(56, 189, 248, 0.2) 100%)",
-        border: "1px solid rgba(2, 132, 199, 0.35)",
-        color: "#0369a1",
+        bg: "linear-gradient(135deg, rgba(151, 97, 50, 0.12) 0%, rgba(204, 149, 100, 0.2) 100%)",
+        border: "1px solid rgba(151, 97, 50, 0.35)",
+        color: "#7b4f29",
         label: "🎓 " + desig,
       };
     }
@@ -399,9 +399,9 @@ export default function DashboardPage() {
         label: `${syllabusUnits}/5 Units Uploaded`,
         subtext: "In Progress (Partial)",
         badgeBg: "#eff6ff",
-        badgeColor: "#2563eb",
+        badgeColor: "#c3844d",
         badgeBorder: "1px solid #bfdbfe",
-        progressColor: "linear-gradient(90deg, #3b82f6, #2563eb)",
+        progressColor: "linear-gradient(90deg, #cc9565, #c3844d)",
         state: "In Progress",
       };
     } else {
@@ -452,9 +452,9 @@ export default function DashboardPage() {
         label: `${questionsCount}/25 Qs Uploaded`,
         subtext: "Draft Submissions",
         badgeBg: "#eff6ff",
-        badgeColor: "#2563eb",
+        badgeColor: "#c3844d",
         badgeBorder: "1px solid #bfdbfe",
-        progressColor: "linear-gradient(90deg, #60a5fa, #3b82f6)",
+        progressColor: "linear-gradient(90deg, #d6aa84, #cc9565)",
         state: "In Progress",
       };
     } else {
@@ -593,7 +593,7 @@ export default function DashboardPage() {
       <aside className="digital-vfx-sidebar"
         style={{
           width: "260px",
-          background: "linear-gradient(180deg, #090e1f 0%, #060914 100%)",
+          background: "linear-gradient(180deg, #1c120c 0%, #120c08 100%)",
           color: "#94a3b8",
           display: "flex",
           flexDirection: "column",
@@ -700,9 +700,9 @@ export default function DashboardPage() {
               boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(99, 102, 241, 0.25)";
-              e.currentTarget.style.borderColor = "rgba(99, 102, 241, 0.5)";
-              e.currentTarget.style.boxShadow = "0 0 15px rgba(99, 102, 241, 0.4)";
+              e.currentTarget.style.background = "rgba(212, 167, 128, 0.25)";
+              e.currentTarget.style.borderColor = "rgba(212, 167, 128, 0.5)";
+              e.currentTarget.style.boxShadow = "0 0 15px rgba(212, 167, 128, 0.4)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
@@ -794,7 +794,7 @@ export default function DashboardPage() {
                   style={{
                     fontSize: "11px",
                     fontWeight: 700,
-                    color: "#4338ca",
+                    color: "#c07d42",
                     background: "#eef2ff",
                     padding: "5px 12px",
                     borderRadius: "20px",
@@ -838,8 +838,8 @@ export default function DashboardPage() {
                   label: "Staff",
                   sublabel: "Course Faculty",
                   icon: FileText,
-                  bg: "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)",
-                  shadow: "rgba(79, 70, 229, 0.35)",
+                  bg: "linear-gradient(135deg, #ca9261 0%, #d4a780 100%)",
+                  shadow: "rgba(202, 146, 97, 0.35)",
                   isApproved: Boolean(activeApproval?.staffStatus === "Submitted" || (activeApproval && activeApproval.stage !== "staff")),
                 },
                 {
@@ -847,8 +847,8 @@ export default function DashboardPage() {
                   label: "HOD",
                   sublabel: "Dept. Scrutiny",
                   icon: CheckCircle2,
-                  bg: "linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)",
-                  shadow: "rgba(2, 132, 199, 0.35)",
+                  bg: "linear-gradient(135deg, #976132 0%, #cc9564 100%)",
+                  shadow: "rgba(151, 97, 50, 0.35)",
                   isApproved: Boolean(activeApproval?.hodStatus === "Approved"),
                 },
                 {
@@ -856,8 +856,8 @@ export default function DashboardPage() {
                   label: "Dean",
                   sublabel: "Academic Clearance",
                   icon: GraduationCap,
-                  bg: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)",
-                  shadow: "rgba(124, 58, 237, 0.35)",
+                  bg: "linear-gradient(135deg, #c9905e 0%, #d3a37a 100%)",
+                  shadow: "rgba(201, 144, 94, 0.35)",
                   isApproved: Boolean(activeApproval?.deanStatus === "Approved"),
                 },
                 {
@@ -865,8 +865,8 @@ export default function DashboardPage() {
                   label: "COE",
                   sublabel: "Confidential Lock",
                   icon: Shield,
-                  bg: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
-                  shadow: "rgba(5, 150, 105, 0.35)",
+                  bg: "linear-gradient(135deg, #5a3a24 0%, #8b5a2b 100%)",
+                  shadow: "rgba(90, 58, 36, 0.38)",
                   isApproved: Boolean(activeApproval?.coeStatus === "Approved"),
                 },
               ].map((tier, idx, arr) => {
@@ -874,6 +874,7 @@ export default function DashboardPage() {
                 return (
                   <React.Fragment key={tier.id}>
                     <div
+                      className="tier-vfx-card"
                       style={{
                         display: "flex",
                         flexDirection: "column",
@@ -885,24 +886,27 @@ export default function DashboardPage() {
                         border: "1px solid #e2e8f0",
                         borderRadius: "14px",
                         boxShadow: "0 2px 8px rgba(0, 0, 0, 0.03)",
-                        transition: "all 0.2s ease",
                       }}
                     >
+                      {/* Digital VFX icon: 3D floating core + holo ring + orbiting particles */}
                       <div
+                        className="tier-vfx"
+                        aria-hidden="true"
                         style={{
-                          width: "44px",
-                          height: "44px",
-                          borderRadius: "12px",
-                          background: tier.bg,
-                          color: "#ffffff",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          marginBottom: "10px",
-                          boxShadow: `0 4px 12px ${tier.shadow}`,
-                        }}
+                          ["--tier-bg" as string]: tier.bg,
+                          ["--tier-glow" as string]: tier.shadow,
+                          ["--tier-delay" as string]: `${idx * -0.9}s`,
+                        } as React.CSSProperties}
                       >
-                        <Icon size={22} />
+                        <span className="tier-vfx-ring" />
+                        <span className="tier-vfx-orbit">
+                          <i />
+                          <i />
+                          <i />
+                        </span>
+                        <span className="tier-vfx-core">
+                          <Icon size={22} className="tier-vfx-icon" />
+                        </span>
                       </div>
 
                       <div style={{ fontSize: "14px", fontWeight: 800, color: "#0f172a", marginBottom: "2px" }}>
@@ -1008,9 +1012,9 @@ export default function DashboardPage() {
               marginBottom: "24px",
               padding: "26px",
               borderRadius: "22px",
-              border: "1px solid rgba(125, 211, 252, 0.2)",
-              background: "linear-gradient(120deg, #0b1224 0%, #14234a 58%, #1e3a70 100%)",
-              boxShadow: "0 18px 45px rgba(15, 23, 42, 0.16)",
+              border: "1px solid rgba(222, 186, 155, 0.2)",
+              background: "linear-gradient(120deg, #5a3a24 0%, #7a5032 55%, #9a6a42 100%)",
+              boxShadow: "0 18px 45px rgba(40, 26, 17, 0.16)",
             }}
           >
             <div
@@ -1022,7 +1026,7 @@ export default function DashboardPage() {
                 right: "-90px",
                 top: "-210px",
                 borderRadius: "50%",
-                background: "radial-gradient(circle, rgba(34, 211, 238, 0.2), rgba(59, 130, 246, 0) 68%)",
+                background: "radial-gradient(circle, rgba(195, 132, 77, 0.2), rgba(204, 149, 101, 0) 68%)",
                 pointerEvents: "none",
               }}
             />
@@ -1036,17 +1040,17 @@ export default function DashboardPage() {
               </div>
               <div style={{ position: "relative", zIndex: 1, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "18px", marginBottom: "22px" }}>
                 <div style={{ maxWidth: "680px" }}>
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "6px 10px", border: "1px solid rgba(103, 232, 249, 0.25)", borderRadius: "999px", background: "rgba(8, 145, 178, 0.12)", color: "#a5f3fc", fontSize: "10px", fontWeight: 800, letterSpacing: "1.3px", textTransform: "uppercase" }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "6px 10px", border: "1px solid rgba(216, 173, 137, 0.25)", borderRadius: "999px", background: "rgba(139, 90, 47, 0.12)", color: "#e8cfb9", fontSize: "10px", fontWeight: 800, letterSpacing: "1.3px", textTransform: "uppercase" }}>
                     <Sparkles size={13} /> Examination Services
                   </div>
                   <h2 style={{ margin: "12px 0 5px", color: "#f8fafc", fontSize: "clamp(20px, 2.5vw, 28px)", lineHeight: 1.2, fontWeight: 800 }}>
                     Academic Operations Workspace
                   </h2>
-                  <p style={{ margin: 0, maxWidth: "620px", color: "#b8c7df", fontSize: "13px", lineHeight: 1.6 }}>
+                  <p style={{ margin: 0, maxWidth: "620px", color: "#dfcab8", fontSize: "13px", lineHeight: 1.6 }}>
                     Manage syllabus records, question banks, and approval workflows through a unified examination services portal.
                   </p>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "9px", padding: "10px 13px", borderRadius: "12px", border: "1px solid rgba(148, 163, 184, 0.2)", background: "rgba(15, 23, 42, 0.38)", color: "#dbeafe", fontSize: "12px", fontWeight: 700 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "9px", padding: "10px 13px", borderRadius: "12px", border: "1px solid rgba(184, 165, 148, 0.2)", background: "rgba(40, 26, 17, 0.38)", color: "#dbeafe", fontSize: "12px", fontWeight: 700 }}>
                   <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#34d399", boxShadow: "0 0 12px rgba(52, 211, 153, 0.8)" }} />
                   Examination Services Portal
                 </div>
@@ -1056,12 +1060,12 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => router.push("/academic-vault")}
-                  style={{ display: "flex", alignItems: "center", gap: "14px", minHeight: "82px", padding: "16px", border: "1px solid rgba(148, 163, 184, 0.22)", borderRadius: "16px", background: "rgba(255, 255, 255, 0.07)", color: "#f8fafc", textAlign: "left", cursor: "pointer", transition: "background 160ms ease, border-color 160ms ease" }}
+                  style={{ display: "flex", alignItems: "center", gap: "14px", minHeight: "82px", padding: "16px", border: "1px solid rgba(184, 165, 148, 0.22)", borderRadius: "16px", background: "rgba(255, 255, 255, 0.07)", color: "#f8fafc", textAlign: "left", cursor: "pointer", transition: "background 160ms ease, border-color 160ms ease" }}
                 >
-                  <span style={{ display: "grid", placeItems: "center", width: "42px", height: "42px", flexShrink: 0, borderRadius: "12px", background: "rgba(99, 102, 241, 0.2)", color: "#c7d2fe" }}><FileText size={21} /></span>
+                  <span style={{ display: "grid", placeItems: "center", width: "42px", height: "42px", flexShrink: 0, borderRadius: "12px", background: "rgba(212, 167, 128, 0.2)", color: "#c7d2fe" }}><FileText size={21} /></span>
                   <span style={{ flex: 1 }}>
                     <span style={{ display: "block", fontSize: "13px", fontWeight: 800 }}>Syllabus Vault</span>
-                    <span style={{ display: "block", marginTop: "4px", color: "#b8c7df", fontSize: "11px", lineHeight: 1.4 }}>Upload and organize course material</span>
+                    <span style={{ display: "block", marginTop: "4px", color: "#dfcab8", fontSize: "11px", lineHeight: 1.4 }}>Upload and organize course material</span>
                   </span>
                   <ChevronRight size={17} color="#94a3b8" />
                 </button>
@@ -1069,12 +1073,12 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => router.push("/academic-vault?tab=question-bank-upload")}
-                  style={{ display: "flex", alignItems: "center", gap: "14px", minHeight: "82px", padding: "16px", border: "1px solid rgba(148, 163, 184, 0.22)", borderRadius: "16px", background: "rgba(255, 255, 255, 0.07)", color: "#f8fafc", textAlign: "left", cursor: "pointer", transition: "background 160ms ease, border-color 160ms ease" }}
+                  style={{ display: "flex", alignItems: "center", gap: "14px", minHeight: "82px", padding: "16px", border: "1px solid rgba(184, 165, 148, 0.22)", borderRadius: "16px", background: "rgba(255, 255, 255, 0.07)", color: "#f8fafc", textAlign: "left", cursor: "pointer", transition: "background 160ms ease, border-color 160ms ease" }}
                 >
-                  <span style={{ display: "grid", placeItems: "center", width: "42px", height: "42px", flexShrink: 0, borderRadius: "12px", background: "rgba(6, 182, 212, 0.18)", color: "#a5f3fc" }}><Database size={21} /></span>
+                  <span style={{ display: "grid", placeItems: "center", width: "42px", height: "42px", flexShrink: 0, borderRadius: "12px", background: "rgba(164, 105, 55, 0.18)", color: "#e8cfb9" }}><Database size={21} /></span>
                   <span style={{ flex: 1 }}>
                     <span style={{ display: "block", fontSize: "13px", fontWeight: 800 }}>Question Bank</span>
-                    <span style={{ display: "block", marginTop: "4px", color: "#b8c7df", fontSize: "11px", lineHeight: 1.4 }}>Add and manage exam questions</span>
+                    <span style={{ display: "block", marginTop: "4px", color: "#dfcab8", fontSize: "11px", lineHeight: 1.4 }}>Add and manage exam questions</span>
                   </span>
                   <ChevronRight size={17} color="#94a3b8" />
                 </button>
@@ -1082,12 +1086,12 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => router.push("/approval")}
-                  style={{ display: "flex", alignItems: "center", gap: "14px", minHeight: "82px", padding: "16px", border: "1px solid rgba(148, 163, 184, 0.22)", borderRadius: "16px", background: "rgba(255, 255, 255, 0.07)", color: "#f8fafc", textAlign: "left", cursor: "pointer", transition: "background 160ms ease, border-color 160ms ease" }}
+                  style={{ display: "flex", alignItems: "center", gap: "14px", minHeight: "82px", padding: "16px", border: "1px solid rgba(184, 165, 148, 0.22)", borderRadius: "16px", background: "rgba(255, 255, 255, 0.07)", color: "#f8fafc", textAlign: "left", cursor: "pointer", transition: "background 160ms ease, border-color 160ms ease" }}
                 >
-                  <span style={{ display: "grid", placeItems: "center", width: "42px", height: "42px", flexShrink: 0, borderRadius: "12px", background: "rgba(168, 85, 247, 0.2)", color: "#e9d5ff" }}><ShieldCheck size={21} /></span>
+                  <span style={{ display: "grid", placeItems: "center", width: "42px", height: "42px", flexShrink: 0, borderRadius: "12px", background: "rgba(211, 163, 122, 0.2)", color: "#e9d5ff" }}><ShieldCheck size={21} /></span>
                   <span style={{ flex: 1 }}>
                     <span style={{ display: "block", fontSize: "13px", fontWeight: 800 }}>Verify &amp; Approval</span>
-                    <span style={{ display: "block", marginTop: "4px", color: "#b8c7df", fontSize: "11px", lineHeight: 1.4 }}>Review and approve submissions</span>
+                    <span style={{ display: "block", marginTop: "4px", color: "#dfcab8", fontSize: "11px", lineHeight: 1.4 }}>Review and approve submissions</span>
                   </span>
                   <ChevronRight size={17} color="#94a3b8" />
                 </button>
@@ -1122,7 +1126,7 @@ export default function DashboardPage() {
                     border: "1.5px solid #c7d2fe",
                     borderRadius: "18px",
                     padding: "24px",
-                    boxShadow: "0 4px 18px rgba(99, 102, 241, 0.08)",
+                    boxShadow: "0 4px 18px rgba(212, 167, 128, 0.08)",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
@@ -1137,7 +1141,7 @@ export default function DashboardPage() {
                       top: "-15px",
                       width: "80px",
                       height: "80px",
-                      background: "rgba(99, 102, 241, 0.06)",
+                      background: "rgba(212, 167, 128, 0.06)",
                       borderRadius: "50%",
                     }}
                   />
@@ -1148,12 +1152,12 @@ export default function DashboardPage() {
                           width: "44px",
                           height: "44px",
                           borderRadius: "12px",
-                          background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)",
+                          background: "linear-gradient(135deg, #ca9261 0%, #d4a780 100%)",
                           color: "#ffffff",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          boxShadow: "0 4px 12px rgba(79, 70, 229, 0.3)",
+                          boxShadow: "0 4px 12px rgba(202, 146, 97, 0.3)",
                         }}
                       >
                         <Briefcase size={22} />
@@ -1162,7 +1166,7 @@ export default function DashboardPage() {
                         style={{
                           fontSize: "11px",
                           fontWeight: 700,
-                          color: "#4338ca",
+                          color: "#c07d42",
                           background: "#e0e7ff",
                           padding: "3px 10px",
                           borderRadius: "12px",
@@ -1188,7 +1192,7 @@ export default function DashboardPage() {
                       padding: "11px 16px",
                       borderRadius: "10px",
                       border: "none",
-                      background: "linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)",
+                      background: "linear-gradient(135deg, #ca9261 0%, #c07d42 100%)",
                       color: "#ffffff",
                       fontSize: "13px",
                       fontWeight: 700,
@@ -1197,7 +1201,7 @@ export default function DashboardPage() {
                       alignItems: "center",
                       justifyContent: "center",
                       gap: "8px",
-                      boxShadow: "0 2px 8px rgba(79, 70, 229, 0.25)",
+                      boxShadow: "0 2px 8px rgba(202, 146, 97, 0.25)",
                       transition: "transform 0.15s ease",
                     }}
                     onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-1px)")}
@@ -1230,12 +1234,12 @@ export default function DashboardPage() {
                           width: "44px",
                           height: "44px",
                           borderRadius: "12px",
-                          background: "linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)",
+                          background: "linear-gradient(135deg, #976132 0%, #cc9564 100%)",
                           color: "#ffffff",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          boxShadow: "0 4px 12px rgba(2, 132, 199, 0.3)",
+                          boxShadow: "0 4px 12px rgba(151, 97, 50, 0.3)",
                         }}
                       >
                         <Search size={22} />
@@ -1244,7 +1248,7 @@ export default function DashboardPage() {
                         style={{
                           fontSize: "11px",
                           fontWeight: 700,
-                          color: "#0369a1",
+                          color: "#7b4f29",
                           background: "#e0f2fe",
                           padding: "3px 10px",
                           borderRadius: "12px",
@@ -1282,9 +1286,9 @@ export default function DashboardPage() {
                       transition: "all 0.15s ease",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "#0284c7";
+                      e.currentTarget.style.background = "#976132";
                       e.currentTarget.style.color = "#ffffff";
-                      e.currentTarget.style.borderColor = "#0284c7";
+                      e.currentTarget.style.borderColor = "#976132";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = "#f8fafc";
@@ -1318,12 +1322,12 @@ export default function DashboardPage() {
                         width: "44px",
                         height: "44px",
                         borderRadius: "12px",
-                        background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)",
+                        background: "linear-gradient(135deg, #c9905e 0%, #d3a37a 100%)",
                         color: "#ffffff",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        boxShadow: "0 4px 12px rgba(124, 58, 237, 0.3)",
+                        boxShadow: "0 4px 12px rgba(201, 144, 94, 0.3)",
                       }}
                     >
                       <Archive size={22} />
@@ -1332,7 +1336,7 @@ export default function DashboardPage() {
                       style={{
                         fontSize: "11px",
                         fontWeight: 700,
-                        color: "#6d28d9",
+                        color: "#c07c41",
                         background: "#ede9fe",
                         padding: "3px 10px",
                         borderRadius: "12px",
@@ -1370,9 +1374,9 @@ export default function DashboardPage() {
                     transition: "all 0.15s ease",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#7c3aed";
+                    e.currentTarget.style.background = "#c9905e";
                     e.currentTarget.style.color = "#ffffff";
-                    e.currentTarget.style.borderColor = "#7c3aed";
+                    e.currentTarget.style.borderColor = "#c9905e";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = "#f8fafc";
@@ -1574,7 +1578,7 @@ export default function DashboardPage() {
                                 fontSize: "11px",
                                 fontWeight: 800,
                                 background: "#eff6ff",
-                                color: "#2563eb",
+                                color: "#c3844d",
                                 border: "1px solid #bfdbfe",
                                 padding: "3px 7px",
                                 borderRadius: "6px",
@@ -1609,7 +1613,7 @@ export default function DashboardPage() {
                                   width: `${sub.totalQuestions ? Math.min(100, Math.round(((sub.verified || 0) / sub.totalQuestions) * 100)) : 0}%`,
                                   height: "100%",
                                   borderRadius: "999px",
-                                  background: isCompleted ? "#10b981" : "#3b82f6",
+                                  background: isCompleted ? "#10b981" : "#cc9565",
                                 }}
                               />
                             </div>
@@ -1626,7 +1630,7 @@ export default function DashboardPage() {
                               fontSize: "11px",
                               fontWeight: 700,
                               background: isCompleted ? "#ecfdf5" : isProgress ? "#eff6ff" : "#fffbeb",
-                              color: isCompleted ? "#059669" : isProgress ? "#2563eb" : "#d97706",
+                              color: isCompleted ? "#059669" : isProgress ? "#c3844d" : "#d97706",
                               border: isCompleted ? "1px solid #a7f3d0" : isProgress ? "1px solid #bfdbfe" : "1px solid #fde68a",
                             }}
                           >
@@ -1642,7 +1646,7 @@ export default function DashboardPage() {
                               borderRadius: "7px",
                               border: "1px solid #e0e7ff",
                               background: "#eef2ff",
-                              color: "#4f46e5",
+                              color: "#ca9261",
                               fontSize: "11.5px",
                               fontWeight: 700,
                               cursor: "pointer",
@@ -1686,7 +1690,7 @@ export default function DashboardPage() {
           badge={{
             label: viewSubject.status,
             bg: viewSubject.status === "Completed" ? "#dcfce7" : "#e0e7ff",
-            color: viewSubject.status === "Completed" ? "#16a34a" : "#4338ca",
+            color: viewSubject.status === "Completed" ? "#16a34a" : "#c07d42",
           }}
           fields={[
             { label: "Subject Name", value: viewSubject.name || (viewSubject as any).subject, spanFull: true },

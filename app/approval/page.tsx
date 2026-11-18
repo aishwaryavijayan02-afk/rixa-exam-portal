@@ -54,6 +54,7 @@ import {
   CrudActionButtons,
 } from "../components/CrudModal";
 import PortalFooter from "../components/PortalFooter";
+import { confirmDialog } from "../components/ConfirmDialog";
 import PortalHeader from "../components/PortalHeader";
 import Pagination from "../components/Pagination";
 import SyllabusDocumentPreview from "../components/SyllabusDocumentPreview";
@@ -153,6 +154,7 @@ export default function ApprovalPage() {
       setVerifyPopModal({
         isOpen: true,
         itemName: `${subjectModalData.subjectName} (${ids.length} Questions)`,
+        verifiedCount: ids.length,
         title: "HOD Subject Verification Complete!",
         remarks: `Verified all ${ids.length} question(s) in ${subjectModalData.subjectName} by HOD ${currentUser.name}. Forwarded to Dean Academic Affairs for approval.`,
       });
@@ -161,6 +163,7 @@ export default function ApprovalPage() {
       setVerifyPopModal({
         isOpen: true,
         itemName: `${subjectModalData.subjectName} (${ids.length} Questions)`,
+        verifiedCount: ids.length,
         title: "Dean Subject Approval Complete!",
         remarks: `Approved all ${ids.length} question(s) in ${subjectModalData.subjectName} by Dean ${currentUser.name}. Forwarded to COE Question Bank.`,
       });
@@ -169,6 +172,7 @@ export default function ApprovalPage() {
       setVerifyPopModal({
         isOpen: true,
         itemName: `${subjectModalData.subjectName} (${ids.length} Questions)`,
+        verifiedCount: ids.length,
         title: "COE Final Approval Complete!",
         remarks: `Final sign-off granted by COE ${currentUser.name} for all ${ids.length} question(s) in ${subjectModalData.subjectName}. Ready for Question Paper Printing.`,
       });
@@ -177,6 +181,7 @@ export default function ApprovalPage() {
       setVerifyPopModal({
         isOpen: true,
         itemName: `${subjectModalData.subjectName} (${ids.length} Questions)`,
+        verifiedCount: ids.length,
         title: "Subject Questions Approved!",
         remarks: `All ${ids.length} question(s) in ${subjectModalData.subjectName} have been verified and added to Question Bank.`,
       });
@@ -189,6 +194,7 @@ export default function ApprovalPage() {
     itemName?: string;
     title?: string;
     remarks?: string;
+    verifiedCount?: number;
   }>({
     isOpen: false,
     itemName: "",
@@ -310,8 +316,21 @@ export default function ApprovalPage() {
       if (currentUser.role === "COE") return item.deanStatus === "Approved" && (item.coeStatus === "Pending" || item.coeStatus === "Locked");
       return item.status === "Pending";
     };
+    // Pair a syllabus with the same staff member's question bank even when the
+    // subject names differ slightly (e.g. "Basic Mathematics" vs an older
+    // upload saved as "Basic Mathematics Bloom").
+    const subjectKey = (value: string) => value.toLowerCase().replace(/&/g, " ").replace(/\band\b/g, " ").replace(/[^a-z0-9]+/g, "");
+    const sameSubject = (a: string, b: string) => {
+      const x = subjectKey(a);
+      const y = subjectKey(b);
+      return Boolean(x && y) && (x === y || (Math.min(x.length, y.length) >= 6 && (x.includes(y) || y.includes(x))));
+    };
     syllabusApprovals.filter(syllabusNeedsReview).forEach((item) => {
-      const group = addGroup(item.submittedBy, item.submitterEmail, item.courseName);
+      const identity = getIdentity(item.submittedBy, item.submitterEmail);
+      const existing = [...groups.values()].find(
+        (group) => group.identity === identity && !group.syllabus && (sameSubject(group.subject, item.courseName) || (item.courseCode && sameSubject(group.subject, item.courseCode))),
+      );
+      const group = existing || addGroup(item.submittedBy, item.submitterEmail, item.courseName);
       if (!group.syllabus) group.syllabus = item;
     });
 
@@ -352,7 +371,7 @@ export default function ApprovalPage() {
   };
 
   /** Verifies the whole active submission: pending questions + syllabus. */
-  const handleVerifyFeaturedSubject = () => {
+  const handleVerifyFeaturedSubject = async () => {
     const questionIds = featuredSubjectCandidates.map((question) => question.id);
     const syllabus = featuredSyllabus;
     if (questionIds.length === 0 && !syllabus) {
@@ -365,7 +384,7 @@ export default function ApprovalPage() {
       questionIds.length > 0 ? `${questionIds.length} question(s)` : "",
       syllabus ? `the syllabus "${syllabus.documentName || syllabus.courseName}"` : "",
     ].filter(Boolean).join(" and ");
-    if (!window.confirm(`${role === "HOD" ? "Verify" : "Approve"} ${items} from ${facultyName} for ${featuredSubject} and forward to ${target}?`)) return;
+    if (!(await confirmDialog(`${role === "HOD" ? "Verify" : "Approve"} ${items} from ${facultyName} for ${featuredSubject} and forward to ${target}?`, { title: role === "HOD" ? "Verify and forward" : "Approve and forward", confirmLabel: role === "HOD" ? "Verify" : "Approve" }))) return;
 
     approveQuestionIds(questionIds);
     if (syllabus) {
@@ -375,6 +394,7 @@ export default function ApprovalPage() {
     setVerifyPopModal({
       isOpen: true,
       itemName: `${featuredSubject} · ${items}`,
+      verifiedCount: questionIds.length,
       title: role === "HOD" ? "HOD Verification Complete!" : role === "DEAN" ? "Dean Approval Complete!" : "Final Approval Complete!",
       remarks: `${items.charAt(0).toUpperCase()}${items.slice(1)} ${role === "HOD" ? "verified by HOD" : "approved by"} ${currentUser.name} and forwarded to ${target}.`,
     });
@@ -538,9 +558,9 @@ export default function ApprovalPage() {
     triggerToast(`Returned ${selectedRows.length} question(s) for editing.`, "info");
   };
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     if (selectedRows.length === 0) return;
-    if (confirm(`Delete ${selectedRows.length} selected question(s)?`)) {
+    if (await confirmDialog(`Delete ${selectedRows.length} selected question(s)?`, { danger: true })) {
       examStore.bulkDeleteQuestions(selectedRows.map(Number));
       setSelectedRows([]);
       triggerToast(`Removed ${selectedRows.length} question(s).`, "error");
@@ -663,10 +683,10 @@ export default function ApprovalPage() {
       }}
     >
       {/* ================================= SIDEBAR ================================= */}
-      <aside
+      <aside className="digital-vfx-sidebar"
         style={{
           width: "260px",
-          background: "linear-gradient(180deg, #090e1f 0%, #060914 100%)",
+          background: "linear-gradient(180deg, #1c120c 0%, #120c08 100%)",
           color: "#94a3b8",
           display: "flex",
           flexDirection: "column",
@@ -681,11 +701,7 @@ export default function ApprovalPage() {
         <div>
           {/* RGU Logo */}
           <div style={{ padding: "6px 10px 24px 10px" }}>
-            <img
-              src="/images/rgu-logo.svg"
-              alt="Rathinam Global (Deemed to be University)"
-              style={{ maxHeight: "38px", width: "auto", objectFit: "contain" }}
-            />
+            <div className="brand-orbit-logo" aria-label="Rathinam Global (Deemed to be University)"><span className="brand-orbit-mark">RG</span><span className="brand-orbit-name">Rathinam Global</span></div>
           </div>
 
           {/* Navigation Items */}
@@ -743,7 +759,7 @@ export default function ApprovalPage() {
             <Shield
               size={19}
               style={{
-                filter: "drop-shadow(0 0 6px rgba(96, 165, 250, 0.8))",
+                filter: "drop-shadow(0 0 6px rgba(214, 170, 132, 0.8))",
               }}
             />
           </div>
@@ -823,21 +839,22 @@ export default function ApprovalPage() {
             )}
             <div className="approval-model-columns">
               <section className="approval-model-column approval-model-faculty">
-                <div className="approval-model-column-heading"><Users size={19} /><h2>Faculty Details</h2></div>
-                <div className="approval-model-faculty-list">
-                  <div className="approval-model-detail-row approval-model-name-row">
-                    <span className="approval-model-detail-icon"><UserRound size={16} /></span>
-                    <span className="approval-model-detail-label">Faculty Name</span>
-                    <span className="approval-model-detail-value" title={facultyName}>{facultyName}</span>
+                <div className="approval-model-column-heading"><Users size={19} /><h2>Faculty Name</h2></div>
+                {activeSubmission ? (
+                  <div className="approval-model-document approval-model-faculty-card">
+                    <span className="approval-model-document-icon approval-model-faculty-avatar" aria-hidden="true">
+                      {(facultyName.replace(/^(mr\.|mrs\.|ms\.|dr\.|prof\.)\s*/i, "").trim()[0] || "F").toUpperCase()}
+                    </span>
+                    <span className="approval-model-document-meta">
+                      <strong title={facultyName}>{facultyName}</strong>
+                      <small title={activeSubmission.email || ""}>{activeSubmission.email || "Faculty member"}</small>
+                      {submissionProxyUploader && <small title={submissionProxyUploader}>Uploaded by {submissionProxyUploader} (HOD)</small>}
+                    </span>
+                    <span className="approval-model-document-status"><UserRound size={13} /> {featuredSubject || "Subject"}</span>
                   </div>
-                  {submissionProxyUploader && (
-                    <div className="approval-model-detail-row">
-                      <span className="approval-model-detail-icon"><UserRound size={16} /></span>
-                      <span className="approval-model-detail-label">Uploaded by</span>
-                      <span className="approval-model-detail-value" title={submissionProxyUploader}>{submissionProxyUploader} (HOD)</span>
-                    </div>
-                  )}
-                </div>
+                ) : (
+                  <div className="approval-model-empty"><UserRound size={22} /><strong>No faculty selected</strong><span>Faculty details appear here when a staff member submits work.</span></div>
+                )}
               </section>
 
               <section className="approval-model-column">
@@ -873,7 +890,7 @@ export default function ApprovalPage() {
               <div className="approval-model-action-copy"><span className="approval-model-action-shield"><ShieldCheck size={19} /></span><span><strong>{finalizedSubjectQuestions.length > 0 ? "Final approval complete" : "Ready for academic review"}</strong><small>{finalizedSubjectQuestions.length > 0 ? `${finalizedSubjectQuestions.length} approved question${finalizedSubjectQuestions.length === 1 ? "" : "s"} ready to print.` : `${featuredSubjectCandidates.length} question${featuredSubjectCandidates.length === 1 ? "" : "s"} currently await ${currentUser.role === "HOD" ? "HOD verification" : currentUser.role === "DEAN" ? "Dean approval" : currentUser.role === "COE" ? "COE sign-off" : "review"}.`}</small></span></div>
               <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                 {currentUser.role === "COE" && finalizedSubjectQuestions.length > 0 && (
-                  <button type="button" className="approval-model-approve-button" onClick={handlePrintFinalizedSubject} style={{ background: "linear-gradient(135deg, #0f766e, #0f5f59)" }}>
+                  <button type="button" className="approval-model-approve-button" onClick={handlePrintFinalizedSubject} style={{ background: "linear-gradient(135deg, #8b5a2b, #5a3a24)", borderColor: "#c08552" }}>
                     <Printer size={18} /> Print approved questions <ArrowRight size={17} />
                   </button>
                 )}
@@ -891,10 +908,10 @@ export default function ApprovalPage() {
       </div>
 
       {selectedSyllabus && (
-        <div className="syllabus-review-overlay" onClick={() => setSelectedSyllabus(null)} style={{ position: "fixed", inset: 0, zIndex: 1200, background: "rgba(15, 23, 42, 0.62)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-          <div className="syllabus-review-modal" onClick={(event) => event.stopPropagation()} style={{ width: "min(860px, 100%)", height: "86vh", maxHeight: "86vh", minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden", borderRadius: "18px", background: "#ffffff", boxShadow: "0 24px 70px rgba(15, 23, 42, 0.28)" }}>
+        <div className="syllabus-review-overlay" onClick={() => setSelectedSyllabus(null)} style={{ position: "fixed", inset: 0, zIndex: 1200, background: "rgba(40, 26, 17, 0.62)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+          <div className="syllabus-review-modal" onClick={(event) => event.stopPropagation()} style={{ width: "min(860px, 100%)", height: "86vh", maxHeight: "86vh", minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden", borderRadius: "18px", background: "#ffffff", boxShadow: "0 24px 70px rgba(40, 26, 17, 0.28)" }}>
             <div className="syllabus-review-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "14px", padding: "18px 20px", background: "linear-gradient(135deg, #eff6ff, #f8fafc)", borderBottom: "1px solid #dbeafe" }}>
-              <div><div style={{ fontSize: "10px", color: "#2563eb", fontWeight: 850, textTransform: "uppercase", letterSpacing: "0.08em" }}>Syllabus Document Review</div><h2 style={{ margin: "5px 0 0", color: "#172554", fontSize: "18px", fontWeight: 850 }}>{selectedSyllabus.courseName}</h2><div style={{ marginTop: "4px", color: "#64748b", fontSize: "11px" }}>Uploaded by {selectedSyllabus.submittedBy}{selectedSyllabus.uploadedOnBehalfBy ? ` (via HOD ${selectedSyllabus.uploadedOnBehalfBy})` : ""} · {selectedSyllabus.documentName || "Syllabus document"}</div></div>
+              <div><div style={{ fontSize: "10px", color: "#c3844d", fontWeight: 850, textTransform: "uppercase", letterSpacing: "0.08em" }}>Syllabus Document Review</div><h2 style={{ margin: "5px 0 0", color: "#4c311f", fontSize: "18px", fontWeight: 850 }}>{selectedSyllabus.courseName}</h2><div style={{ marginTop: "4px", color: "#64748b", fontSize: "11px" }}>Uploaded by {selectedSyllabus.submittedBy}{selectedSyllabus.uploadedOnBehalfBy ? ` (via HOD ${selectedSyllabus.uploadedOnBehalfBy})` : ""} · {selectedSyllabus.documentName || "Syllabus document"}</div></div>
               <button type="button" onClick={() => setSelectedSyllabus(null)} aria-label="Close document preview" style={{ width: "32px", height: "32px", display: "grid", placeItems: "center", border: "none", borderRadius: "9px", background: "#e2e8f0", color: "#475569", cursor: "pointer" }}><X size={17} /></button>
             </div>
             <SyllabusDocumentPreview
@@ -925,13 +942,13 @@ export default function ApprovalPage() {
                 let outcomeNumber = 0;
                 return (
                   <div style={{ padding: "26px 18px 34px", maxHeight: "calc(86vh - 110px)", overflowY: "auto", background: "linear-gradient(135deg, #e8edf5 0%, #f8fafc 55%, #e9eef8 100%)" }}>
-                    <div style={{ maxWidth: "850px", minHeight: "100%", margin: "0 auto", background: "#ffffff", border: "1px solid #dbe3ee", borderRadius: "4px", boxShadow: "0 12px 30px rgba(15, 23, 42, 0.12)", overflow: "hidden" }}>
+                    <div style={{ maxWidth: "850px", minHeight: "100%", margin: "0 auto", background: "#ffffff", border: "1px solid #dbe3ee", borderRadius: "4px", boxShadow: "0 12px 30px rgba(40, 26, 17, 0.12)", overflow: "hidden" }}>
                       <div style={{ padding: "30px 38px 24px", borderBottom: "1px solid #dbe3ee", background: "linear-gradient(135deg, #f8fafc, #eef2ff)" }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", marginBottom: "20px" }}>
-                          <div style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: "#6366f1" }}>Official Academic Document</div>
-                          <div style={{ padding: "5px 9px", borderRadius: "999px", background: "#e0e7ff", color: "#4338ca", fontSize: "10px", fontWeight: 800 }}>FULL PREVIEW</div>
+                          <div style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: "#d4a780" }}>Official Academic Document</div>
+                          <div style={{ padding: "5px 9px", borderRadius: "999px", background: "#e0e7ff", color: "#c07d42", fontSize: "10px", fontWeight: 800 }}>FULL PREVIEW</div>
                         </div>
-                        <div style={{ fontSize: "24px", fontWeight: 850, lineHeight: 1.25, color: "#172554" }}>Syllabus Document</div>
+                        <div style={{ fontSize: "24px", fontWeight: 850, lineHeight: 1.25, color: "#4c311f" }}>Syllabus Document</div>
                         <div style={{ marginTop: "8px", fontSize: "12px", color: "#64748b" }}>{selectedSyllabus.documentName || `${selectedSyllabus.courseName}.docx`}</div>
                       </div>
                       <div style={{ padding: "30px 38px 46px", fontFamily: "Arial, sans-serif" }}>
@@ -948,8 +965,8 @@ export default function ApprovalPage() {
                           const displayValue = isOutcome ? value.replace(/^CO\s*\d+\s*[:.)-]?\s*/i, "") : value;
                           const number = isOutcome ? outcomeNumber : isTopic ? ++topicNumber : "";
                           return (
-                            <div key={`${value}-${index}`} style={{ display: "flex", alignItems: "flex-start", gap: (isTopic || isOutcome) ? "12px" : 0, marginTop: isUnit ? "22px" : 0, marginBottom: isTitle ? "20px" : isUnit ? "10px" : isLabel ? "6px" : "13px", padding: isUnit ? "12px 14px" : isLabel ? "8px 10px" : (isTopic || isOutcome) ? "7px 10px" : 0, borderLeft: isUnit ? "5px solid #4f46e5" : isLabel ? "3px solid #818cf8" : (isTopic || isOutcome) ? "3px solid #c7d2fe" : "none", borderBottom: isUnit || isLabel ? "1px solid #dbe3ee" : "none", borderRadius: isUnit ? "8px" : (isTopic || isOutcome) ? "6px" : 0, background: isUnit ? "linear-gradient(135deg, #eef2ff, #f8fafc)" : isLabel ? "#f8faff" : (isTopic || isOutcome) ? "#fbfdff" : "transparent", color: isTitle ? "#1e3a8a" : isUnit ? "#312e81" : isLabel ? "#4338ca" : "#334155", fontSize: isTitle ? "20px" : isUnit ? "15px" : isLabel ? "11px" : "13px", fontWeight: isTitle || isUnit || isLabel ? 800 : 500, letterSpacing: isUnit || isLabel ? "0.06em" : "normal", textTransform: isUnit || isLabel ? "uppercase" : "none", lineHeight: 1.7, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                              {(isTopic || isOutcome) && <span style={{ flex: "0 0 32px", display: "inline-flex", alignItems: "center", justifyContent: "center", minHeight: "24px", borderRadius: "6px", background: isOutcome ? "#dcfce7" : "#e0e7ff", color: isOutcome ? "#166534" : "#4338ca", fontSize: "11px", fontWeight: 800 }}>{number}</span>}
+                            <div key={`${value}-${index}`} style={{ display: "flex", alignItems: "flex-start", gap: (isTopic || isOutcome) ? "12px" : 0, marginTop: isUnit ? "22px" : 0, marginBottom: isTitle ? "20px" : isUnit ? "10px" : isLabel ? "6px" : "13px", padding: isUnit ? "12px 14px" : isLabel ? "8px 10px" : (isTopic || isOutcome) ? "7px 10px" : 0, borderLeft: isUnit ? "5px solid #ca9261" : isLabel ? "3px solid #deba9b" : (isTopic || isOutcome) ? "3px solid #c7d2fe" : "none", borderBottom: isUnit || isLabel ? "1px solid #dbe3ee" : "none", borderRadius: isUnit ? "8px" : (isTopic || isOutcome) ? "6px" : 0, background: isUnit ? "linear-gradient(135deg, #eef2ff, #f8fafc)" : isLabel ? "#f8faff" : (isTopic || isOutcome) ? "#fbfdff" : "transparent", color: isTitle ? "#7e512a" : isUnit ? "#81552e" : isLabel ? "#c07d42" : "#334155", fontSize: isTitle ? "20px" : isUnit ? "15px" : isLabel ? "11px" : "13px", fontWeight: isTitle || isUnit || isLabel ? 800 : 500, letterSpacing: isUnit || isLabel ? "0.06em" : "normal", textTransform: isUnit || isLabel ? "uppercase" : "none", lineHeight: 1.7, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                              {(isTopic || isOutcome) && <span style={{ flex: "0 0 32px", display: "inline-flex", alignItems: "center", justifyContent: "center", minHeight: "24px", borderRadius: "6px", background: isOutcome ? "#dcfce7" : "#e0e7ff", color: isOutcome ? "#166534" : "#c07d42", fontSize: "11px", fontWeight: 800 }}>{number}</span>}
                               <span style={{ flex: 1 }}>{displayValue}</span>
                             </div>
                           );
@@ -965,7 +982,7 @@ export default function ApprovalPage() {
                 {selectedSyllabus.hodStatus === "Approved" ? "Verified and forwarded in the approval workflow." : "Review the complete Unit 1–5 document before forwarding."}
               </div>
               {syllabusAwaitsCurrentRole(selectedSyllabus) && (
-                <button type="button" onClick={handleApproveSyllabus} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "9px 16px", borderRadius: "10px", border: "none", background: "linear-gradient(135deg, #4f46e5, #2563eb)", color: "#ffffff", fontSize: "12px", fontWeight: 800, cursor: "pointer", boxShadow: "0 6px 16px rgba(37,99,235,0.25)", whiteSpace: "nowrap" }}>
+                <button type="button" onClick={handleApproveSyllabus} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "9px 16px", borderRadius: "10px", border: "none", background: "linear-gradient(135deg, #ca9261, #c3844d)", color: "#ffffff", fontSize: "12px", fontWeight: 800, cursor: "pointer", boxShadow: "0 6px 16px rgba(195, 132, 77,0.25)", whiteSpace: "nowrap" }}>
                   {currentUser.role === "HOD" ? "✓ Verify & Send to Dean" : currentUser.role === "DEAN" ? "✓ Approve & Send to COE" : "✓ Final Approve"}
                 </button>
               )}
@@ -982,14 +999,8 @@ export default function ApprovalPage() {
         subtitle="Read all questions in full detail below before giving official verification approval"
         questionsList={subjectModalData.questions}
         groupQuestionsByUnit
-        onVerify={canApproveSubjectQuestions ? handleApproveSubjectFromModal : undefined}
-        verifyLabel={
-          currentUser.role === "HOD"
-            ? "✓ Verify & Send to Dean"
-            : currentUser.role === "DEAN"
-            ? "✓ Approve & Send to COE"
-            : "✓ Approve Subject Questions"
-        }
+        // Read-only inspection: approval is done with the "Verify & Forward"
+        // button on the review page, so no verify button is shown here.
       />
 
       <ViewModal
@@ -1089,6 +1100,7 @@ export default function ApprovalPage() {
         title={verifyPopModal.title}
         itemName={verifyPopModal.itemName}
         qualityScore={98}
+        verifiedCount={verifyPopModal.verifiedCount ?? 0}
         remarks={verifyPopModal.remarks}
       />
     </div>

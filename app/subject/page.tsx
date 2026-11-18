@@ -31,10 +31,10 @@ const subjects = [
     code: "VFX-P301",
     type: "Practical Lab",
     credits: "2 Credits",
-    underline: "#7c3aed",
+    underline: "#c9905e",
     boxBg: "linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)",
-    neonGlow: "rgba(124, 58, 237, 0.25)",
-    iconColor: "#7c3aed",
+    neonGlow: "rgba(201, 144, 94, 0.25)",
+    iconColor: "#c9905e",
     icon: Clapperboard,
   },
   {
@@ -43,10 +43,10 @@ const subjects = [
     code: "VFX-T302",
     type: "Theory Core",
     credits: "4 Credits",
-    underline: "#0284c7",
+    underline: "#976132",
     boxBg: "linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)",
-    neonGlow: "rgba(2, 132, 199, 0.25)",
-    iconColor: "#0284c7",
+    neonGlow: "rgba(151, 97, 50, 0.25)",
+    iconColor: "#976132",
     icon: BookOpen,
   },
 ];
@@ -62,13 +62,10 @@ export default function SubjectPage() {
   return (
     <div className="institution-page">
       {/* ================= LEFT SIDEBAR ================= */}
-      <aside className="institution-sidebar">
+      <aside className="institution-sidebar digital-vfx-sidebar">
         {/* RGU Logo */}
         <div className="sidebar-logo">
-          <img
-            src="/images/rgu-logo.svg"
-            alt="Rathinam Global (Deemed to be University)"
-          />
+          <div className="brand-orbit-logo" aria-label="Rathinam Global (Deemed to be University)"><span className="brand-orbit-mark">RG</span><span className="brand-orbit-name">Rathinam Global</span></div>
         </div>
 
         {/* Vertical Step Navigation */}
@@ -253,8 +250,8 @@ export default function SubjectPage() {
                     justifyContent: "space-between",
                     padding: "24px",
                     borderBottom: `4px solid ${sub.underline}`,
-                    boxShadow: `0 12px 30px ${sub.neonGlow}, 0 2px 8px rgba(15, 23, 42, 0.04), inset 0 1px 2px #ffffff`,
-                    borderColor: "rgba(226, 232, 240, 0.9)",
+                    boxShadow: `0 12px 30px ${sub.neonGlow}, 0 2px 8px rgba(40, 26, 17, 0.04), inset 0 1px 2px #ffffff`,
+                    borderColor: "rgba(240, 234, 226, 0.9)",
                     background: "#ffffff",
                     cursor: "default",
                     transition: "transform 0.25s ease, box-shadow 0.25s ease",
@@ -393,8 +390,8 @@ export default function SubjectPage() {
                     className="why-item-icon"
                     style={{
                       background: "radial-gradient(circle at 35% 30%, #ede9fe, #ddd6fe)",
-                      color: "#6366f1",
-                      boxShadow: "0 2px 8px rgba(99, 102, 241, 0.25)",
+                      color: "#d4a780",
+                      boxShadow: "0 2px 8px rgba(212, 167, 128, 0.25)",
                     }}
                   >
                     <Target size={16} />
@@ -410,8 +407,8 @@ export default function SubjectPage() {
                     className="why-item-icon"
                     style={{
                       background: "radial-gradient(circle at 35% 30%, #dbeafe, #bfdbfe)",
-                      color: "#2563eb",
-                      boxShadow: "0 2px 8px rgba(37, 99, 235, 0.25)",
+                      color: "#c3844d",
+                      boxShadow: "0 2px 8px rgba(195, 132, 77, 0.25)",
                     }}
                   >
                     <BarChart3 size={16} />
@@ -427,8 +424,8 @@ export default function SubjectPage() {
                     className="why-item-icon"
                     style={{
                       background: "radial-gradient(circle at 35% 30%, #e0e7ff, #c7d2fe)",
-                      color: "#4f46e5",
-                      boxShadow: "0 2px 8px rgba(79, 70, 229, 0.25)",
+                      color: "#ca9261",
+                      boxShadow: "0 2px 8px rgba(202, 146, 97, 0.25)",
                     }}
                   >
                     <UserCheck size={16} />
@@ -464,7 +461,7 @@ export default function SubjectPage() {
         <footer className="institution-bottom">
           <div className="cant-find-banner">
             <div className="cant-find-text">
-              <Info size={18} color="#2563eb" />
+              <Info size={18} color="#c3844d" />
               <div>
                 <strong>Need more subjects added?</strong>
                 <span>Contact your administrator or exam cell support.</span>

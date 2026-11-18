@@ -29,9 +29,7 @@ import {
   GraduationCap,
   FileCheck,
   Award,
-  Key,
-  Sun,
-  Moon
+  Key
 } from "lucide-react";
 
 export default function LoginPage() {
@@ -44,7 +42,6 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<UserRole | null>(null);
   const [activeInput, setActiveInput] = useState<"email" | "password" | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [isFieldReadOnly, setIsFieldReadOnly] = useState(true);
   const signInButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -58,38 +55,11 @@ export default function LoginPage() {
     return () => clearTimeout(timer);
   }, []);
 
+  // The portal always uses the light cream & brown theme.
   useEffect(() => {
-    const isDark = typeof window !== "undefined" && (
-      localStorage.getItem("exam_cell_dark_mode") === "true" ||
-      document.documentElement.classList.contains("dark-theme")
-    );
-    setIsDarkMode(Boolean(isDark));
-    if (isDark) {
-      document.documentElement.classList.add("dark-theme");
-      document.body?.classList.add("dark-theme");
-    }
-
-    const handleSync = (e: any) => {
-      const dark = e.detail?.isDark ?? (localStorage.getItem("exam_cell_dark_mode") === "true");
-      setIsDarkMode(dark);
-    };
-    window.addEventListener("exam-cell-dark-mode-change", handleSync as EventListener);
-    return () => window.removeEventListener("exam-cell-dark-mode-change", handleSync as EventListener);
+    document.documentElement.classList.remove("dark-theme");
+    document.body?.classList.remove("dark-theme");
   }, []);
-
-  const toggleTheme = () => {
-    const next = !isDarkMode;
-    setIsDarkMode(next);
-    localStorage.setItem("exam_cell_dark_mode", String(next));
-    if (next) {
-      document.documentElement.classList.add("dark-theme");
-      document.body?.classList.add("dark-theme");
-    } else {
-      document.documentElement.classList.remove("dark-theme");
-      document.body?.classList.remove("dark-theme");
-    }
-    window.dispatchEvent(new CustomEvent("exam-cell-dark-mode-change", { detail: { isDark: next } }));
-  };
 
   // Animated counters state
   const [studentsCount, setStudentsCount] = useState(0);
@@ -143,59 +113,72 @@ export default function LoginPage() {
 
     window.addEventListener("resize", handleResize);
 
-    const particles: Array<{
+    // Letters scattered across the header, drifting slowly upward with a
+    // gentle sway, rotation and fade (replaces the old bubble particles).
+    const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZABCD";
+    const COLORS = ["245, 230, 204", "224, 169, 109", "236, 213, 176", "192, 133, 82"];
+    const FONTS = ["Georgia, 'Times New Roman', serif", "var(--font-jakarta), Inter, sans-serif"];
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    type FloatingLetter = {
+      char: string;
       x: number;
       y: number;
       size: number;
-      speedX: number;
       speedY: number;
-      opacity: number;
-      pulseSpeed: number;
+      swayAmp: number;
+      swaySpeed: number;
+      phase: number;
+      rotation: number;
+      spin: number;
+      baseOpacity: number;
       color: string;
-    }> = [];
-
-    const colors = ["rgba(103, 205, 192, ", "rgba(56, 189, 168, ", "rgba(115, 177, 209, ", "rgba(226, 239, 245, "];
-
-    for (let i = 0; i < 45; i++) {
-      particles.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        size: Math.random() * 2.5 + 0.8,
-        speedX: (Math.random() - 0.5) * 0.4,
-        speedY: (Math.random() - 0.5) * 0.4 - 0.1,
-        opacity: Math.random() * 0.7 + 0.2,
-        pulseSpeed: Math.random() * 0.02 + 0.005,
-        color: colors[Math.floor(Math.random() * colors.length)],
-      });
-    }
+      font: string;
+    };
+    const makeLetter = (startAnywhere: boolean): FloatingLetter => ({
+      char: LETTERS[Math.floor(Math.random() * LETTERS.length)],
+      x: Math.random() * width,
+      y: startAnywhere ? Math.random() * height : height + 30,
+      size: 12 + Math.random() * 20,
+      speedY: 0.15 + Math.random() * 0.35,
+      swayAmp: 6 + Math.random() * 14,
+      swaySpeed: 0.0006 + Math.random() * 0.0009,
+      phase: Math.random() * Math.PI * 2,
+      rotation: (Math.random() - 0.5) * 0.6,
+      spin: (Math.random() - 0.5) * 0.004,
+      baseOpacity: 0.14 + Math.random() * 0.26,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      font: FONTS[Math.floor(Math.random() * FONTS.length)],
+    });
+    const letters: FloatingLetter[] = Array.from({ length: 28 }, () => makeLetter(true));
 
     const render = () => {
       ctx.clearRect(0, 0, width, height);
+      const now = Date.now();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
 
-      particles.forEach((p) => {
-        p.x += p.speedX;
-        p.y += p.speedY;
-        p.opacity += Math.sin(Date.now() * p.pulseSpeed) * 0.01;
-
-        if (p.x < 0) p.x = width;
-        if (p.x > width) p.x = 0;
-        if (p.y < 0) p.y = height;
-        if (p.y > height) p.y = 0;
-
-        const currentOpacity = Math.max(0.1, Math.min(0.9, p.opacity));
-        ctx.fillStyle = `${p.color}${currentOpacity})`;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Glow ring around larger particles
-        if (p.size > 2) {
-          ctx.strokeStyle = `${p.color}${currentOpacity * 0.4})`;
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size * 2.2, 0, Math.PI * 2);
-          ctx.stroke();
+      letters.forEach((letter, index) => {
+        if (!reduceMotion) {
+          letter.y -= letter.speedY;
+          letter.rotation += letter.spin;
         }
+        if (letter.y < -30) letters[index] = makeLetter(false);
+        const sway = reduceMotion ? 0 : Math.sin(now * letter.swaySpeed + letter.phase) * letter.swayAmp;
+        // fade in near the bottom, out near the top, with a soft twinkle
+        const edgeFade = Math.min(1, letter.y / 80, (height - letter.y) / 80);
+        const twinkle = 0.75 + 0.25 * Math.sin(now * 0.0012 + letter.phase);
+        const alpha = Math.max(0, letter.baseOpacity * edgeFade * twinkle);
+
+        ctx.save();
+        ctx.translate(letter.x + sway, letter.y);
+        ctx.rotate(letter.rotation);
+        ctx.font = `700 ${letter.size}px ${letter.font}`;
+        ctx.shadowColor = `rgba(${letter.color}, ${alpha * 0.8})`;
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = `rgba(${letter.color}, ${alpha})`;
+        ctx.fillText(letter.char, 0, 0);
+        ctx.restore();
       });
 
       animationFrameId = requestAnimationFrame(render);
@@ -274,7 +257,7 @@ export default function LoginPage() {
       particleCount: 95,
       spread: 80,
       origin: { x: originX, y: originY },
-      colors: ["#38bdf8", "#3b82f6", "#10b981", "#a855f7"],
+      colors: ["#cc9564", "#cc9565", "#10b981", "#d3a37a"],
     });
 
     setTimeout(() => {
@@ -285,26 +268,7 @@ export default function LoginPage() {
 
   return (
     <div className="split-page-container relative">
-      {/* Floating Theme Switcher */}
-      <motion.button
-        type="button"
-        onClick={toggleTheme}
-        whileHover={{ scale: 1.08 }}
-        whileTap={{ scale: 0.92 }}
-        className="fixed top-5 right-6 z-50 px-3 py-2 rounded-xl backdrop-blur-md transition-all shadow-lg flex items-center gap-2 border cursor-pointer"
-        style={{
-          background: isDarkMode ? "rgba(24, 35, 58, 0.9)" : "rgba(255, 255, 255, 0.9)",
-          borderColor: isDarkMode ? "rgba(255, 255, 255, 0.15)" : "#cbd5e1",
-          color: isDarkMode ? "#f59e0b" : "#475569",
-        }}
-        title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode (Soft Slate)"}
-        aria-label="Toggle Theme"
-      >
-        {isDarkMode ? <Sun size={17} className="text-amber-400 animate-pulse" /> : <Moon size={17} className="text-slate-600" />}
-        <span className="text-[11.5px] font-bold" style={{ color: isDarkMode ? "#e2e8f0" : "#475569" }}>
-          {isDarkMode ? "Dark" : "Light"}
-        </span>
-      </motion.button>
+
 
       {/* =========================================================
           LEFT HALF: DARK COSMIC AURORA & 3D ACADEMIC STAGE
@@ -358,7 +322,7 @@ export default function LoginPage() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(56, 189, 248, 0.5)" }}
+            whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(204, 149, 100, 0.5)" }}
           >
             <span className="badge-pulse-dot" />
             <span className="badge-text">Smart Academic Platform</span>
@@ -405,9 +369,9 @@ export default function LoginPage() {
                 className="pedestal-disk"
                 animate={{
                   boxShadow: [
-                    "0 0 35px rgba(56, 189, 248, 0.45)",
-                    "0 0 50px rgba(168, 85, 247, 0.6)",
-                    "0 0 35px rgba(56, 189, 248, 0.45)",
+                    "0 0 35px rgba(204, 149, 100, 0.45)",
+                    "0 0 50px rgba(211, 163, 122, 0.6)",
+                    "0 0 35px rgba(204, 149, 100, 0.45)",
                   ],
                 }}
                 transition={{ duration: 4, repeat: Infinity }}
@@ -589,7 +553,7 @@ export default function LoginPage() {
                   <svg className="sparkline-svg" viewBox="0 0 150 25" fill="none">
                     <motion.path
                       d="M 0 18 Q 25 10, 50 16 T 100 8 T 150 4"
-                      stroke="#38bdf8"
+                      stroke="#cc9564"
                       strokeWidth="2.5"
                       strokeLinecap="round"
                       initial={{ pathLength: 0 }}
@@ -603,8 +567,8 @@ export default function LoginPage() {
                     />
                     <defs>
                       <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.8" />
-                        <stop offset="100%" stopColor="#38bdf8" stopOpacity="0" />
+                        <stop offset="0%" stopColor="#cc9564" stopOpacity="0.8" />
+                        <stop offset="100%" stopColor="#cc9564" stopOpacity="0" />
                       </linearGradient>
                     </defs>
                   </svg>
@@ -808,7 +772,7 @@ export default function LoginPage() {
                     onClick={() => selectPresetUser(role)}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className={`py-1.5 px-2 rounded-xl text-[11px] font-bold transition-all duration-200 flex items-center justify-center gap-1 border ${
+                    className={`login-role-btn${isSelected ? " is-selected" : ""} py-1.5 px-2 rounded-xl text-[11px] font-bold transition-all duration-200 flex items-center justify-center gap-1 border ${
                       isSelected
                         ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/25 ring-2 ring-blue-300"
                         : "bg-slate-50 hover:bg-blue-50 text-slate-700 border-slate-200"
@@ -886,7 +850,7 @@ export default function LoginPage() {
               >
                 <motion.span
                   className="light-icon-left"
-                  animate={activeInput === "email" ? { scale: 1.25, color: "#2563eb" } : { scale: 1, color: "#94a3b8" }}
+                  animate={activeInput === "email" ? { scale: 1.25, color: "#c3844d" } : { scale: 1, color: "#94a3b8" }}
                 >
                   <User size={18} />
                 </motion.span>
@@ -929,7 +893,7 @@ export default function LoginPage() {
               >
                 <motion.span
                   className="light-icon-left"
-                  animate={activeInput === "password" ? { scale: 1.25, color: "#2563eb" } : { scale: 1, color: "#94a3b8" }}
+                  animate={activeInput === "password" ? { scale: 1.25, color: "#c3844d" } : { scale: 1, color: "#94a3b8" }}
                 >
                   <Lock size={18} />
                 </motion.span>
@@ -1025,13 +989,13 @@ export default function LoginPage() {
               <motion.button
                 type="button"
                 className="btn-light-social"
-                whileHover={{ scale: 1.03, borderColor: "#4285F4" }}
+                whileHover={{ scale: 1.03, borderColor: "#cd9869" }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => router.push("/institution")}
               >
                 <svg className="social-logo-img" viewBox="0 0 24 24">
                   <path
-                    fill="#4285F4"
+                    fill="#cd9869"
                     d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
                   />
                   <path
@@ -1054,14 +1018,14 @@ export default function LoginPage() {
               <motion.button
                 type="button"
                 className="btn-light-social"
-                whileHover={{ scale: 1.03, borderColor: "#00a4ef" }}
+                whileHover={{ scale: 1.03, borderColor: "#b3743c" }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => router.push("/institution")}
               >
                 <svg className="social-logo-img" viewBox="0 0 21 21">
                   <rect x="1" y="1" width="9" height="9" fill="#f25022" />
                   <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
-                  <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+                  <rect x="1" y="11" width="9" height="9" fill="#b3743c" />
                   <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
                 </svg>
                 <span>Microsoft</span>

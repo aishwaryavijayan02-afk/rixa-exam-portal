@@ -41,6 +41,7 @@ import { authStore, AuthUser, hasPermission } from "../lib/auth";
 import RoleGuard from "../components/RoleGuard";
 import { ToastNotification } from "../components/CrudModal";
 import PortalFooter from "../components/PortalFooter";
+import { confirmDialog } from "../components/ConfirmDialog";
 import PortalHeader from "../components/PortalHeader";
 
 type ApprovalRole = "staff" | "hod" | "dean" | "coe";
@@ -311,11 +312,11 @@ export default function NotificationsApprovalPage() {
           title: "Staff / Faculty",
           label: "Question Authoring & Initial Upload",
           icon: Users,
-          gradient: "linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)",
-          accentColor: "#6366f1",
+          gradient: "linear-gradient(135deg, #ca9261 0%, #9e6635 100%)",
+          accentColor: "#d4a780",
           lightBg: "#eef2ff",
           borderColor: "#c7d2fe",
-          textColor: "#4338ca",
+          textColor: "#c07d42",
         };
       case "hod":
         return {
@@ -344,11 +345,11 @@ export default function NotificationsApprovalPage() {
           title: "COE Final Approval",
           label: "Controller of Exams Institutional Seal & Lock",
           icon: Award,
-          gradient: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
-          accentColor: "#0284c7",
+          gradient: "linear-gradient(135deg, #976132 0%, #7b4f29 100%)",
+          accentColor: "#976132",
           lightBg: "#f0f9ff",
           borderColor: "#bae6fd",
-          textColor: "#075985",
+          textColor: "#634029",
         };
     }
   };
@@ -362,19 +363,19 @@ export default function NotificationsApprovalPage() {
           display: "flex",
           height: "100vh",
           maxHeight: "100vh",
-          background: "#080d1a",
+          background: "var(--workspace-canvas)",
           fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-          color: "#f8fafc",
+          color: "var(--workspace-ink)",
           width: "100%",
           maxWidth: "100vw",
           overflow: "hidden",
         }}
       >
         {/* ================================= SIDEBAR ================================= */}
-        <aside
+        <aside className="digital-vfx-sidebar"
           style={{
             width: "260px",
-            background: "linear-gradient(180deg, #090e1f 0%, #060914 100%)",
+            background: "linear-gradient(180deg, #1c120c 0%, #120c08 100%)",
             color: "#94a3b8",
             display: "flex",
             flexDirection: "column",
@@ -389,16 +390,7 @@ export default function NotificationsApprovalPage() {
         >
           <div>
             <div style={{ padding: "6px 10px 24px 10px" }}>
-              <img
-                src="/images/rgu-logo.svg"
-                alt="Rathinam Global (Deemed to be University)"
-                style={{
-                  maxHeight: "38px",
-                  width: "auto",
-                  objectFit: "contain",
-                  filter: "drop-shadow(0 0 12px rgba(99, 102, 241, 0.35))",
-                }}
-              />
+              <div className="brand-orbit-logo" aria-label="Rathinam Global (Deemed to be University)"><span className="brand-orbit-mark">RG</span><span className="brand-orbit-name">Rathinam Global</span></div>
             </div>
 
             <nav style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -525,14 +517,14 @@ export default function NotificationsApprovalPage() {
                   borderRadius: "18px",
                   padding: "10px 22px",
                   border: "1px solid #e2e8f0",
-                  boxShadow: "0 4px 20px -3px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(0,0,0,0.02)",
+                  boxShadow: "0 4px 20px -3px rgba(40, 26, 17, 0.05), 0 1px 3px rgba(0,0,0,0.02)",
                   maxWidth: "960px",
                   width: "100%",
                   flexWrap: "wrap",
                 }}
               >
                 {/* 1. Staff Node */}
-                <div
+                <div className={`vfx-step-node${selectedRole === "staff" ? " is-active" : ""}`}
                   onClick={() => setSelectedRole("staff")}
                   style={{
                     display: "flex",
@@ -540,22 +532,22 @@ export default function NotificationsApprovalPage() {
                     gap: "10px",
                     padding: "8px 16px",
                     borderRadius: "12px",
-                    background: selectedRole === "staff" ? "linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)" : "#f8fafc",
+                    background: selectedRole === "staff" ? "linear-gradient(135deg, #ca9261 0%, #c07d42 100%)" : "#f8fafc",
                     color: selectedRole === "staff" ? "#ffffff" : "#334155",
-                    border: selectedRole === "staff" ? "2px solid #818cf8" : "1px solid #e2e8f0",
-                    boxShadow: selectedRole === "staff" ? "0 4px 14px rgba(79, 70, 229, 0.35)" : "none",
+                    border: selectedRole === "staff" ? "2px solid #deba9b" : "1px solid #e2e8f0",
+                    boxShadow: selectedRole === "staff" ? "0 4px 14px rgba(202, 146, 97, 0.35)" : "none",
                     cursor: "pointer",
                     transition: "all 0.2s ease",
                     transform: selectedRole === "staff" ? "scale(1.03)" : "scale(1)",
                   }}
                 >
-                  <div
+                  <div className="vfx-icon-tile"
                     style={{
                       width: "30px",
                       height: "30px",
                       borderRadius: "8px",
                       background: selectedRole === "staff" ? "rgba(255,255,255,0.22)" : "#eef2ff",
-                      color: selectedRole === "staff" ? "#ffffff" : "#4f46e5",
+                      color: selectedRole === "staff" ? "#ffffff" : "#ca9261",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -577,12 +569,12 @@ export default function NotificationsApprovalPage() {
                 </div>
 
                 {/* Arrow Connector 1 -> 2 */}
-                <div style={{ display: "flex", alignItems: "center", color: selectedRole === "staff" ? "#4f46e5" : "#94a3b8" }}>
+                <div className="vfx-step-arrow" style={{ display: "flex", alignItems: "center", color: selectedRole === "staff" ? "#ca9261" : "#94a3b8" }}>
                   <ArrowRight size={18} strokeWidth={2.5} />
                 </div>
 
                 {/* 2. HOD Node */}
-                <div
+                <div className={`vfx-step-node${selectedRole === "hod" ? " is-active" : ""}`}
                   onClick={() => setSelectedRole("hod")}
                   style={{
                     display: "flex",
@@ -599,7 +591,7 @@ export default function NotificationsApprovalPage() {
                     transform: selectedRole === "hod" ? "scale(1.03)" : "scale(1)",
                   }}
                 >
-                  <div
+                  <div className="vfx-icon-tile"
                     style={{
                       width: "30px",
                       height: "30px",
@@ -627,12 +619,12 @@ export default function NotificationsApprovalPage() {
                 </div>
 
                 {/* Arrow Connector 2 -> 3 */}
-                <div style={{ display: "flex", alignItems: "center", color: selectedRole === "hod" ? "#059669" : "#94a3b8" }}>
+                <div className="vfx-step-arrow" style={{ display: "flex", alignItems: "center", color: selectedRole === "hod" ? "#059669" : "#94a3b8" }}>
                   <ArrowRight size={18} strokeWidth={2.5} />
                 </div>
 
                 {/* 3. Dean Node */}
-                <div
+                <div className={`vfx-step-node${selectedRole === "dean" ? " is-active" : ""}`}
                   onClick={() => setSelectedRole("dean")}
                   style={{
                     display: "flex",
@@ -649,7 +641,7 @@ export default function NotificationsApprovalPage() {
                     transform: selectedRole === "dean" ? "scale(1.03)" : "scale(1)",
                   }}
                 >
-                  <div
+                  <div className="vfx-icon-tile"
                     style={{
                       width: "30px",
                       height: "30px",
@@ -677,12 +669,12 @@ export default function NotificationsApprovalPage() {
                 </div>
 
                 {/* Arrow Connector 3 -> 4 */}
-                <div style={{ display: "flex", alignItems: "center", color: selectedRole === "dean" ? "#d97706" : "#94a3b8" }}>
+                <div className="vfx-step-arrow" style={{ display: "flex", alignItems: "center", color: selectedRole === "dean" ? "#d97706" : "#94a3b8" }}>
                   <ArrowRight size={18} strokeWidth={2.5} />
                 </div>
 
                 {/* 4. COE Node */}
-                <div
+                <div className={`vfx-step-node${selectedRole === "coe" ? " is-active" : ""}`}
                   onClick={() => setSelectedRole("coe")}
                   style={{
                     display: "flex",
@@ -690,22 +682,22 @@ export default function NotificationsApprovalPage() {
                     gap: "10px",
                     padding: "8px 16px",
                     borderRadius: "12px",
-                    background: selectedRole === "coe" ? "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)" : "#f8fafc",
+                    background: selectedRole === "coe" ? "linear-gradient(135deg, #976132 0%, #7b4f29 100%)" : "#f8fafc",
                     color: selectedRole === "coe" ? "#ffffff" : "#334155",
-                    border: selectedRole === "coe" ? "2px solid #38bdf8" : "1px solid #e2e8f0",
-                    boxShadow: selectedRole === "coe" ? "0 4px 14px rgba(2, 132, 199, 0.35)" : "none",
+                    border: selectedRole === "coe" ? "2px solid #cc9564" : "1px solid #e2e8f0",
+                    boxShadow: selectedRole === "coe" ? "0 4px 14px rgba(151, 97, 50, 0.35)" : "none",
                     cursor: "pointer",
                     transition: "all 0.2s ease",
                     transform: selectedRole === "coe" ? "scale(1.03)" : "scale(1)",
                   }}
                 >
-                  <div
+                  <div className="vfx-icon-tile"
                     style={{
                       width: "30px",
                       height: "30px",
                       borderRadius: "8px",
                       background: selectedRole === "coe" ? "rgba(255,255,255,0.22)" : "#f0f9ff",
-                      color: selectedRole === "coe" ? "#ffffff" : "#0284c7",
+                      color: selectedRole === "coe" ? "#ffffff" : "#976132",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -739,15 +731,15 @@ export default function NotificationsApprovalPage() {
               }}
             >
               {/* 1. Staff Option */}
-              <div
+              <div className={`vfx-tier-card${selectedRole === "staff" ? " is-active" : ""}`}
                 onClick={() => setSelectedRole("staff")}
                 style={{
-                  background: selectedRole === "staff" ? "linear-gradient(135deg, #4338ca 0%, #3730a3 100%)" : "#ffffff",
+                  background: selectedRole === "staff" ? "linear-gradient(135deg, #c07d42 0%, #9e6635 100%)" : "#ffffff",
                   color: selectedRole === "staff" ? "#ffffff" : "#1e293b",
                   borderRadius: "14px",
                   padding: "16px",
-                  border: selectedRole === "staff" ? "2px solid #818cf8" : "1px solid #e2e8f0",
-                  boxShadow: selectedRole === "staff" ? "0 8px 20px rgba(67, 56, 202, 0.25)" : "0 1px 3px rgba(0,0,0,0.02)",
+                  border: selectedRole === "staff" ? "2px solid #deba9b" : "1px solid #e2e8f0",
+                  boxShadow: selectedRole === "staff" ? "0 8px 20px rgba(192, 125, 66, 0.25)" : "0 1px 3px rgba(0,0,0,0.02)",
                   cursor: "pointer",
                   transition: "all 0.2s ease",
                   transform: selectedRole === "staff" ? "translateY(-2px)" : "none",
@@ -757,13 +749,13 @@ export default function NotificationsApprovalPage() {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div
+                  <div className="vfx-icon-tile"
                     style={{
                       width: "36px",
                       height: "36px",
                       borderRadius: "10px",
                       background: selectedRole === "staff" ? "rgba(255,255,255,0.2)" : "#eef2ff",
-                      color: selectedRole === "staff" ? "#ffffff" : "#4f46e5",
+                      color: selectedRole === "staff" ? "#ffffff" : "#ca9261",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -778,7 +770,7 @@ export default function NotificationsApprovalPage() {
                       padding: "2px 8px",
                       borderRadius: "6px",
                       background: selectedRole === "staff" ? "rgba(255,255,255,0.25)" : "#eef2ff",
-                      color: selectedRole === "staff" ? "#ffffff" : "#4338ca",
+                      color: selectedRole === "staff" ? "#ffffff" : "#c07d42",
                     }}
                   >
                     Tier 1
@@ -840,7 +832,7 @@ export default function NotificationsApprovalPage() {
               </div>
 
               {/* 2. HOD Option */}
-              <div
+              <div className={`vfx-tier-card${selectedRole === "hod" ? " is-active" : ""}`}
                 onClick={() => setSelectedRole("hod")}
                 style={{
                   background: selectedRole === "hod" ? "linear-gradient(135deg, #059669 0%, #047857 100%)" : "#ffffff",
@@ -858,7 +850,7 @@ export default function NotificationsApprovalPage() {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div
+                  <div className="vfx-icon-tile"
                     style={{
                       width: "36px",
                       height: "36px",
@@ -941,7 +933,7 @@ export default function NotificationsApprovalPage() {
               </div>
 
               {/* 3. Dean Option */}
-              <div
+              <div className={`vfx-tier-card${selectedRole === "dean" ? " is-active" : ""}`}
                 onClick={() => setSelectedRole("dean")}
                 style={{
                   background: selectedRole === "dean" ? "linear-gradient(135deg, #d97706 0%, #b45309 100%)" : "#ffffff",
@@ -959,7 +951,7 @@ export default function NotificationsApprovalPage() {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div
+                  <div className="vfx-icon-tile"
                     style={{
                       width: "36px",
                       height: "36px",
@@ -1042,15 +1034,15 @@ export default function NotificationsApprovalPage() {
               </div>
 
               {/* 4. COE Option */}
-              <div
+              <div className={`vfx-tier-card${selectedRole === "coe" ? " is-active" : ""}`}
                 onClick={() => setSelectedRole("coe")}
                 style={{
-                  background: selectedRole === "coe" ? "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)" : "#ffffff",
+                  background: selectedRole === "coe" ? "linear-gradient(135deg, #976132 0%, #7b4f29 100%)" : "#ffffff",
                   color: selectedRole === "coe" ? "#ffffff" : "#1e293b",
                   borderRadius: "14px",
                   padding: "16px",
-                  border: selectedRole === "coe" ? "2px solid #38bdf8" : "1px solid #e2e8f0",
-                  boxShadow: selectedRole === "coe" ? "0 8px 20px rgba(2, 132, 199, 0.25)" : "0 1px 3px rgba(0,0,0,0.02)",
+                  border: selectedRole === "coe" ? "2px solid #cc9564" : "1px solid #e2e8f0",
+                  boxShadow: selectedRole === "coe" ? "0 8px 20px rgba(151, 97, 50, 0.25)" : "0 1px 3px rgba(0,0,0,0.02)",
                   cursor: "pointer",
                   transition: "all 0.2s ease",
                   transform: selectedRole === "coe" ? "translateY(-2px)" : "none",
@@ -1060,13 +1052,13 @@ export default function NotificationsApprovalPage() {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div
+                  <div className="vfx-icon-tile"
                     style={{
                       width: "36px",
                       height: "36px",
                       borderRadius: "10px",
                       background: selectedRole === "coe" ? "rgba(255,255,255,0.2)" : "#f0f9ff",
-                      color: selectedRole === "coe" ? "#ffffff" : "#0284c7",
+                      color: selectedRole === "coe" ? "#ffffff" : "#976132",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -1081,7 +1073,7 @@ export default function NotificationsApprovalPage() {
                       padding: "2px 8px",
                       borderRadius: "6px",
                       background: selectedRole === "coe" ? "rgba(255,255,255,0.25)" : "#f0f9ff",
-                      color: selectedRole === "coe" ? "#ffffff" : "#0369a1",
+                      color: selectedRole === "coe" ? "#ffffff" : "#7b4f29",
                     }}
                   >
                     Tier 4
@@ -1225,8 +1217,8 @@ export default function NotificationsApprovalPage() {
                 {approvalList.length > 0 && (
                   <button
                     type="button"
-                    onClick={() => {
-                      if (confirm("Are you sure you want to remove all syllabus submissions from the board?")) {
+                    onClick={async () => {
+                      if (await confirmDialog("Are you sure you want to remove all syllabus submissions from the board?", { danger: true, confirmLabel: "Clear All" })) {
                         examStore.clearAllSyllabusApprovals();
                         setApprovalList([]);
                         showToast("All syllabus records removed.");
@@ -1302,7 +1294,7 @@ export default function NotificationsApprovalPage() {
                             style={{
                               fontSize: "12px",
                               fontWeight: 800,
-                              color: "#2563eb",
+                              color: "#c3844d",
                               background: "#eff6ff",
                               border: "1px solid #bfdbfe",
                               padding: "3px 8px",
@@ -1340,7 +1332,7 @@ export default function NotificationsApprovalPage() {
                                   ? "#059669"
                                   : item.status === "Revision_Requested"
                                   ? "#dc2626"
-                                  : "#2563eb",
+                                  : "#c3844d",
                               border:
                                 item.coeStatus === "Approved"
                                   ? "1px solid #a7f3d0"
@@ -1455,7 +1447,7 @@ export default function NotificationsApprovalPage() {
                                 padding: "6px 14px",
                                 borderRadius: "7px",
                                 border: "none",
-                                background: "linear-gradient(135deg, #0284c7, #0369a1)",
+                                background: "linear-gradient(135deg, #976132, #7b4f29)",
                                 color: "#ffffff",
                                 fontSize: "11.5px",
                                 fontWeight: 700,
@@ -1469,8 +1461,8 @@ export default function NotificationsApprovalPage() {
 
                           <button
                             type="button"
-                            onClick={() => {
-                              if (confirm(`Remove syllabus submission for "${item.courseName}"?`)) {
+                            onClick={async () => {
+                              if (await confirmDialog(`Remove syllabus submission for "${item.courseName}"?`, { danger: true })) {
                                 examStore.deleteSyllabusApproval(item.id);
                                 setApprovalList(examStore.getSyllabusApprovals());
                                 showToast(`Removed syllabus for ${item.courseName}`);
@@ -1515,7 +1507,7 @@ export default function NotificationsApprovalPage() {
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(15, 23, 42, 0.6)",
+            background: "rgba(40, 26, 17, 0.6)",
             backdropFilter: "blur(4px)",
             display: "flex",
             alignItems: "center",
@@ -1539,7 +1531,7 @@ export default function NotificationsApprovalPage() {
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "12px", fontWeight: 800, color: "#2563eb", background: "#eff6ff", padding: "2px 8px", borderRadius: "5px" }}>
+                <span style={{ fontSize: "12px", fontWeight: 800, color: "#c3844d", background: "#eff6ff", padding: "2px 8px", borderRadius: "5px" }}>
                   {inspectedItem.courseCode}
                 </span>
                 <h3 style={{ fontSize: "16px", fontWeight: 800, margin: 0, color: "#0f172a" }}>

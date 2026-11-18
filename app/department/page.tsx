@@ -35,10 +35,10 @@ const departments = [
     id: "las",
     name: "School Of Liberal arts and science",
     est: "Est. 2012",
-    color: "radial-gradient(circle at 35% 30%, #c084fc 0%, #7c3aed 45%, #2e1065 100%)",
-    glowColor: "rgba(124, 58, 237, 0.45)",
-    badgeBg: "rgba(124, 58, 237, 0.12)",
-    badgeColor: "#7c3aed",
+    color: "radial-gradient(circle at 35% 30%, #e0bea1 0%, #c9905e 45%, #533622 100%)",
+    glowColor: "rgba(201, 144, 94, 0.45)",
+    badgeBg: "rgba(201, 144, 94, 0.12)",
+    badgeColor: "#c9905e",
     icon: BookOpen,
   },
   {
@@ -65,10 +65,10 @@ const departments = [
     id: "biz",
     name: "School Of Business And Commerce",
     est: "Est. 2010",
-    color: "radial-gradient(circle at 35% 30%, #38bdf8 0%, #0284c7 45%, #082f49 100%)",
-    glowColor: "rgba(2, 132, 199, 0.45)",
-    badgeBg: "rgba(2, 132, 199, 0.12)",
-    badgeColor: "#0284c7",
+    color: "radial-gradient(circle at 35% 30%, #cc9564 0%, #976132 45%, #3a2517 100%)",
+    glowColor: "rgba(151, 97, 50, 0.45)",
+    badgeBg: "rgba(151, 97, 50, 0.12)",
+    badgeColor: "#976132",
     icon: Briefcase,
   },
   {
@@ -85,10 +85,10 @@ const departments = [
     id: "ai",
     name: "School Of Quantum Science Computing & AI",
     est: "Est. 2020",
-    color: "radial-gradient(circle at 35% 30%, #818cf8 0%, #6366f1 45%, #1e1b4b 100%)",
-    glowColor: "rgba(99, 102, 241, 0.45)",
-    badgeBg: "rgba(99, 102, 241, 0.12)",
-    badgeColor: "#6366f1",
+    color: "radial-gradient(circle at 35% 30%, #deba9b 0%, #d4a780 45%, #482f1e 100%)",
+    glowColor: "rgba(212, 167, 128, 0.45)",
+    badgeBg: "rgba(212, 167, 128, 0.12)",
+    badgeColor: "#d4a780",
     icon: Atom,
   },
   {
@@ -115,13 +115,10 @@ export default function DepartmentPage() {
   return (
     <div className="institution-page">
       {/* ================= LEFT SIDEBAR ================= */}
-      <aside className="institution-sidebar">
+      <aside className="institution-sidebar digital-vfx-sidebar">
         {/* RGU Logo */}
         <div className="sidebar-logo">
-          <img
-            src="/images/rgu-logo.svg"
-            alt="Rathinam Global (Deemed to be University)"
-          />
+          <div className="brand-orbit-logo" aria-label="Rathinam Global (Deemed to be University)"><span className="brand-orbit-mark">RG</span><span className="brand-orbit-name">Rathinam Global</span></div>
         </div>
 
         {/* Vertical Step Navigation */}
@@ -344,7 +341,7 @@ export default function DepartmentPage() {
                 <div className="why-list-item">
                   <div
                     className="why-item-icon"
-                    style={{ background: "#ede9fe", color: "#6366f1" }}
+                    style={{ background: "#ede9fe", color: "#d4a780" }}
                   >
                     <FolderLock size={16} />
                   </div>
@@ -357,7 +354,7 @@ export default function DepartmentPage() {
                 <div className="why-list-item">
                   <div
                     className="why-item-icon"
-                    style={{ background: "#dbeafe", color: "#2563eb" }}
+                    style={{ background: "#dbeafe", color: "#c3844d" }}
                   >
                     <Mail size={16} />
                   </div>
@@ -370,7 +367,7 @@ export default function DepartmentPage() {
                 <div className="why-list-item">
                   <div
                     className="why-item-icon"
-                    style={{ background: "#f3e8ff", color: "#9333ea" }}
+                    style={{ background: "#f3e8ff", color: "#c78b56" }}
                   >
                     <Compass size={16} />
                   </div>
@@ -401,7 +398,7 @@ export default function DepartmentPage() {
         <footer className="institution-bottom">
           <div className="cant-find-banner">
             <div className="cant-find-text">
-              <Info size={18} color="#2563eb" />
+              <Info size={18} color="#c3844d" />
               <div>
                 <strong>Can't find your department?</strong>
                 <span>Contact your administrator or exam cell support.</span>

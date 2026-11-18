@@ -512,7 +512,7 @@ export default function SubjectAllocationPage() {
                 selectedAllocation.status === "Active"
                   ? "#15803d"
                   : selectedAllocation.status === "Allocated"
-                  ? "#4338ca"
+                  ? "#c07d42"
                   : "#b45309",
             }}
           >
@@ -555,11 +555,11 @@ export default function SubjectAllocationPage() {
                     width: "40px",
                     height: "40px",
                     borderRadius: "12px",
-                    background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+                    background: "linear-gradient(135deg, #ca9261 0%, #c9905e 100%)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    boxShadow: "0 4px 12px rgba(79, 70, 229, 0.3)",
+                    boxShadow: "0 4px 12px rgba(202, 146, 97, 0.3)",
                   }}
                 >
                   <BookCheck size={22} color="#ffffff" />
@@ -639,12 +639,12 @@ export default function SubjectAllocationPage() {
                   padding: "10px 18px",
                   borderRadius: "12px",
                   border: "none",
-                  background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+                  background: "linear-gradient(135deg, #ca9261 0%, #c9905e 100%)",
                   color: "#ffffff",
                   fontSize: "13.5px",
                   fontWeight: 700,
                   cursor: "pointer",
-                  boxShadow: "0 4px 14px rgba(79, 70, 229, 0.35)",
+                  boxShadow: "0 4px 14px rgba(202, 146, 97, 0.35)",
                   transition: "all 0.15s ease",
                 }}
               >
@@ -669,7 +669,7 @@ export default function SubjectAllocationPage() {
                 borderRadius: "16px",
                 padding: "18px 20px",
                 border: "1px solid #e2e8f0",
-                boxShadow: "0 2px 6px rgba(15, 23, 42, 0.04)",
+                boxShadow: "0 2px 6px rgba(40, 26, 17, 0.04)",
                 display: "flex",
                 alignItems: "center",
                 gap: "14px",
@@ -681,7 +681,7 @@ export default function SubjectAllocationPage() {
                   height: "44px",
                   borderRadius: "12px",
                   background: "#e0e7ff",
-                  color: "#4f46e5",
+                  color: "#ca9261",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -703,7 +703,7 @@ export default function SubjectAllocationPage() {
                 borderRadius: "16px",
                 padding: "18px 20px",
                 border: "1px solid #e2e8f0",
-                boxShadow: "0 2px 6px rgba(15, 23, 42, 0.04)",
+                boxShadow: "0 2px 6px rgba(40, 26, 17, 0.04)",
                 display: "flex",
                 alignItems: "center",
                 gap: "14px",
@@ -737,7 +737,7 @@ export default function SubjectAllocationPage() {
                 borderRadius: "16px",
                 padding: "18px 20px",
                 border: "1px solid #e2e8f0",
-                boxShadow: "0 2px 6px rgba(15, 23, 42, 0.04)",
+                boxShadow: "0 2px 6px rgba(40, 26, 17, 0.04)",
                 display: "flex",
                 alignItems: "center",
                 gap: "14px",
@@ -749,7 +749,7 @@ export default function SubjectAllocationPage() {
                   height: "44px",
                   borderRadius: "12px",
                   background: "#eff6ff",
-                  color: "#2563eb",
+                  color: "#c3844d",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -761,7 +761,7 @@ export default function SubjectAllocationPage() {
                 <span style={{ fontSize: "11.5px", color: "#64748b", fontWeight: 600, textTransform: "uppercase" }}>
                   Departments Covered
                 </span>
-                <div style={{ fontSize: "22px", fontWeight: 800, color: "#2563eb" }}>{uniqueDepartments}</div>
+                <div style={{ fontSize: "22px", fontWeight: 800, color: "#c3844d" }}>{uniqueDepartments}</div>
               </div>
             </div>
 
@@ -771,7 +771,7 @@ export default function SubjectAllocationPage() {
                 borderRadius: "16px",
                 padding: "18px 20px",
                 border: "1px solid #e2e8f0",
-                boxShadow: "0 2px 6px rgba(15, 23, 42, 0.04)",
+                boxShadow: "0 2px 6px rgba(40, 26, 17, 0.04)",
                 display: "flex",
                 alignItems: "center",
                 gap: "14px",
@@ -807,7 +807,7 @@ export default function SubjectAllocationPage() {
               borderRadius: "16px",
               padding: "16px 20px",
               border: "1px solid #e2e8f0",
-              boxShadow: "0 2px 8px rgba(15, 23, 42, 0.04)",
+              boxShadow: "0 2px 8px rgba(40, 26, 17, 0.04)",
               marginBottom: "20px",
               display: "flex",
               flexWrap: "wrap",
@@ -1010,7 +1010,7 @@ export default function SubjectAllocationPage() {
                   padding: "9px 18px",
                   borderRadius: "10px",
                   border: "none",
-                  background: "#4f46e5",
+                  background: "#ca9261",
                   color: "#ffffff",
                   fontSize: "13px",
                   fontWeight: 600,
@@ -1026,7 +1026,7 @@ export default function SubjectAllocationPage() {
                 background: "#ffffff",
                 borderRadius: "16px",
                 border: "1px solid #e2e8f0",
-                boxShadow: "0 2px 8px rgba(15, 23, 42, 0.04)",
+                boxShadow: "0 2px 8px rgba(40, 26, 17, 0.04)",
                 overflow: "hidden",
               }}
             >
@@ -1071,7 +1071,7 @@ export default function SubjectAllocationPage() {
                         onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
-                        <td style={{ padding: "14px 20px", fontSize: "13px", fontWeight: 700, color: "#4f46e5" }}>
+                        <td style={{ padding: "14px 20px", fontSize: "13px", fontWeight: 700, color: "#ca9261" }}>
                           {item.subjectCode}
                         </td>
                         <td style={{ padding: "14px 20px", fontSize: "13.5px", fontWeight: 600, color: "#0f172a" }}>
@@ -1116,7 +1116,7 @@ export default function SubjectAllocationPage() {
                                 item.status === "Active"
                                   ? "#15803d"
                                   : item.status === "Allocated"
-                                  ? "#4338ca"
+                                  ? "#c07d42"
                                   : "#b45309",
                               border:
                                 item.status === "Active"
@@ -1163,7 +1163,7 @@ export default function SubjectAllocationPage() {
                                 borderRadius: "8px",
                                 border: "1px solid #e0e7ff",
                                 background: "#eff6ff",
-                                color: "#2563eb",
+                                color: "#c3844d",
                                 display: "inline-flex",
                                 alignItems: "center",
                                 justifyContent: "center",
@@ -1218,7 +1218,7 @@ export default function SubjectAllocationPage() {
                     borderRadius: "18px",
                     border: "1px solid #e2e8f0",
                     padding: "20px",
-                    boxShadow: "0 2px 8px rgba(15, 23, 42, 0.04)",
+                    boxShadow: "0 2px 8px rgba(40, 26, 17, 0.04)",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
@@ -1235,7 +1235,7 @@ export default function SubjectAllocationPage() {
                           padding: "3px 8px",
                           borderRadius: "6px",
                           background: "#e0e7ff",
-                          color: "#4338ca",
+                          color: "#c07d42",
                           letterSpacing: "0.5px",
                         }}
                       >
@@ -1257,7 +1257,7 @@ export default function SubjectAllocationPage() {
                             item.status === "Active"
                               ? "#15803d"
                               : item.status === "Allocated"
-                              ? "#4338ca"
+                              ? "#c07d42"
                               : "#b45309",
                         }}
                       >
@@ -1327,7 +1327,7 @@ export default function SubjectAllocationPage() {
                           borderRadius: "6px",
                           border: "1px solid #e0e7ff",
                           background: "#eff6ff",
-                          color: "#2563eb",
+                          color: "#c3844d",
                           fontSize: "12px",
                           fontWeight: 600,
                           cursor: "pointer",

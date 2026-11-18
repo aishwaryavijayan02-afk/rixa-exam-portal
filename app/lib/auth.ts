@@ -21,7 +21,7 @@ export const PRESET_USERS: Record<UserRole, AuthUser> = {
     role: "STAFF",
     roleTitle: "Assistant Professor",
     department: "Visual Communication",
-    avatarBg: "#4f46e5",
+    avatarBg: "#ca9261",
   },
   HOD: {
     id: "usr-hod",
@@ -30,7 +30,7 @@ export const PRESET_USERS: Record<UserRole, AuthUser> = {
     role: "HOD",
     roleTitle: "HOD / Associate Dean",
     department: "Visual Arts & VFX",
-    avatarBg: "#0284c7",
+    avatarBg: "#976132",
     isSubjectFaculty: true,
   },
   DEAN: {
@@ -40,7 +40,7 @@ export const PRESET_USERS: Record<UserRole, AuthUser> = {
     role: "DEAN",
     roleTitle: "Dean Academic Affairs",
     department: "School of Media & Arts",
-    avatarBg: "#8b5cf6",
+    avatarBg: "#d4a67e",
   },
   COE: {
     id: "usr-coe",
@@ -61,7 +61,7 @@ export const STAFF_FACULTY_ACCOUNTS: AuthUser[] = [
     role: "STAFF",
     roleTitle: "Assistant Professor",
     department: "Visual Communication",
-    avatarBg: "#4f46e5",
+    avatarBg: "#ca9261",
   },
   {
     id: "fac-vis-2",
@@ -70,7 +70,7 @@ export const STAFF_FACULTY_ACCOUNTS: AuthUser[] = [
     role: "STAFF",
     roleTitle: "Assistant Professor",
     department: "Visual Communication",
-    avatarBg: "#0284c7",
+    avatarBg: "#976132",
   },
   {
     id: "fac-vis-3",
@@ -106,7 +106,7 @@ export const STAFF_FACULTY_ACCOUNTS: AuthUser[] = [
     role: "STAFF",
     roleTitle: "Assistant Professor",
     department: "Visual Communication",
-    avatarBg: "#8b5cf6",
+    avatarBg: "#d4a67e",
   },
 ];
 
@@ -345,7 +345,7 @@ export function authenticateUser(
     role: role,
     roleTitle: roleTitle,
     department: department,
-    avatarBg: cleanEmail.includes("gayathiri") || cleanEmail.includes("mrs") ? "#db2777" : "#4f46e5",
+    avatarBg: cleanEmail.includes("gayathiri") || cleanEmail.includes("mrs") ? "#db2777" : "#ca9261",
     isSubjectFaculty: role === "HOD" ? true : undefined,
   };
 

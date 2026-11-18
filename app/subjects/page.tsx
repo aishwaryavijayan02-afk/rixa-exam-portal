@@ -91,27 +91,81 @@ export interface SchoolShowcaseItem {
   programmeGroups?: ProgrammeGroup[];
 }
 
-// Light, professional palette for the school cards: a soft tint background,
-// a muted accent for icons/text, and a matching border.
-export interface SchoolTheme {
+// Each school card has its own colour, with a light-mode and a dark-mode
+// palette: accent (icons/text), soft (tinted background) and border.
+// The values are passed to the card as CSS variables; globals.css
+// (`.school-theme`) picks the light or dark set based on `html.dark-theme`.
+export interface SchoolPalette {
   accent: string;
   soft: string;
   border: string;
 }
 
+export interface SchoolTheme {
+  light: SchoolPalette;
+  dark: SchoolPalette;
+}
+
 export const SCHOOL_THEMES: Record<string, SchoolTheme> = {
-  "quantum-ai": { accent: "#4338ca", soft: "#eef2ff", border: "#c7d2fe" },
-  "business-commerce": { accent: "#1d4ed8", soft: "#eff6ff", border: "#bfdbfe" },
-  "sports-health": { accent: "#7e22ce", soft: "#faf5ff", border: "#e9d5ff" },
-  "media-performing": { accent: "#be185d", soft: "#fdf2f8", border: "#fbcfe8" },
-  "liberal-arts": { accent: "#c2410c", soft: "#fff7ed", border: "#fed7aa" },
-  "applied-bio": { accent: "#047857", soft: "#ecfdf5", border: "#a7f3d0" },
-  sustainability: { accent: "#0e7490", soft: "#ecfeff", border: "#a5f3fc" },
+  // Brown & cream family: each school gets its own warm shade.
+  "quantum-ai": { // cocoa
+    light: { accent: "#6b4226", soft: "#f3e7da", border: "#dcc4ab" },
+    dark: { accent: "#e3c4a0", soft: "#3a2416", border: "#6b4a30" },
+  },
+  "business-commerce": { // caramel
+    light: { accent: "#a0673a", soft: "#f8ead9", border: "#e7c9a5" },
+    dark: { accent: "#f0b97c", soft: "#3f2814", border: "#7a5230" },
+  },
+  "sports-health": { // terracotta
+    light: { accent: "#a4502f", soft: "#f8e4da", border: "#e9bfa9" },
+    dark: { accent: "#f2a988", soft: "#40201a", border: "#7c4330" },
+  },
+  "media-performing": { // rosewood
+    light: { accent: "#8e4a4a", soft: "#f6e4e0", border: "#e2bdb5" },
+    dark: { accent: "#eab0a6", soft: "#3d1f1f", border: "#74423e" },
+  },
+  "liberal-arts": { // amber honey
+    light: { accent: "#9a6a12", soft: "#f8eccf", border: "#e8cf95" },
+    dark: { accent: "#f2cf7a", soft: "#3b2a0e", border: "#7a5c22" },
+  },
+  "applied-bio": { // olive
+    light: { accent: "#5f6b2a", soft: "#eef0dc", border: "#cfd4a6" },
+    dark: { accent: "#cfd99a", soft: "#2a2d16", border: "#5c6332" },
+  },
+  sustainability: { // sage
+    light: { accent: "#4f6b4f", soft: "#e8efe4", border: "#bfd1b8" },
+    dark: { accent: "#b9d4b0", soft: "#1f2a1e", border: "#4b6248" },
+  },
 };
 
-const DEFAULT_SCHOOL_THEME: SchoolTheme = { accent: "#334155", soft: "#f8fafc", border: "#e2e8f0" };
+const DEFAULT_SCHOOL_THEME: SchoolTheme = {
+  light: { accent: "#334155", soft: "#f1f5f9", border: "#e2e8f0" },
+  dark: { accent: "#cbd5e1", soft: "#1e293b", border: "#334155" },
+};
 
 export const getSchoolTheme = (id: string): SchoolTheme => SCHOOL_THEMES[id] || DEFAULT_SCHOOL_THEME;
+
+// CSS variables consumed by `.school-theme` in globals.css.
+export const schoolThemeVars = (id: string): React.CSSProperties => {
+  const { light, dark } = getSchoolTheme(id);
+  return {
+    "--sc-accent-l": light.accent,
+    "--sc-soft-l": light.soft,
+    "--sc-border-l": light.border,
+    "--sc-accent-d": dark.accent,
+    "--sc-soft-d": dark.soft,
+    "--sc-border-d": dark.border,
+  } as React.CSSProperties;
+};
+
+// Resolved colours inside a `.school-theme` element (switch with the theme).
+const SC = {
+  accent: "var(--sc-accent)",
+  soft: "var(--sc-soft)",
+  border: "var(--sc-border)",
+  surface: "var(--sc-surface)",
+  title: "var(--sc-title)",
+};
 
 export const RATHINAM_SCHOOLS: SchoolShowcaseItem[] = [
   {
@@ -119,8 +173,8 @@ export const RATHINAM_SCHOOLS: SchoolShowcaseItem[] = [
     name: "Quantum Science, Computing & AI",
     programmes: "13 Programmes",
     icon: Cpu,
-    gradient: "linear-gradient(135deg, #7c3aed 0%, #9333ea 100%)",
-    glow: "rgba(124, 58, 237, 0.4)",
+    gradient: "linear-gradient(135deg, #c9905e 0%, #c78b56 100%)",
+    glow: "rgba(201, 144, 94, 0.4)",
     tags: ["Machine Learning", "Data Science"],
     departmentMatch: ["computer", "ai", "quantum", "it"],
     programmeGroups: [
@@ -222,8 +276,8 @@ export const RATHINAM_SCHOOLS: SchoolShowcaseItem[] = [
     name: "Sports & Health Sciences",
     programmes: "4 Programmes",
     icon: Activity,
-    gradient: "linear-gradient(135deg, #9333ea 0%, #c026d3 100%)",
-    glow: "rgba(168, 85, 247, 0.4)",
+    gradient: "linear-gradient(135deg, #c78b56 0%, #bb783e 100%)",
+    glow: "rgba(211, 163, 122, 0.4)",
     tags: ["Psychology", "Clinical"],
     departmentMatch: ["health", "sports", "science"],
     programmeGroups: [
@@ -359,8 +413,8 @@ export const RATHINAM_SCHOOLS: SchoolShowcaseItem[] = [
     name: "Sustainability & Climate Studies",
     programmes: "2 Programmes",
     icon: Sprout,
-    gradient: "linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)",
-    glow: "rgba(6, 182, 212, 0.4)",
+    gradient: "linear-gradient(135deg, #8b5a2f 0%, #a46937 100%)",
+    glow: "rgba(164, 105, 55, 0.4)",
     tags: ["Environment", "Climate Policy"],
     departmentMatch: ["sustainability", "climate", "environment"],
     programmeGroups: [
@@ -418,7 +472,7 @@ const INITIAL_MEDIA_STAFF: MediaStaffItem[] = [
     assignedSubjects: ["Augmented Reality & VFX (VIS-301)"],
     assignedSyllabus: ["Unit 1: Tracking Fundamentals & Feature Solvers","Unit 2: Planar & Rotoscopy Spline Workflows","Unit 3: Chroma Green/Blue Screen Keying","Unit 4: Matchmoving & 3D Camera Tracking","Unit 5: Vuforia AR SDK & Unity Pipeline"],
     status: "Active",
-    avatarBg: "linear-gradient(135deg, #4f46e5, #7c3aed)",
+    avatarBg: "linear-gradient(135deg, #ca9261, #c9905e)",
   },
   {
     id: "fac-vis-2",
@@ -435,7 +489,7 @@ const INITIAL_MEDIA_STAFF: MediaStaffItem[] = [
     assignedSubjects: ["Digital Cinematography & Lighting (VIS-302)"],
     assignedSyllabus: ["Unit 1: Sensor & Camera Tech","Unit 2: Three-Point Lighting Design","Unit 3: Color Grading & Anamorphic Optics","Unit 4: Production Visual Storyboarding","Unit 5: Post Master Export Formats"],
     status: "Active",
-    avatarBg: "linear-gradient(135deg, #0284c7, #38bdf8)",
+    avatarBg: "linear-gradient(135deg, #976132, #cc9564)",
   },
   {
     id: "fac-vis-3",
@@ -503,7 +557,7 @@ const INITIAL_MEDIA_STAFF: MediaStaffItem[] = [
     assignedSubjects: ["Multimedia Production & Web Design (VIS-306)"],
     assignedSyllabus: ["Unit 1: HTML/CSS Foundations","Unit 2: UI/UX Design Principles","Unit 3: Motion Graphics","Unit 4: Interactive Media","Unit 5: Portfolio Development"],
     status: "Active",
-    avatarBg: "linear-gradient(135deg, #7c3aed, #a855f7)",
+    avatarBg: "linear-gradient(135deg, #c9905e, #d3a37a)",
   },
 ];
 
@@ -866,10 +920,10 @@ export default function DepartmentManagementPage() {
       : (assignedSyllabus.length > 0 ? assignedSyllabus.length : 1);
 
     const gradients = [
-      "linear-gradient(135deg, #4f46e5, #7c3aed)",
+      "linear-gradient(135deg, #ca9261, #c9905e)",
       "linear-gradient(135deg, #059669, #10b981)",
       "linear-gradient(135deg, #ea580c, #f97316)",
-      "linear-gradient(135deg, #0284c7, #38bdf8)",
+      "linear-gradient(135deg, #976132, #cc9564)",
       "linear-gradient(135deg, #db2777, #f472b6)",
     ];
     const randomGradient = gradients[Math.floor(Math.random() * gradients.length)];
@@ -1093,10 +1147,10 @@ export default function DepartmentManagementPage() {
         }}
       >
         {/* ================================= SIDEBAR ================================= */}
-        <aside
+        <aside className="digital-vfx-sidebar"
           style={{
             width: "260px",
-            background: "linear-gradient(180deg, #090e1f 0%, #060914 100%)",
+            background: "linear-gradient(180deg, #1c120c 0%, #120c08 100%)",
             color: "#94a3b8",
             display: "flex",
             flexDirection: "column",
@@ -1111,17 +1165,7 @@ export default function DepartmentManagementPage() {
           <div>
             {/* RGU Logo */}
             <div style={{ padding: "6px 10px 24px 10px", position: "relative" }}>
-              <img
-                src="/images/rgu-logo.svg"
-                alt="Rathinam Global (Deemed to be University)"
-                style={{
-                  maxHeight: "38px",
-                  width: "auto",
-                  objectFit: "contain",
-                  filter: "drop-shadow(0 0 12px rgba(99, 102, 241, 0.35))",
-                  transition: "filter 0.3s ease",
-                }}
-              />
+              <div className="brand-orbit-logo" aria-label="Rathinam Global (Deemed to be University)"><span className="brand-orbit-mark">RG</span><span className="brand-orbit-name">Rathinam Global</span></div>
             </div>
 
             {/* Navigation Items */}
@@ -1245,7 +1289,7 @@ export default function DepartmentManagementPage() {
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "14px",
-                  boxShadow: "0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03)",
+                  boxShadow: "0 4px 20px -2px rgba(40, 26, 17, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03)",
                   transition: "all 0.3s ease",
                 }}
               >
@@ -1260,16 +1304,25 @@ export default function DepartmentManagementPage() {
                     padding: "6px 12px",
                   }}
                 >
-                  <img
-                    src="/images/rgu-logo.svg"
-                    alt="RGU Logo"
-                    style={{
-                      height: "34px",
-                      width: "auto",
-                      objectFit: "contain",
-                      display: "block",
-                    }}
-                  />
+                  <div aria-label="Rathinam Global (Deemed to be University)" style={{ display: "flex", alignItems: "center", gap: "8px", height: "34px" }}>
+                    <span
+                      style={{
+                        width: "30px",
+                        height: "30px",
+                        borderRadius: "9px",
+                        display: "grid",
+                        placeItems: "center",
+                        background: "linear-gradient(145deg, #8b5a2b, #5a3a24)",
+                        color: "#f8eedb",
+                        fontSize: "11px",
+                        fontWeight: 800,
+                        letterSpacing: ".5px",
+                      }}
+                    >
+                      RG
+                    </span>
+                    <span style={{ fontSize: "13px", fontWeight: 800, color: "#4a2f1d", whiteSpace: "nowrap" }}>Rathinam Global</span>
+                  </div>
                 </div>
                 <div style={{ width: "1px", height: "30px", background: "#e2e8f0" }} />
                 <div style={{ flexShrink: 0 }}>
@@ -1318,7 +1371,7 @@ export default function DepartmentManagementPage() {
                 border: "1px solid #e2e8f0",
                 padding: "24px 28px",
                 marginBottom: "26px",
-                boxShadow: "0 4px 20px -2px rgba(15, 23, 42, 0.04)",
+                boxShadow: "0 4px 20px -2px rgba(40, 26, 17, 0.04)",
               }}
             >
               {/* Showcase Header & Centered Pill Search Bar matching photo */}
@@ -1336,8 +1389,8 @@ export default function DepartmentManagementPage() {
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
                     <span
                       style={{
-                        background: "rgba(99, 102, 241, 0.12)",
-                        color: "#4f46e5",
+                        background: "rgba(212, 167, 128, 0.12)",
+                        color: "#ca9261",
                         fontSize: "11px",
                         fontWeight: 700,
                         padding: "3px 10px",
@@ -1405,8 +1458,8 @@ export default function DepartmentManagementPage() {
                     }}
                     onFocus={(e) => {
                       e.currentTarget.style.background = "#ffffff";
-                      e.currentTarget.style.borderColor = "#6366f1";
-                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99, 102, 241, 0.15)";
+                      e.currentTarget.style.borderColor = "#d4a780";
+                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(212, 167, 128, 0.15)";
                     }}
                     onBlur={(e) => {
                       e.currentTarget.style.background = "#f8fafc";
@@ -1427,9 +1480,9 @@ export default function DepartmentManagementPage() {
               >
                 {filteredSchools.map((school) => {
                   const Icon = school.icon;
-                  const theme = getSchoolTheme(school.id);
-                  const restShadow = "0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.04)";
-                  const hoverShadow = "0 10px 24px -6px rgba(15, 23, 42, 0.14)";
+                  const theme = SC;
+                  const restShadow = "0 1px 3px rgba(40, 26, 17, 0.06), 0 4px 12px rgba(40, 26, 17, 0.04)";
+                  const hoverShadow = "0 10px 24px -6px rgba(40, 26, 17, 0.14)";
                   const staffActive = showStaffProfiles && expandedSchoolId === school.id;
                   const isSelected =
                     expandedSchoolId === school.id ||
@@ -1437,19 +1490,20 @@ export default function DepartmentManagementPage() {
                     (school.id === "media-performing" && (activeDept.toLowerCase() === "viscom" || activeDept.toLowerCase().includes("fashion") || activeDept.toLowerCase().includes("media") || activeDept.toLowerCase().includes("performing")));
 
                   return (
-                    <div key={school.id} style={{ display: "flex", flexDirection: "column" }}>
-                      <div
+                    <div key={school.id} className="school-theme" style={{ ...schoolThemeVars(school.id), display: "flex", flexDirection: "column" }}>
+                      <div className={`school-card${isSelected ? " is-active" : ""}`}
                         onClick={() => {
                           setExpandedSchoolId(school.id);
                           setActiveDept(school.name);
                         }}
                         style={{
-                          background: `linear-gradient(180deg, ${theme.soft} 0%, #ffffff 100%)`,
-                          border: `1px solid ${isSelected ? theme.accent : theme.border}`,
-                          borderTop: `4px solid ${theme.accent}`,
+                          background: `linear-gradient(180deg, ${theme.soft} 0%, ${theme.surface} 100%)`,
+                          borderStyle: "solid",
+                          borderWidth: "4px 1px 1px 1px",
+                          borderColor: `${theme.accent} ${isSelected ? theme.accent : theme.border} ${isSelected ? theme.accent : theme.border}`,
                           borderRadius: "18px",
                           padding: "18px 20px 20px",
-                          color: "#0f172a",
+                          color: theme.title,
                           cursor: "pointer",
                           minHeight: "155px",
                           display: "flex",
@@ -1475,12 +1529,12 @@ export default function DepartmentManagementPage() {
                       >
                         {/* Top row: Icon + Programmes Badge */}
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                          <div
+                          <div className="school-card-icon"
                             style={{
                               width: "38px",
                               height: "38px",
                               borderRadius: "11px",
-                              background: "#ffffff",
+                              background: theme.surface,
                               border: `1px solid ${theme.border}`,
                               display: "flex",
                               alignItems: "center",
@@ -1491,9 +1545,9 @@ export default function DepartmentManagementPage() {
                             <Icon size={19} />
                           </div>
 
-                          <span
+                          <span className="school-card-badge"
                             style={{
-                              background: "#ffffff",
+                              background: theme.surface,
                               border: `1px solid ${theme.border}`,
                               padding: "4px 10px",
                               borderRadius: "12px",
@@ -1512,7 +1566,7 @@ export default function DepartmentManagementPage() {
                           style={{
                             fontSize: "16.5px",
                             fontWeight: 800,
-                            color: "#0f172a",
+                            color: theme.title,
                             lineHeight: 1.25,
                             marginTop: "16px",
                             marginBottom: "12px",
@@ -1537,7 +1591,7 @@ export default function DepartmentManagementPage() {
                               display: "inline-flex",
                               alignItems: "center",
                               gap: "6px",
-                              background: "#ffffff",
+                              background: theme.surface,
                               padding: "6px 12px",
                               borderRadius: "10px",
                               border: `1px solid ${theme.border}`,
@@ -1550,11 +1604,11 @@ export default function DepartmentManagementPage() {
                               e.currentTarget.style.borderColor = theme.accent;
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.background = "#ffffff";
+                              e.currentTarget.style.background = theme.surface;
                               e.currentTarget.style.borderColor = theme.border;
                             }}
                           >
-                            <BookOpen size={13} color={theme.accent} />
+                            <BookOpen size={13} />
                             <span>View Programmes</span>
                           </div>
                           {(
@@ -1576,7 +1630,7 @@ export default function DepartmentManagementPage() {
                               style={{
                                 fontSize: "12px",
                                 fontWeight: 700,
-                                color: staffActive ? "#ffffff" : theme.accent,
+                                color: staffActive ? theme.surface : theme.accent,
                                 display: "inline-flex",
                                 alignItems: "center",
                                 gap: "6px",
@@ -1595,7 +1649,7 @@ export default function DepartmentManagementPage() {
                                 e.currentTarget.style.borderColor = staffActive ? theme.accent : theme.border;
                               }}
                             >
-                              <Users size={13} color={staffActive ? "#ffffff" : theme.accent} />
+                              <Users size={13} />
                               <span>{showStaffProfiles && expandedSchoolId === school.id ? "Hide Staff Profiles" : "View Staff Profiles"}</span>
                             </div>
                           )}
@@ -1609,8 +1663,8 @@ export default function DepartmentManagementPage() {
                             <span
                               key={tIdx}
                               style={{
-                                background: "#ffffff",
-                                border: "1px solid #e2e8f0",
+                                background: theme.surface,
+                                border: `1px solid ${theme.border}`,
                                 padding: "3px 9px",
                                 borderRadius: "14px",
                                 fontSize: "10.5px",
@@ -1685,7 +1739,7 @@ export default function DepartmentManagementPage() {
                           <span
                             style={{
                               background: "#e0e7ff",
-                              color: "#4338ca",
+                              color: "#c07d42",
                               fontSize: "11px",
                               fontWeight: 700,
                               padding: "2px 10px",
@@ -1752,11 +1806,11 @@ export default function DepartmentManagementPage() {
                         style={{
                           background: "#ffffff",
                           borderRadius: "20px",
-                          border: isMyProfile ? "2px solid #6366f1" : "1.5px solid #f1f5f9",
+                          border: isMyProfile ? "2px solid #d4a780" : "1.5px solid #f1f5f9",
                           padding: "24px",
                           boxShadow: isMyProfile
-                            ? "0 8px 24px rgba(99, 102, 241, 0.18)"
-                            : "0 4px 20px rgba(15, 23, 42, 0.06)",
+                            ? "0 8px 24px rgba(212, 167, 128, 0.18)"
+                            : "0 4px 20px rgba(40, 26, 17, 0.06)",
                           transition: "all 0.22s ease",
                           position: "relative",
                           overflow: "hidden",
@@ -1768,14 +1822,14 @@ export default function DepartmentManagementPage() {
                         onMouseEnter={(e) => {
                           e.currentTarget.style.transform = "translateY(-4px)";
                           e.currentTarget.style.boxShadow = isMyProfile
-                            ? "0 14px 34px rgba(99, 102, 241, 0.24)"
-                            : "0 12px 32px rgba(15, 23, 42, 0.12)";
+                            ? "0 14px 34px rgba(212, 167, 128, 0.24)"
+                            : "0 12px 32px rgba(40, 26, 17, 0.12)";
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.transform = "translateY(0)";
                           e.currentTarget.style.boxShadow = isMyProfile
-                            ? "0 8px 24px rgba(99, 102, 241, 0.18)"
-                            : "0 4px 20px rgba(15, 23, 42, 0.06)";
+                            ? "0 8px 24px rgba(212, 167, 128, 0.18)"
+                            : "0 4px 20px rgba(40, 26, 17, 0.06)";
                         }}
                       >
                         {/* Top gradient accent */}
@@ -1839,20 +1893,20 @@ export default function DepartmentManagementPage() {
                                       display: "inline-flex",
                                       alignItems: "center",
                                       gap: "4px",
-                                      background: "linear-gradient(135deg, #4f46e5, #7c3aed)",
+                                      background: "linear-gradient(135deg, #ca9261, #c9905e)",
                                       color: "#ffffff",
                                       fontSize: "10px",
                                       fontWeight: 800,
                                       padding: "2px 8px",
                                       borderRadius: "8px",
-                                      boxShadow: "0 2px 6px rgba(79, 70, 229, 0.3)",
+                                      boxShadow: "0 2px 6px rgba(202, 146, 97, 0.3)",
                                     }}
                                   >
                                     <Sparkles size={9} /> You (Logged In)
                                   </span>
                                 )}
                               </div>
-                              <div style={{ fontSize: "12px", color: "#6366f1", fontWeight: 600, marginTop: "2px" }}>
+                              <div style={{ fontSize: "12px", color: "#d4a780", fontWeight: 600, marginTop: "2px" }}>
                                 {staff.designation}
                               </div>
                               <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>
@@ -1900,8 +1954,8 @@ export default function DepartmentManagementPage() {
                                 <GraduationCap size={13} color="#64748b" />
                                 <span>{staff.qualification}</span>
                               </div>
-                              <div style={{ fontSize: "12px", color: "#6366f1", marginBottom: "5px", display: "flex", alignItems: "center", gap: "6px" }}>
-                                <Mail size={13} color="#6366f1" />
+                              <div style={{ fontSize: "12px", color: "#d4a780", marginBottom: "5px", display: "flex", alignItems: "center", gap: "6px" }}>
+                                <Mail size={13} color="#d4a780" />
                                 <span>{staff.email}</span>
                               </div>
                               <div style={{ fontSize: "12px", color: "#334155", marginBottom: "5px", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1913,7 +1967,7 @@ export default function DepartmentManagementPage() {
                                 <span>{staff.school}</span>
                               </div>
                               <div style={{ fontSize: "12px", color: "#64748b", display: "flex", alignItems: "center", gap: "6px" }}>
-                                <UserCheck size={13} color="#9333ea" />
+                                <UserCheck size={13} color="#c78b56" />
                                 <span>Reporting: <strong style={{ color: "#0f172a" }}>{staff.reportingOfficerName}</strong></span>
                               </div>
                             </div>
@@ -1939,16 +1993,16 @@ export default function DepartmentManagementPage() {
                                         display: "inline-flex",
                                         alignItems: "center",
                                         gap: "5px",
-                                        background: "rgba(99,102,241,0.08)",
-                                        color: "#4f46e5",
+                                        background: "rgba(212, 167, 128,0.08)",
+                                        color: "#ca9261",
                                         fontSize: "11px",
                                         fontWeight: 600,
                                         padding: "4px 10px",
                                         borderRadius: "8px",
-                                        border: "1px solid rgba(99,102,241,0.12)",
+                                        border: "1px solid rgba(212, 167, 128,0.12)",
                                       }}
                                     >
-                                      <BookOpen size={11} color="#4f46e5" />
+                                      <BookOpen size={11} color="#ca9261" />
                                       <span>{sub}</span>
                                     </div>
                                   ))
@@ -2030,7 +2084,7 @@ export default function DepartmentManagementPage() {
                                 alignItems: "center",
                                 justifyContent: "center",
                                 gap: "6px",
-                                background: "linear-gradient(135deg, #4f46e5, #6366f1)",
+                                background: "linear-gradient(135deg, #ca9261, #d4a780)",
                                 color: "#ffffff",
                                 border: "none",
                                 borderRadius: "10px",
@@ -2038,16 +2092,16 @@ export default function DepartmentManagementPage() {
                                 fontSize: "12px",
                                 fontWeight: 700,
                                 cursor: "pointer",
-                                boxShadow: "0 2px 8px rgba(79, 70, 229, 0.25)",
+                                boxShadow: "0 2px 8px rgba(202, 146, 97, 0.25)",
                                 transition: "all 0.18s ease",
                               }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.transform = "translateY(-1px)";
-                                e.currentTarget.style.boxShadow = "0 4px 12px rgba(79, 70, 229, 0.35)";
+                                e.currentTarget.style.boxShadow = "0 4px 12px rgba(202, 146, 97, 0.35)";
                               }}
                               onMouseLeave={(e) => {
                                 e.currentTarget.style.transform = "translateY(0)";
-                                e.currentTarget.style.boxShadow = "0 2px 8px rgba(79, 70, 229, 0.25)";
+                                e.currentTarget.style.boxShadow = "0 2px 8px rgba(202, 146, 97, 0.25)";
                               }}
                             >
                               <Edit3 size={13} color="#ffffff" />
@@ -2081,7 +2135,7 @@ export default function DepartmentManagementPage() {
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  background: "rgba(15, 23, 42, 0.72)",
+                  background: "rgba(40, 26, 17, 0.72)",
                   backdropFilter: "blur(8px)",
                   display: "flex",
                   alignItems: "flex-start",
@@ -2113,7 +2167,7 @@ export default function DepartmentManagementPage() {
                     overflowY: "scroll",
                     overscrollBehavior: "contain",
                     WebkitOverflowScrolling: "touch",
-                    boxShadow: "0 32px 80px rgba(15, 23, 42, 0.32)",
+                    boxShadow: "0 32px 80px rgba(40, 26, 17, 0.32)",
                     position: "relative",
                   }}
                 >
@@ -2160,7 +2214,7 @@ export default function DepartmentManagementPage() {
                               <span
                                 style={{
                                   background: "#ffffff",
-                                  color: "#4f46e5",
+                                  color: "#ca9261",
                                   fontSize: "11px",
                                   fontWeight: 800,
                                   padding: "2px 8px",
@@ -2315,7 +2369,7 @@ export default function DepartmentManagementPage() {
                             padding: "12px 16px",
                             border: "1px solid #bfdbfe",
                             fontSize: "12.5px",
-                            color: "#1e40af",
+                            color: "#9a6333",
                             fontWeight: 600,
                           }}
                         >
@@ -2458,13 +2512,13 @@ export default function DepartmentManagementPage() {
                             style={{
                               padding: "9px 22px",
                               borderRadius: "10px",
-                              background: "linear-gradient(135deg, #4f46e5, #6366f1)",
+                              background: "linear-gradient(135deg, #ca9261, #d4a780)",
                               border: "none",
                               color: "#ffffff",
                               fontSize: "13px",
                               fontWeight: 700,
                               cursor: "pointer",
-                              boxShadow: "0 2px 8px rgba(79, 70, 229, 0.3)",
+                              boxShadow: "0 2px 8px rgba(202, 146, 97, 0.3)",
                             }}
                           >
                            Save Changes
@@ -2493,7 +2547,7 @@ export default function DepartmentManagementPage() {
                               <div style={{ fontSize: "10px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: "4px" }}>
                                 Email Address
                               </div>
-                              <div style={{ fontSize: "13px", fontWeight: 600, color: "#4f46e5", wordBreak: "break-word" }}>
+                              <div style={{ fontSize: "13px", fontWeight: 600, color: "#ca9261", wordBreak: "break-word" }}>
                                 {selectedStaffProfile.email}
                               </div>
                             </div>
@@ -2542,7 +2596,7 @@ export default function DepartmentManagementPage() {
                               width: "36px",
                               height: "36px",
                               borderRadius: "10px",
-                              background: "#9333ea",
+                              background: "#c78b56",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
@@ -2553,7 +2607,7 @@ export default function DepartmentManagementPage() {
                             <UserCheck size={18} color="#ffffff" />
                           </div>
                           <div>
-                            <div style={{ fontSize: "10px", fontWeight: 700, color: "#9333ea", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                            <div style={{ fontSize: "10px", fontWeight: 700, color: "#c78b56", textTransform: "uppercase", letterSpacing: "0.5px" }}>
                               Reporting Officer
                             </div>
                             <div style={{ fontSize: "14px", fontWeight: 700, color: "#0f172a" }}>
@@ -2585,16 +2639,16 @@ export default function DepartmentManagementPage() {
                                     display: "inline-flex",
                                     alignItems: "center",
                                     gap: "6px",
-                                    background: "rgba(99,102,241,0.08)",
-                                    color: "#4f46e5",
+                                    background: "rgba(212, 167, 128,0.08)",
+                                    color: "#ca9261",
                                     fontSize: "12px",
                                     fontWeight: 600,
                                     padding: "6px 12px",
                                     borderRadius: "10px",
-                                    border: "1px solid rgba(99,102,241,0.15)",
+                                    border: "1px solid rgba(212, 167, 128,0.15)",
                                   }}
                                 >
-                                  <BookOpen size={13} color="#4f46e5" />
+                                  <BookOpen size={13} color="#ca9261" />
                                   <span>{sub}</span>
                                 </span>
                               ))
@@ -2628,7 +2682,7 @@ export default function DepartmentManagementPage() {
               left: 0,
               right: 0,
               bottom: 0,
-              background: "rgba(15, 23, 42, 0.65)",
+              background: "rgba(40, 26, 17, 0.65)",
               backdropFilter: "blur(6px)",
               display: "flex",
               alignItems: "center",
@@ -2646,12 +2700,12 @@ export default function DepartmentManagementPage() {
                       width: "34px",
                       height: "34px",
                       borderRadius: "10px",
-                      background: "linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)",
+                      background: "linear-gradient(135deg, #ca9261 0%, #cc9565 100%)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       color: "#ffffff",
-                      boxShadow: "0 2px 8px rgba(79, 70, 229, 0.3)",
+                      boxShadow: "0 2px 8px rgba(202, 146, 97, 0.3)",
                       flexShrink: 0,
                     }}
                   >
@@ -2927,21 +2981,21 @@ export default function DepartmentManagementPage() {
                       padding: "7px 18px",
                       borderRadius: "7px",
                       border: "none",
-                      background: "linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)",
+                      background: "linear-gradient(135deg, #ca9261 0%, #cc9565 100%)",
                       color: "#ffffff",
                       fontSize: "12px",
                       fontWeight: 700,
                       cursor: "pointer",
-                      boxShadow: "0 2px 8px rgba(79, 70, 229, 0.35)",
+                      boxShadow: "0 2px 8px rgba(202, 146, 97, 0.35)",
                       transition: "all 0.15s ease",
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = "translateY(-1px)";
-                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(79, 70, 229, 0.45)";
+                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(202, 146, 97, 0.45)";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow = "0 2px 8px rgba(79, 70, 229, 0.35)";
+                      e.currentTarget.style.boxShadow = "0 2px 8px rgba(202, 146, 97, 0.35)";
                     }}
                   >
                     {editingStaff ? "Save Changes" : "Save Staff Profile"}
@@ -2961,7 +3015,7 @@ export default function DepartmentManagementPage() {
               left: 0,
               right: 0,
               bottom: 0,
-              background: "rgba(15, 23, 42, 0.65)",
+              background: "rgba(40, 26, 17, 0.65)",
               backdropFilter: "blur(6px)",
               display: "flex",
               alignItems: "center",
@@ -3053,7 +3107,7 @@ export default function DepartmentManagementPage() {
               style={{
                 position: "fixed",
                 inset: 0,
-                background: "rgba(15, 23, 42, 0.6)",
+                background: "rgba(40, 26, 17, 0.6)",
                 backdropFilter: "blur(5px)",
                 zIndex: 99999,
                 display: "flex",
@@ -3069,7 +3123,7 @@ export default function DepartmentManagementPage() {
                   background: "#ffffff",
                   borderRadius: "22px",
                   border: "1px solid #e2e8f0",
-                  boxShadow: "0 25px 60px -15px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.04)",
+                  boxShadow: "0 25px 60px -15px rgba(40, 26, 17, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.04)",
                   width: "100%",
                   maxWidth: "520px",
                   maxHeight: "85vh",
@@ -3090,17 +3144,18 @@ export default function DepartmentManagementPage() {
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <div
+                    <div className="school-theme"
                       style={{
                         width: "40px",
                         height: "40px",
                         borderRadius: "12px",
-                        background: getSchoolTheme(selectedSchoolData.id).soft,
-                        border: `1px solid ${getSchoolTheme(selectedSchoolData.id).border}`,
+                        ...schoolThemeVars(selectedSchoolData.id),
+                        background: SC.soft,
+                        border: `1px solid ${SC.border}`,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        color: getSchoolTheme(selectedSchoolData.id).accent,
+                        color: SC.accent,
                         flexShrink: 0,
                       }}
                     >
@@ -3200,7 +3255,7 @@ export default function DepartmentManagementPage() {
                             width: "22px",
                             height: "22px",
                             borderRadius: "50%",
-                            background: "#8b5cf6",
+                            background: "#d4a67e",
                             color: "#ffffff",
                             fontSize: "11px",
                             fontWeight: 800,
@@ -3263,7 +3318,7 @@ export default function DepartmentManagementPage() {
                               transition: "all 0.15s ease",
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.color = "#7c3aed";
+                              e.currentTarget.style.color = "#c9905e";
                               e.currentTarget.style.borderColor = "#c4b5fd";
                               e.currentTarget.style.background = "#faf5ff";
                               e.currentTarget.style.transform = "translateX(3px)";
@@ -3276,7 +3331,7 @@ export default function DepartmentManagementPage() {
                             }}
                             title={`Click to filter: ${item}`}
                           >
-                            <span style={{ color: "#8b5cf6", fontWeight: 700, fontSize: "13px" }}>→</span>
+                            <span style={{ color: "#d4a67e", fontWeight: 700, fontSize: "13px" }}>→</span>
                             <span>{item}</span>
                           </div>
                         ))}
@@ -3309,7 +3364,7 @@ export default function DepartmentManagementPage() {
                         setTimeout(() => document.getElementById("staff-profiles-section")?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
                       }}
                       style={{
-                        background: "linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)",
+                        background: "linear-gradient(135deg, #a8703f 0%, #8f5c31 100%)",
                         border: "none",
                         borderRadius: "8px",
                         padding: "6px 14px",
@@ -3320,7 +3375,7 @@ export default function DepartmentManagementPage() {
                         display: "flex",
                         alignItems: "center",
                         gap: "6px",
-                        boxShadow: "0 2px 8px rgba(79, 70, 229, 0.25)",
+                        boxShadow: "0 3px 10px rgba(143, 92, 49, 0.3)",
                       }}
                     >
                       <Users size={14} />

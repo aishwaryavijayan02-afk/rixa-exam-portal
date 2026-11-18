@@ -328,10 +328,10 @@ export default function ReportsPage() {
       }}
     >
       {/* ================================= SIDEBAR ================================= */}
-      <aside
+      <aside className="digital-vfx-sidebar"
         style={{
           width: "260px",
-          background: "linear-gradient(180deg, #090e1f 0%, #060914 100%)",
+          background: "linear-gradient(180deg, #1c120c 0%, #120c08 100%)",
           color: "#94a3b8",
           display: "flex",
           flexDirection: "column",
@@ -346,11 +346,7 @@ export default function ReportsPage() {
         <div>
           {/* RGU Logo */}
           <div style={{ padding: "6px 10px 24px 10px" }}>
-            <img
-              src="/images/rgu-logo.svg"
-              alt="Rathinam Global (Deemed to be University)"
-              style={{ maxHeight: "38px", width: "auto", objectFit: "contain" }}
-            />
+            <div className="brand-orbit-logo" aria-label="Rathinam Global (Deemed to be University)"><span className="brand-orbit-mark">RG</span><span className="brand-orbit-name">Rathinam Global</span></div>
           </div>
 
           {/* Navigation Items */}
@@ -408,7 +404,7 @@ export default function ReportsPage() {
             <Shield
               size={19}
               style={{
-                filter: "drop-shadow(0 0 6px rgba(96, 165, 250, 0.8))",
+                filter: "drop-shadow(0 0 6px rgba(214, 170, 132, 0.8))",
               }}
             />
           </div>
@@ -510,13 +506,13 @@ export default function ReportsPage() {
                     width: "32px",
                     height: "32px",
                     borderRadius: "10px",
-                    background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-                    boxShadow: "0 4px 14px rgba(37, 99, 235, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.5)",
+                    background: "linear-gradient(135deg, #cc9565 0%, #c3844d 100%)",
+                    boxShadow: "0 4px 14px rgba(195, 132, 77, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.5)",
                     color: "#ffffff",
                     animation: "float3D 4s infinite ease-in-out",
                   }}
                 >
-                  <BarChart2 size={19} style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 10px rgba(59, 130, 246, 0.8))" }} />
+                  <BarChart2 size={19} style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 10px rgba(204, 149, 101, 0.8))" }} />
                 </div>
               </h1>
               <p style={{ fontSize: "13.5px", color: "#64748b", margin: 0 }}>
@@ -550,7 +546,7 @@ export default function ReportsPage() {
                     size={23}
                     color="#ffffff"
                     style={{
-                      filter: "drop-shadow(0 0 8px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(59, 130, 246, 0.8))",
+                      filter: "drop-shadow(0 0 8px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(204, 149, 101, 0.8))",
                     }}
                   />
                 </div>
@@ -582,7 +578,7 @@ export default function ReportsPage() {
                     size={23}
                     color="#ffffff"
                     style={{
-                      filter: "drop-shadow(0 0 8px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(6, 182, 212, 0.8))",
+                      filter: "drop-shadow(0 0 8px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(164, 105, 55, 0.8))",
                     }}
                   />
                 </div>
@@ -722,9 +718,9 @@ export default function ReportsPage() {
                             fontSize: "10px",
                             padding: "2px 7px",
                             borderRadius: "5px",
-                            border: "1px solid #3b82f6",
+                            border: "1px solid #cc9565",
                             background: "#eff6ff",
-                            color: "#1d4ed8",
+                            color: "#b8763d",
                             fontWeight: 700,
                             cursor: "pointer",
                             transition: "all 0.15s ease",
@@ -878,7 +874,7 @@ export default function ReportsPage() {
                           style={{
                             marginTop: "14px",
                             padding: "5px 10px",
-                            background: "#2563eb",
+                            background: "#c3844d",
                             color: "#ffffff",
                             border: "none",
                             borderRadius: "6px",
@@ -1043,12 +1039,12 @@ export default function ReportsPage() {
                         padding: "8px 18px",
                         borderRadius: "10px",
                         border: "none",
-                        background: "linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)",
+                        background: "linear-gradient(135deg, #ca9261 0%, #cc9565 100%)",
                         color: "#ffffff",
                         fontSize: "12px",
                         fontWeight: 600,
                         cursor: "pointer",
-                        boxShadow: "0 6px 16px rgba(79, 70, 229, 0.35)",
+                        boxShadow: "0 6px 16px rgba(202, 146, 97, 0.35)",
                       }}
                     >
                       <Filter size={13} style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.8))" }} />
@@ -1151,7 +1147,7 @@ export default function ReportsPage() {
                   {/* Chart Legend */}
                   <div style={{ display: "flex", gap: "16px", marginBottom: "14px", flexWrap: "wrap" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#6366f1", boxShadow: "0 0 8px rgba(99, 102, 241, 0.6)" }} />
+                      <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#d4a780", boxShadow: "0 0 8px rgba(212, 167, 128, 0.6)" }} />
                       <span style={{ fontSize: "11px", color: "#64748b" }}>Total Questions</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1173,7 +1169,7 @@ export default function ReportsPage() {
                     <svg viewBox="0 0 460 200" style={{ width: "100%", height: "100%", overflow: "visible" }}>
                       <defs>
                         <filter id="glow-purple-line" x="-10%" y="-10%" width="120%" height="120%">
-                          <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#6366f1" floodOpacity="0.45" />
+                          <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#d4a780" floodOpacity="0.45" />
                         </filter>
                         <filter id="glow-green-line" x="-10%" y="-10%" width="120%" height="120%">
                           <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#10b981" floodOpacity="0.45" />
@@ -1212,14 +1208,14 @@ export default function ReportsPage() {
                       <path
                         d="M 40 145 Q 72 110, 105 112 T 170 85 T 235 55 T 300 95 T 365 110 T 430 40"
                         fill="none"
-                        stroke="#6366f1"
+                        stroke="#d4a780"
                         strokeWidth="2.8"
                         filter="url(#glow-purple-line)"
                       />
                       {[
                         [40, 145], [105, 112], [170, 85], [235, 55], [300, 95], [365, 110], [430, 40]
                       ].map(([cx, cy], i) => (
-                        <circle key={i} cx={cx} cy={cy} r="3.5" fill="#6366f1" stroke="#ffffff" strokeWidth="1.5" />
+                        <circle key={i} cx={cx} cy={cy} r="3.5" fill="#d4a780" stroke="#ffffff" strokeWidth="1.5" />
                       ))}
 
                       {/* Green Line: Approved */}
@@ -1332,7 +1328,7 @@ export default function ReportsPage() {
                           cy="67.5"
                           r="48"
                           fill="transparent"
-                          stroke="#0284c7"
+                          stroke="#976132"
                           strokeWidth="18"
                           strokeDasharray="10.5 301.6"
                           strokeDashoffset="-288.5"
@@ -1359,7 +1355,7 @@ export default function ReportsPage() {
                           flexDirection: "column",
                           alignItems: "center",
                           justifyContent: "center",
-                          background: "radial-gradient(circle, #ffffff 60%, rgba(248, 250, 252, 0.8) 100%)",
+                          background: "radial-gradient(circle, #ffffff 60%, rgba(252, 250, 248, 0.8) 100%)",
                           borderRadius: "50%",
                           width: "74px",
                           height: "74px",
@@ -1396,7 +1392,7 @@ export default function ReportsPage() {
 
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                          <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#0284c7", boxShadow: "0 0 6px rgba(2, 132, 199, 0.5)" }} />
+                          <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#976132", boxShadow: "0 0 6px rgba(151, 97, 50, 0.5)" }} />
                           <span style={{ fontSize: "11px", color: "#334155" }}>Returned for Edit</span>
                         </div>
                         <span style={{ fontSize: "11px", color: "#64748b", fontWeight: 600 }}>10 (3.55%)</span>
@@ -1493,7 +1489,7 @@ export default function ReportsPage() {
                           borderRadius: "7px",
                           border: "none",
                           background: viewMode === "cards" ? "#eff6ff" : "transparent",
-                          color: viewMode === "cards" ? "#4f46e5" : "#94a3b8",
+                          color: viewMode === "cards" ? "#ca9261" : "#94a3b8",
                           cursor: "pointer",
                           display: "flex",
                           alignItems: "center",
@@ -1512,7 +1508,7 @@ export default function ReportsPage() {
                           borderRadius: "7px",
                           border: "none",
                           background: viewMode === "table" ? "#eff6ff" : "transparent",
-                          color: viewMode === "table" ? "#4f46e5" : "#94a3b8",
+                          color: viewMode === "table" ? "#ca9261" : "#94a3b8",
                           cursor: "pointer",
                           display: "flex",
                           alignItems: "center",
@@ -1569,7 +1565,7 @@ export default function ReportsPage() {
                             <tr key={s.id} className="table-row-3d" style={{ borderBottom: "1px solid #f1f5f9" }}>
                               <td style={{ padding: "14px 10px", fontSize: "13px", fontWeight: 700, color: "#0f172a" }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                  <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: s.dotColor || "#6366f1" }} />
+                                  <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: s.dotColor || "#d4a780" }} />
                                   <span>{s.name}</span>
                                 </div>
                                 <span style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 500 }}>{s.code}</span>
@@ -1662,7 +1658,7 @@ export default function ReportsPage() {
                             {/* Subject Header */}
                             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "8px" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: s.dotColor || "#6366f1", flexShrink: 0 }} />
+                                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: s.dotColor || "#d4a780", flexShrink: 0 }} />
                                 <div>
                                   <h4 style={{ fontSize: "13.5px", fontWeight: 700, color: "#0f172a", margin: 0 }}>
                                     {s.name}
@@ -1707,8 +1703,8 @@ export default function ReportsPage() {
                                 <div style={{ fontSize: "13px", fontWeight: 700, color: "#ea580c" }}>{pending}</div>
                               </div>
                               <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: "8px", padding: "6px 8px" }}>
-                                <div style={{ fontSize: "10px", color: "#0369a1", fontWeight: 600 }}>Returned</div>
-                                <div style={{ fontSize: "13px", fontWeight: 700, color: "#0284c7" }}>{returned}</div>
+                                <div style={{ fontSize: "10px", color: "#7b4f29", fontWeight: 600 }}>Returned</div>
+                                <div style={{ fontSize: "13px", fontWeight: 700, color: "#976132" }}>{returned}</div>
                               </div>
                               <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "6px 8px" }}>
                                 <div style={{ fontSize: "10px", color: "#991b1b", fontWeight: 600 }}>Rejected</div>

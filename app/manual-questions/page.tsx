@@ -15,6 +15,7 @@ import {
   CrudActionButtons,
 } from "../components/CrudModal";
 import PortalFooter from "../components/PortalFooter";
+import { confirmDialog } from "../components/ConfirmDialog";
 import PortalHeader from "../components/PortalHeader";
 import {
   Home,
@@ -536,7 +537,7 @@ export default function ManualQuestionsPage() {
     topic: q.topic || "Core Concept",
     type: q.type || "Descriptive",
     typeBg: q.type === "MCQ" ? "#f3e8ff" : "#eff6ff",
-    typeColor: q.type === "MCQ" ? "#7e22ce" : "#2563eb",
+    typeColor: q.type === "MCQ" ? "#b4743c" : "#c3844d",
     difficulty: q.difficulty,
     marks: q.marks,
     status: q.status as any,
@@ -632,8 +633,8 @@ export default function ManualQuestionsPage() {
     setSelectedIds([]);
   };
 
-  const handleBulkDelete = () => {
-    if (window.confirm(`Are you sure you want to delete ${selectedIds.length} questions?`)) {
+  const handleBulkDelete = async () => {
+    if (await confirmDialog(`Are you sure you want to delete ${selectedIds.length} questions?`, { danger: true })) {
       examStore.bulkDeleteQuestions(selectedIds);
       setToast(`Deleted ${selectedIds.length} questions from question bank.`);
       setSelectedIds([]);
@@ -683,10 +684,10 @@ export default function ManualQuestionsPage() {
       }}
     >
       {/* ================================= SIDEBAR ================================= */}
-      <aside
+      <aside className="digital-vfx-sidebar"
         style={{
           width: "260px",
-          background: "linear-gradient(180deg, #090e1f 0%, #060914 100%)",
+          background: "linear-gradient(180deg, #1c120c 0%, #120c08 100%)",
           color: "#94a3b8",
           display: "flex",
           flexDirection: "column",
@@ -701,11 +702,7 @@ export default function ManualQuestionsPage() {
         <div>
           {/* RGU Logo */}
           <div style={{ padding: "6px 10px 24px 10px" }}>
-            <img
-              src="/images/rgu-logo.svg"
-              alt="Rathinam Global (Deemed to be University)"
-              style={{ maxHeight: "38px", width: "auto", objectFit: "contain" }}
-            />
+            <div className="brand-orbit-logo" aria-label="Rathinam Global (Deemed to be University)"><span className="brand-orbit-mark">RG</span><span className="brand-orbit-name">Rathinam Global</span></div>
           </div>
 
           {/* Navigation Items */}
@@ -756,7 +753,7 @@ export default function ManualQuestionsPage() {
             <Shield
               size={19}
               style={{
-                filter: "drop-shadow(0 0 6px rgba(96, 165, 250, 0.8))",
+                filter: "drop-shadow(0 0 6px rgba(214, 170, 132, 0.8))",
               }}
             />
           </div>
@@ -858,13 +855,13 @@ export default function ManualQuestionsPage() {
                     width: "32px",
                     height: "32px",
                     borderRadius: "10px",
-                    background: "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)",
-                    boxShadow: "0 4px 14px rgba(99, 102, 241, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.5)",
+                    background: "linear-gradient(135deg, #cc9565 0%, #d4a780 100%)",
+                    boxShadow: "0 4px 14px rgba(212, 167, 128, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.5)",
                     color: "#ffffff",
                     animation: "float3D 4s infinite ease-in-out",
                   }}
                 >
-                  <Edit3 size={18} style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 10px rgba(99, 102, 241, 0.8))" }} />
+                  <Edit3 size={18} style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 10px rgba(212, 167, 128, 0.8))" }} />
                 </div>
               </h1>
               <p style={{ fontSize: "13.5px", color: "#64748b", margin: 0 }}>
@@ -898,7 +895,7 @@ export default function ManualQuestionsPage() {
                     size={23}
                     color="#ffffff"
                     style={{
-                      filter: "drop-shadow(0 0 8px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(124, 58, 237, 0.8))",
+                      filter: "drop-shadow(0 0 8px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(201, 144, 94, 0.8))",
                     }}
                   />
                 </div>
@@ -930,7 +927,7 @@ export default function ManualQuestionsPage() {
                     size={23}
                     color="#ffffff"
                     style={{
-                      filter: "drop-shadow(0 0 8px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(6, 182, 212, 0.8))",
+                      filter: "drop-shadow(0 0 8px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(164, 105, 55, 0.8))",
                     }}
                   />
                 </div>
@@ -1021,7 +1018,7 @@ export default function ManualQuestionsPage() {
                 style={{
                   background: "#ffffff",
                   borderRadius: "20px",
-                  border: "1px solid rgba(226, 232, 240, 0.9)",
+                  border: "1px solid rgba(240, 234, 226, 0.9)",
                   padding: "24px",
                   boxShadow: "0 10px 30px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)",
                   transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -1115,12 +1112,12 @@ export default function ManualQuestionsPage() {
                         padding: "8px 18px",
                         borderRadius: "10px",
                         border: "none",
-                        background: "linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)",
+                        background: "linear-gradient(135deg, #c9905e 0%, #ec4899 100%)",
                         color: "#ffffff",
                         fontSize: "12.5px",
                         fontWeight: 700,
                         cursor: "pointer",
-                        boxShadow: "0 4px 14px rgba(124, 58, 237, 0.45)",
+                        boxShadow: "0 4px 14px rgba(201, 144, 94, 0.45)",
                       }}
                     >
                       <Sparkles size={15} style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.8))" }} />
@@ -1137,12 +1134,12 @@ export default function ManualQuestionsPage() {
                         padding: "8px 18px",
                         borderRadius: "10px",
                         border: "none",
-                        background: "linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)",
+                        background: "linear-gradient(135deg, #ca9261 0%, #cc9565 100%)",
                         color: "#ffffff",
                         fontSize: "12.5px",
                         fontWeight: 600,
                         cursor: "pointer",
-                        boxShadow: "0 4px 14px rgba(79, 70, 229, 0.4)",
+                        boxShadow: "0 4px 14px rgba(202, 146, 97, 0.4)",
                       }}
                     >
                       <Plus size={15} />
@@ -1193,7 +1190,7 @@ export default function ManualQuestionsPage() {
                           borderRadius: "7px",
                           border: "none",
                           background: viewMode === "cards" ? "#eff6ff" : "transparent",
-                          color: viewMode === "cards" ? "#4f46e5" : "#94a3b8",
+                          color: viewMode === "cards" ? "#ca9261" : "#94a3b8",
                           cursor: "pointer",
                           display: "flex",
                           alignItems: "center",
@@ -1212,7 +1209,7 @@ export default function ManualQuestionsPage() {
                           borderRadius: "7px",
                           border: "none",
                           background: viewMode === "table" ? "#eff6ff" : "transparent",
-                          color: viewMode === "table" ? "#4f46e5" : "#94a3b8",
+                          color: viewMode === "table" ? "#ca9261" : "#94a3b8",
                           cursor: "pointer",
                           display: "flex",
                           alignItems: "center",
@@ -1230,7 +1227,7 @@ export default function ManualQuestionsPage() {
                 <div style={{ position: "relative", marginBottom: "18px" }}>
                   <Search
                     size={16}
-                    color="#6366f1"
+                    color="#d4a780"
                     style={{ position: "absolute", left: "15px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
                   />
                   <input
@@ -1463,7 +1460,7 @@ export default function ManualQuestionsPage() {
                 style={{
                   background: "#ffffff",
                   borderRadius: "20px",
-                  border: "1px solid rgba(226, 232, 240, 0.9)",
+                  border: "1px solid rgba(240, 234, 226, 0.9)",
                   padding: "24px",
                   boxShadow: "0 10px 30px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)",
                   transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -1485,7 +1482,7 @@ export default function ManualQuestionsPage() {
                   </div>
 
                   <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>
-                    Total: <strong style={{ color: "#4f46e5" }}>{filteredQuestions.length}</strong> questions ({storeQuestions.length} total)
+                    Total: <strong style={{ color: "#ca9261" }}>{filteredQuestions.length}</strong> questions ({storeQuestions.length} total)
                   </div>
                 </div>
 
@@ -1501,12 +1498,12 @@ export default function ManualQuestionsPage() {
                       background: "linear-gradient(135deg, #ede9fe 0%, #e0e7ff 100%)",
                       border: "1px solid #c7d2fe",
                       borderRadius: "12px",
-                      boxShadow: "0 4px 12px rgba(99, 102, 241, 0.15)",
+                      boxShadow: "0 4px 12px rgba(212, 167, 128, 0.15)",
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <CheckCircle2 size={18} color="#4f46e5" />
-                      <span style={{ fontSize: "13px", fontWeight: 700, color: "#3730a3" }}>
+                      <CheckCircle2 size={18} color="#ca9261" />
+                      <span style={{ fontSize: "13px", fontWeight: 700, color: "#9e6635" }}>
                         {selectedIds.length} question{selectedIds.length > 1 ? "s" : ""} selected
                       </span>
                     </div>
@@ -1518,7 +1515,7 @@ export default function ManualQuestionsPage() {
                           padding: "6px 14px",
                           fontSize: "12px",
                           fontWeight: 700,
-                          background: "linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)",
+                          background: "linear-gradient(135deg, #c9905e 0%, #ec4899 100%)",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: "8px",
@@ -1526,7 +1523,7 @@ export default function ManualQuestionsPage() {
                           display: "flex",
                           alignItems: "center",
                           gap: "6px",
-                          boxShadow: "0 2px 8px rgba(124, 58, 237, 0.3)",
+                          boxShadow: "0 2px 8px rgba(201, 144, 94, 0.3)",
                         }}
                       >
                         <Sparkles size={13} />
@@ -1555,7 +1552,7 @@ export default function ManualQuestionsPage() {
                           padding: "6px 12px",
                           fontSize: "12px",
                           fontWeight: 600,
-                          background: "#0ea5e9",
+                          background: "#b9773e",
                           color: "#ffffff",
                           border: "none",
                           borderRadius: "8px",
@@ -1605,13 +1602,13 @@ export default function ManualQuestionsPage() {
                   <div className="no-scrollbar" style={{ overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                       <thead>
-                        <tr style={{ borderBottom: "1px solid #e2e8f0", background: "rgba(248, 250, 252, 0.6)" }}>
+                        <tr style={{ borderBottom: "1px solid #e2e8f0", background: "rgba(252, 250, 248, 0.6)" }}>
                           <th style={{ padding: "12px 10px", width: "34px", borderRadius: "8px 0 0 8px" }}>
                             <input
                               type="checkbox"
                               checked={selectedIds.length === filteredQuestions.length && filteredQuestions.length > 0}
                               onChange={toggleSelectAll}
-                              style={{ cursor: "pointer", accentColor: "#4f46e5", width: "15px", height: "15px" }}
+                              style={{ cursor: "pointer", accentColor: "#ca9261", width: "15px", height: "15px" }}
                             />
                           </th>
                           <th style={{ padding: "12px 12px", fontSize: "12px", fontWeight: 700, color: "#475569", letterSpacing: "0.02em" }}>
@@ -1632,7 +1629,7 @@ export default function ManualQuestionsPage() {
                           <th style={{ padding: "12px 12px", fontSize: "12px", fontWeight: 700, color: "#475569", letterSpacing: "0.02em" }}>
                             STATUS
                           </th>
-                          <th style={{ padding: "12px 12px", fontSize: "12px", fontWeight: 700, color: "#7c3aed", letterSpacing: "0.02em" }}>
+                          <th style={{ padding: "12px 12px", fontSize: "12px", fontWeight: 700, color: "#c9905e", letterSpacing: "0.02em" }}>
                             🤖 AI VERIFICATION
                           </th>
                           <th style={{ padding: "12px 12px", fontSize: "12px", fontWeight: 700, color: "#475569", letterSpacing: "0.02em" }}>
@@ -1666,13 +1663,13 @@ export default function ManualQuestionsPage() {
                           let statusColor = "#16a34a";
                           let statusBorder = "rgba(187, 247, 208, 0.8)";
                           if (item.status === "Draft") {
-                            statusBg = "rgba(224, 242, 254, 0.8)";
-                            statusColor = "#0284c7";
-                            statusBorder = "rgba(186, 230, 253, 0.8)";
+                            statusBg = "rgba(249, 241, 229, 0.8)";
+                            statusColor = "#976132";
+                            statusBorder = "rgba(241, 224, 198, 0.8)";
                           } else if (item.status === "Archived") {
-                            statusBg = "rgba(241, 245, 249, 0.8)";
+                            statusBg = "rgba(249, 246, 241, 0.8)";
                             statusColor = "#64748b";
-                            statusBorder = "rgba(226, 232, 240, 0.8)";
+                            statusBorder = "rgba(240, 234, 226, 0.8)";
                           }
 
                           return (
@@ -1681,7 +1678,7 @@ export default function ManualQuestionsPage() {
                               className="table-row-3d"
                               style={{
                                 borderBottom: "1px solid #f1f5f9",
-                                background: isChecked ? "rgba(99, 102, 241, 0.05)" : "transparent",
+                                background: isChecked ? "rgba(212, 167, 128, 0.05)" : "transparent",
                                 transition: "all 0.15s ease",
                               }}
                             >
@@ -1691,7 +1688,7 @@ export default function ManualQuestionsPage() {
                                   type="checkbox"
                                   checked={isChecked}
                                   onChange={() => toggleSelect(item.id)}
-                                  style={{ cursor: "pointer", accentColor: "#4f46e5", width: "15px", height: "15px" }}
+                                  style={{ cursor: "pointer", accentColor: "#ca9261", width: "15px", height: "15px" }}
                                 />
                               </td>
 
@@ -1713,7 +1710,7 @@ export default function ManualQuestionsPage() {
                                   {item.question}
                                 </div>
                                 <div style={{ display: "flex", gap: "6px", marginTop: "5px", alignItems: "center" }}>
-                                  <span style={{ fontSize: "10px", color: "#6366f1", fontWeight: 700 }}>
+                                  <span style={{ fontSize: "10px", color: "#d4a780", fontWeight: 700 }}>
                                     #{item.id}
                                   </span>
                                 </div>
@@ -1874,7 +1871,7 @@ export default function ManualQuestionsPage() {
                                       cursor: "pointer",
                                     }}
                                   >
-                                    <Sparkles size={11} color="#7c3aed" />
+                                    <Sparkles size={11} color="#c9905e" />
                                     <span>Verify with AI</span>
                                   </button>
                                 )}
@@ -1942,13 +1939,13 @@ export default function ManualQuestionsPage() {
                       let statusColor = "#16a34a";
                       let statusBorder = "rgba(187, 247, 208, 0.8)";
                       if (item.status === "Draft") {
-                        statusBg = "rgba(224, 242, 254, 0.8)";
-                        statusColor = "#0284c7";
-                        statusBorder = "rgba(186, 230, 253, 0.8)";
+                        statusBg = "rgba(249, 241, 229, 0.8)";
+                        statusColor = "#976132";
+                        statusBorder = "rgba(241, 224, 198, 0.8)";
                       } else if (item.status === "Archived") {
-                        statusBg = "rgba(241, 245, 249, 0.8)";
+                        statusBg = "rgba(249, 246, 241, 0.8)";
                         statusColor = "#64748b";
-                        statusBorder = "rgba(226, 232, 240, 0.8)";
+                        statusBorder = "rgba(240, 234, 226, 0.8)";
                       }
 
                       return (
@@ -1958,14 +1955,14 @@ export default function ManualQuestionsPage() {
                           style={{
                             background: isChecked ? "#f5f3ff" : "#ffffff",
                             borderRadius: "16px",
-                            border: isChecked ? "1.5px solid #6366f1" : "1px solid #e2e8f0",
+                            border: isChecked ? "1.5px solid #d4a780" : "1px solid #e2e8f0",
                             padding: "18px",
                             display: "flex",
                             flexDirection: "column",
                             justifyContent: "space-between",
                             gap: "14px",
                             boxShadow: isChecked
-                              ? "0 8px 20px rgba(99, 102, 241, 0.15)"
+                              ? "0 8px 20px rgba(212, 167, 128, 0.15)"
                               : "0 4px 14px rgba(0, 0, 0, 0.03)",
                             transition: "all 0.2s ease",
                           }}
@@ -1985,9 +1982,9 @@ export default function ManualQuestionsPage() {
                                   type="checkbox"
                                   checked={isChecked}
                                   onChange={() => toggleSelect(item.id)}
-                                  style={{ cursor: "pointer", accentColor: "#4f46e5", width: "15px", height: "15px" }}
+                                  style={{ cursor: "pointer", accentColor: "#ca9261", width: "15px", height: "15px" }}
                                 />
-                                <span style={{ fontSize: "11px", fontWeight: 700, color: "#4f46e5", background: "#eef2ff", padding: "2px 7px", borderRadius: "6px" }}>
+                                <span style={{ fontSize: "11px", fontWeight: 700, color: "#ca9261", background: "#eef2ff", padding: "2px 7px", borderRadius: "6px" }}>
                                   #{item.id}
                                 </span>
                                 <span
@@ -2057,12 +2054,12 @@ export default function ManualQuestionsPage() {
                                   overflow: "hidden",
                                   background: "#0f172a",
                                   padding: "8px 10px",
-                                  border: "1px solid rgba(56, 189, 248, 0.35)",
+                                  border: "1px solid rgba(204, 149, 100, 0.35)",
                                   cursor: "pointer",
                                 }}
                                 onClick={() => setViewingQuestion(item.raw)}
                               >
-                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "10.5px", color: "#38bdf8", fontWeight: 700, marginBottom: "4px" }}>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "10.5px", color: "#cc9564", fontWeight: 700, marginBottom: "4px" }}>
                                   <span>🖼️ Diagram Attached ({item.diagramType || "Figure"})</span>
                                   <span style={{ fontSize: "9.5px", color: "#94a3b8" }}>🔍 Inspect</span>
                                 </div>
@@ -2227,7 +2224,7 @@ export default function ManualQuestionsPage() {
             left: 0,
             right: 0,
             bottom: 0,
-            background: "rgba(15, 23, 42, 0.75)",
+            background: "rgba(40, 26, 17, 0.75)",
             backdropFilter: "blur(8px)",
             zIndex: 9999,
             display: "flex",
@@ -2244,7 +2241,7 @@ export default function ManualQuestionsPage() {
               width: "90%",
               textAlign: "center",
               boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)",
-              border: "1px solid rgba(139, 92, 246, 0.3)",
+              border: "1px solid rgba(212, 166, 126, 0.3)",
             }}
           >
             <div
@@ -2252,12 +2249,12 @@ export default function ManualQuestionsPage() {
                 width: "70px",
                 height: "70px",
                 borderRadius: "22px",
-                background: "linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)",
+                background: "linear-gradient(135deg, #c9905e 0%, #ec4899 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 margin: "0 auto 20px auto",
-                boxShadow: "0 10px 25px rgba(124, 58, 237, 0.5)",
+                boxShadow: "0 10px 25px rgba(201, 144, 94, 0.5)",
               }}
             >
               <Sparkles size={36} color="#ffffff" style={{ filter: "drop-shadow(0 0 8px rgba(255,255,255,0.9))" }} />
@@ -2275,14 +2272,14 @@ export default function ManualQuestionsPage() {
                 style={{
                   height: "100%",
                   width: aiScanStep === 1 ? "35%" : aiScanStep === 2 ? "70%" : "98%",
-                  background: "linear-gradient(90deg, #7c3aed 0%, #ec4899 100%)",
+                  background: "linear-gradient(90deg, #c9905e 0%, #ec4899 100%)",
                   transition: "width 0.4s ease-in-out",
                   borderRadius: "10px",
                 }}
               />
             </div>
 
-            <div style={{ fontSize: "12px", fontWeight: 700, color: "#7c3aed" }}>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: "#c9905e" }}>
               {aiScanStep === 1 && "🔍 Step 1: Parsing Question Syntax & Structure..."}
               {aiScanStep === 2 && "🧠 Step 2: Evaluating Bloom's Taxonomy Level & Difficulty..."}
               {aiScanStep === 3 && "✅ Step 3: Finalizing AI Audit Quality Score..."}
@@ -2309,7 +2306,7 @@ export default function ManualQuestionsPage() {
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(15, 23, 42, 0.75)",
+            background: "rgba(40, 26, 17, 0.75)",
             backdropFilter: "blur(6px)",
             zIndex: 9999,
             display: "flex",
@@ -2333,7 +2330,7 @@ export default function ManualQuestionsPage() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div style={{ padding: "20px 24px", background: "linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)", color: "#ffffff", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ padding: "20px 24px", background: "linear-gradient(135deg, #7e512a 0%, #9a6333 100%)", color: "#ffffff", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                 <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Printer size={22} color="#ffffff" />
@@ -2502,7 +2499,7 @@ export default function ManualQuestionsPage() {
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(15, 23, 42, 0.85)",
+            background: "rgba(40, 26, 17, 0.85)",
             backdropFilter: "blur(8px)",
             zIndex: 99999,
             display: "flex",
@@ -2557,7 +2554,7 @@ export default function ManualQuestionsPage() {
                         fontSize: "11.5px",
                         fontWeight: 700,
                         cursor: "pointer",
-                        background: sopConfig.selectedPaperSet === setLabel ? "#3b82f6" : "transparent",
+                        background: sopConfig.selectedPaperSet === setLabel ? "#cc9565" : "transparent",
                         color: sopConfig.selectedPaperSet === setLabel ? "#ffffff" : "#94a3b8",
                       }}
                     >

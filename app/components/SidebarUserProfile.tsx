@@ -44,8 +44,8 @@ export default function SidebarUserProfile() {
         className="user-avatar-badge"
         style={{
           background: user.avatarBg
-            ? `radial-gradient(circle at 35% 30%, ${user.avatarBg}, #1e1b4b)`
-            : "radial-gradient(circle at 35% 30%, #7c3aed, #4c1d95)",
+            ? `radial-gradient(circle at 35% 30%, ${user.avatarBg}, #482f1e)`
+            : "radial-gradient(circle at 35% 30%, #c9905e, #86562d)",
         }}
       >
         <span>{initial}</span>

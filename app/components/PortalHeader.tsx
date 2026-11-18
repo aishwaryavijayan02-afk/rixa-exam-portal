@@ -27,8 +27,6 @@ import {
   Layers,
   HelpCircle,
   Menu,
-  Moon,
-  Sun,
   GitBranch,
   Archive,
   BookCheck,
@@ -44,48 +42,16 @@ interface PortalHeaderProps {
 export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
+  // The portal always uses the light cream & brown theme.
   useEffect(() => {
-    const savedMode = localStorage.getItem("exam_cell_dark_mode");
-    const shouldBeDark = savedMode === "true";
-    setIsDarkMode(shouldBeDark);
-    if (shouldBeDark) {
-      document.documentElement.classList.add("dark-theme");
-      document.body?.classList.add("dark-theme");
-    } else {
+    const applyLight = () => {
       document.documentElement.classList.remove("dark-theme");
       document.body?.classList.remove("dark-theme");
-    }
-
-    const handleSync = (e: any) => {
-      const isDark = e.detail?.isDark ?? (localStorage.getItem("exam_cell_dark_mode") === "true");
-      setIsDarkMode(isDark);
-      if (isDark) {
-        document.documentElement.classList.add("dark-theme");
-        document.body?.classList.add("dark-theme");
-      } else {
-        document.documentElement.classList.remove("dark-theme");
-        document.body?.classList.remove("dark-theme");
-      }
     };
-    window.addEventListener("exam-cell-dark-mode-change", handleSync as EventListener);
-    return () => window.removeEventListener("exam-cell-dark-mode-change", handleSync as EventListener);
+    applyLight();
+    window.addEventListener("exam-cell-dark-mode-change", applyLight);
+    return () => window.removeEventListener("exam-cell-dark-mode-change", applyLight);
   }, []);
-
-  const toggleDarkMode = () => {
-    const newMode = !isDarkMode;
-    setIsDarkMode(newMode);
-    localStorage.setItem("exam_cell_dark_mode", String(newMode));
-    if (newMode) {
-      document.documentElement.classList.add("dark-theme");
-      document.body?.classList.add("dark-theme");
-    } else {
-      document.documentElement.classList.remove("dark-theme");
-      document.body?.classList.remove("dark-theme");
-    }
-    window.dispatchEvent(new CustomEvent("exam-cell-dark-mode-change", { detail: { isDark: newMode } }));
-  };
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -368,20 +334,6 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
             <GitBranch size={20} color="#475569" style={{ transition: "all 0.2s ease" }} />
           </a>
           
-          {/* Dark Mode Toggle */}
-          <div
-            className="header-icon-btn-3d"
-            onClick={toggleDarkMode}
-            style={{ cursor: "pointer", position: "relative" }}
-            title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-          >
-            {isDarkMode ? (
-              <Sun size={20} color="#f59e0b" style={{ transition: "all 0.2s ease" }} />
-            ) : (
-              <Moon size={20} color="#475569" style={{ transition: "all 0.2s ease" }} />
-            )}
-          </div>
-
           {/* Notification Bell */}
           <div ref={notifRef} style={{ position: "relative" }}>
             <div
@@ -410,7 +362,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
                   background: "#ffffff",
                   borderRadius: "14px",
                   border: "1px solid #e2e8f0",
-                  boxShadow: "0 18px 40px -8px rgba(15, 23, 42, 0.16)",
+                  boxShadow: "0 18px 40px -8px rgba(40, 26, 17, 0.16)",
                   padding: "14px",
                   zIndex: 100,
                   animation: "slideDownFade 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -454,7 +406,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
                     background: "none",
                     border: "none",
                     fontSize: "11.5px",
-                    color: "#6366f1",
+                    color: "#d4a780",
                     fontWeight: 600,
                     cursor: "pointer",
                   }}
@@ -584,7 +536,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
                 background: "#ffffff",
                 borderRadius: "14px",
                 border: "1px solid #e2e8f0",
-                boxShadow: "0 18px 40px -8px rgba(15, 23, 42, 0.16)",
+                boxShadow: "0 18px 40px -8px rgba(40, 26, 17, 0.16)",
                 padding: "14px",
                 zIndex: 100,
                 animation: "slideDownFade 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -606,7 +558,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
                     fontSize: "10px",
                     fontWeight: 700,
                     background: unreadMailCount > 0 ? "#fee2e2" : "#e0e7ff",
-                    color: unreadMailCount > 0 ? "#dc2626" : "#4338ca",
+                    color: unreadMailCount > 0 ? "#dc2626" : "#c07d42",
                     padding: "2px 8px",
                     borderRadius: "10px",
                   }}
@@ -640,7 +592,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
                         <strong style={{ fontSize: "12px", color: "#1e293b" }}>{m.senderName} ({m.senderRole})</strong>
                         <span style={{ fontSize: "10px", color: "#94a3b8" }}>{m.timeAgo || "Just now"}</span>
                       </div>
-                      <div style={{ fontSize: "11.5px", fontWeight: 600, color: "#4f46e5", marginTop: "2px" }}>
+                      <div style={{ fontSize: "11.5px", fontWeight: 600, color: "#ca9261", marginTop: "2px" }}>
                         {m.subject}
                       </div>
                       <div style={{ fontSize: "11px", color: "#64748b", marginTop: "1px", lineHeight: "1.3", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -662,13 +614,13 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
                     flex: 1,
                     padding: "8px",
                     borderRadius: "8px",
-                    background: "linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)",
+                    background: "linear-gradient(135deg, #ca9261 0%, #cc9565 100%)",
                     border: "none",
                     fontSize: "12px",
                     fontWeight: 700,
                     color: "#ffffff",
                     cursor: "pointer",
-                    boxShadow: "0 2px 8px rgba(79, 70, 229, 0.3)",
+                    boxShadow: "0 2px 8px rgba(202, 146, 97, 0.3)",
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -709,7 +661,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
                 width: "32px",
                 height: "32px",
                 borderRadius: "50%",
-                background: currentUser.avatarBg || "#6366f1",
+                background: currentUser.avatarBg || "#d4a780",
                 color: "#ffffff",
                 display: "flex",
                 alignItems: "center",
@@ -742,9 +694,9 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
                       currentUser.role === "COE"
                         ? "#15803d"
                         : currentUser.role === "DEAN"
-                        ? "#7e22ce"
+                        ? "#b4743c"
                         : currentUser.role === "HOD"
-                        ? "#0369a1"
+                        ? "#7b4f29"
                         : "#475569",
                   }}
                 >
@@ -757,7 +709,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
 
           {/* User Profile Popover */}
           {isProfileOpen && (
-            <div
+            <div className="profile-menu"
               style={{
                 position: "absolute",
                 top: "calc(100% + 12px)",
@@ -767,7 +719,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
                 background: "#ffffff",
                 borderRadius: "16px",
                 border: "1px solid #e2e8f0",
-                boxShadow: "0 20px 45px -10px rgba(15, 23, 42, 0.18)",
+                boxShadow: "0 20px 45px -10px rgba(40, 26, 17, 0.18)",
                 padding: "16px",
                 zIndex: 100,
                 animation: "slideDownFade 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -775,12 +727,12 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
             >
               {/* Header profile info */}
               <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px", paddingBottom: "12px", borderBottom: "1px solid #f1f5f9" }}>
-                <div
+                <div className="profile-menu-avatar"
                   style={{
                     width: "42px",
                     height: "42px",
                     borderRadius: "50%",
-                    background: currentUser.avatarBg || "#6366f1",
+                    background: currentUser.avatarBg || "#d4a780",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -795,7 +747,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
                 <div>
                   <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#0f172a" }}>{cleanUserName}</div>
                   <div style={{ fontSize: "11px", color: "#64748b" }}>{currentUser.email}</div>
-                  <div style={{ fontSize: "11px", fontWeight: 600, color: "#6366f1", marginTop: "2px" }}>{currentUser.roleTitle}</div>
+                  <div style={{ fontSize: "11px", fontWeight: 600, color: "#d4a780", marginTop: "2px" }}>{currentUser.roleTitle}</div>
                 </div>
               </div>
 
@@ -843,7 +795,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
 
                 <div style={{ height: "1px", background: "#f1f5f9", margin: "4px 0" }} />
 
-                <button
+                <button className="profile-menu-signout"
                   type="button"
                   onClick={() => {
                     authStore.logout();
@@ -926,7 +878,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
             </div>
 
             {/* Navigation Links */}
-            <nav style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1, overflowY: "auto" }}>
+            <nav className="drawer-nav" style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1, overflowY: "auto" }}>
               {mobileNavItems.map((item) => {
                 const IconComp = item.icon;
                 const isActive = activeRoute === item.id || (pathname && pathname.includes(item.id));
@@ -977,6 +929,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
             <div style={{ paddingTop: "14px", borderTop: "1px solid rgba(255, 255, 255, 0.08)", marginTop: "12px" }}>
               <button
                 type="button"
+                className="drawer-support-btn"
                 onClick={() => {
                   setIsMobileMenuOpen(false);
                   if (typeof window !== "undefined") {
@@ -991,8 +944,8 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
                   width: "100%",
                   padding: "9px 12px",
                   borderRadius: "10px",
-                  background: "rgba(99, 102, 241, 0.2)",
-                  border: "1px solid rgba(99, 102, 241, 0.35)",
+                  background: "rgba(212, 167, 128, 0.2)",
+                  border: "1px solid rgba(212, 167, 128, 0.35)",
                   color: "#ffffff",
                   fontSize: "12px",
                   fontWeight: 600,
@@ -1000,13 +953,14 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
                   marginBottom: "8px",
                 }}
               >
-                <Shield size={14} color="#818cf8" />
+                <Shield size={14} />
                 <span>Contact Support</span>
                 <ArrowRight size={13} />
               </button>
 
               <button
                 type="button"
+                className="drawer-signout-btn"
                 onClick={() => {
                   setIsMobileMenuOpen(false);
                   router.push("/");
@@ -1027,7 +981,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
                   cursor: "pointer",
                 }}
               >
-                <LogOut size={14} color="#f87171" />
+                <LogOut size={14} />
                 <span>Sign Out</span>
               </button>
             </div>
@@ -1043,7 +997,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
             position: "fixed",
             inset: 0,
             zIndex: 99999,
-            background: "rgba(15, 23, 42, 0.65)",
+            background: "rgba(40, 26, 17, 0.65)",
             backdropFilter: "blur(6px)",
             display: "flex",
             alignItems: "center",
@@ -1068,7 +1022,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
             {/* Modal Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "linear-gradient(135deg, #ca9261 0%, #cc9565 100%)", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   ✉️
                 </div>
                 <div>
@@ -1222,12 +1176,12 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
                     padding: "9px 22px",
                     borderRadius: "10px",
                     border: "none",
-                    background: "linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)",
+                    background: "linear-gradient(135deg, #ca9261 0%, #cc9565 100%)",
                     color: "#ffffff",
                     fontSize: "12.5px",
                     fontWeight: 700,
                     cursor: "pointer",
-                    boxShadow: "0 4px 14px rgba(79, 70, 229, 0.4)",
+                    boxShadow: "0 4px 14px rgba(202, 146, 97, 0.4)",
                   }}
                 >
                   Send Message

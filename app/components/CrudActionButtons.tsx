@@ -67,14 +67,14 @@ export function CrudActionButtons({
             width: `${size}px`,
             height: `${size}px`,
             borderRadius: "10px",
-            border: "1px solid rgba(139, 92, 246, 0.4)",
-            background: "linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)",
+            border: "1px solid rgba(212, 166, 126, 0.4)",
+            background: "linear-gradient(135deg, #c9905e 0%, #ec4899 100%)",
             color: "#ffffff",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            boxShadow: "0 3px 10px rgba(124, 58, 237, 0.35)",
+            boxShadow: "0 3px 10px rgba(201, 144, 94, 0.35)",
             transition: "all 0.2s ease",
           }}
           onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.08)")}

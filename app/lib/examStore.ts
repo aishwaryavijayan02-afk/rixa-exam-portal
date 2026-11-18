@@ -38,7 +38,7 @@ export interface SyllabusUnit {
 // Sample SVG Diagrams for visual questions
 export const SAMPLE_DIAGRAM_AR_PIPELINE = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 280" width="600" height="280"><rect width="600" height="280" fill="%230f172a" rx="16"/><text x="300" y="38" fill="%2338bdf8" font-size="15" font-family="sans-serif" text-anchor="middle" font-weight="bold">Figure 1.1: AR Spatial Feature Tracking &amp; Rendering Pipeline</text><rect x="30" y="85" width="115" height="75" rx="10" fill="%231e293b" stroke="%2338bdf8" stroke-width="2"/><text x="87" y="118" fill="%23f8fafc" font-size="13" font-family="sans-serif" text-anchor="middle" font-weight="bold">RGB-D Camera</text><text x="87" y="138" fill="%2394a3b8" font-size="11" font-family="sans-serif" text-anchor="middle">Input Stream</text><rect x="180" y="85" width="130" height="75" rx="10" fill="%231e293b" stroke="%23818cf8" stroke-width="2"/><text x="245" y="118" fill="%23818cf8" font-size="13" font-family="sans-serif" text-anchor="middle" font-weight="bold">Vuforia Engine</text><text x="245" y="138" fill="%2394a3b8" font-size="11" font-family="sans-serif" text-anchor="middle">Feature Matrix</text><rect x="345" y="85" width="125" height="75" rx="10" fill="%231e293b" stroke="%23a855f7" stroke-width="2"/><text x="407" y="118" fill="%23a855f7" font-size="13" font-family="sans-serif" text-anchor="middle" font-weight="bold">Pose Estimator</text><text x="407" y="138" fill="%2394a3b8" font-size="11" font-family="sans-serif" text-anchor="middle">Transform 6DoF</text><rect x="495" y="85" width="80" height="75" rx="10" fill="%231e293b" stroke="%234ade80" stroke-width="2"/><text x="535" y="118" fill="%234ade80" font-size="13" font-family="sans-serif" text-anchor="middle" font-weight="bold">3D Overlay</text><text x="535" y="138" fill="%2394a3b8" font-size="11" font-family="sans-serif" text-anchor="middle">Unity View</text><path d="M145 122 H180 M310 122 H345 M470 122 H495" stroke="%2338bdf8" stroke-width="3" stroke-dasharray="4 2"/><polygon points="177,117 185,122 177,127" fill="%2338bdf8"/><polygon points="342,117 350,122 342,127" fill="%2338bdf8"/><polygon points="492,117 500,122 492,127" fill="%2338bdf8"/><rect x="180" y="195" width="290" height="50" rx="8" fill="%231e293b" stroke="%23f59e0b" stroke-width="1.5"/><text x="325" y="225" fill="%23f59e0b" font-size="12" font-family="sans-serif" text-anchor="middle" font-weight="bold">Anchor Storage &amp; Cloud Key Sync</text></svg>`;
 
-export const SAMPLE_DIAGRAM_OPTICS = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 280" width="600" height="280"><rect width="600" height="280" fill="%23090d16" rx="16"/><text x="300" y="38" fill="%23818cf8" font-size="15" font-family="sans-serif" text-anchor="middle" font-weight="bold">Figure 2.1: Digital Camera Convex Lens &amp; Focal Point Optics</text><path d="M50 140 H550 M250 60 Q300 140 250 220 Q200 140 250 60 Z" fill="rgba(99,102,241,0.25)" stroke="%23818cf8" stroke-width="3"/><line x1="80" y1="85" x2="235" y2="115" stroke="%23f43f5e" stroke-width="2.5"/><line x1="235" y1="115" x2="450" y2="140" stroke="%23f43f5e" stroke-width="2.5"/><line x1="80" y1="195" x2="235" y2="165" stroke="%23f43f5e" stroke-width="2.5"/><line x1="235" y1="165" x2="450" y2="140" stroke="%23f43f5e" stroke-width="2.5"/><circle cx="450" cy="140" r="7" fill="%23f43f5e"/><text x="450" y="172" fill="%23f43f5e" font-size="13" font-family="sans-serif" text-anchor="middle" font-weight="bold">Focal Point (F)</text><rect x="495" y="70" width="12" height="140" fill="%2338bdf8" rx="3"/><text x="501" y="232" fill="%2338bdf8" font-size="12" font-family="sans-serif" text-anchor="middle" font-weight="bold">CMOS Sensor</text></svg>`;
+export const SAMPLE_DIAGRAM_OPTICS = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 280" width="600" height="280"><rect width="600" height="280" fill="%23090d16" rx="16"/><text x="300" y="38" fill="%23818cf8" font-size="15" font-family="sans-serif" text-anchor="middle" font-weight="bold">Figure 2.1: Digital Camera Convex Lens &amp; Focal Point Optics</text><path d="M50 140 H550 M250 60 Q300 140 250 220 Q200 140 250 60 Z" fill="rgba(212, 167, 128,0.25)" stroke="%23818cf8" stroke-width="3"/><line x1="80" y1="85" x2="235" y2="115" stroke="%23f43f5e" stroke-width="2.5"/><line x1="235" y1="115" x2="450" y2="140" stroke="%23f43f5e" stroke-width="2.5"/><line x1="80" y1="195" x2="235" y2="165" stroke="%23f43f5e" stroke-width="2.5"/><line x1="235" y1="165" x2="450" y2="140" stroke="%23f43f5e" stroke-width="2.5"/><circle cx="450" cy="140" r="7" fill="%23f43f5e"/><text x="450" y="172" fill="%23f43f5e" font-size="13" font-family="sans-serif" text-anchor="middle" font-weight="bold">Focal Point (F)</text><rect x="495" y="70" width="12" height="140" fill="%2338bdf8" rx="3"/><text x="501" y="232" fill="%2338bdf8" font-size="12" font-family="sans-serif" text-anchor="middle" font-weight="bold">CMOS Sensor</text></svg>`;
 
 export const SAMPLE_DIAGRAM_RIGGING = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 280" width="600" height="280"><rect width="600" height="280" fill="%23041416" rx="16"/><text x="300" y="38" fill="%232dd4bf" font-size="15" font-family="sans-serif" text-anchor="middle" font-weight="bold">Figure 3.1: Character Skeleton Bone Joint Hierarchy &amp; Kinematics</text><g stroke="%232dd4bf" stroke-width="3" fill="none"><circle cx="300" cy="75" r="20" stroke="%232dd4bf"/><line x1="300" y1="95" x2="300" y2="185"/><circle cx="300" cy="120" r="6" fill="%232dd4bf"/><line x1="300" y1="120" x2="230" y2="155"/><line x1="230" y1="155" x2="190" y2="205"/><circle cx="230" cy="155" r="5" fill="%23f43f5e"/><circle cx="190" cy="205" r="5" fill="%23f43f5e"/><line x1="300" y1="120" x2="370" y2="155"/><line x1="370" y1="155" x2="410" y2="205"/><circle cx="370" cy="155" r="5" fill="%23f43f5e"/><circle cx="410" cy="205" r="5" fill="%23f43f5e"/><circle cx="300" cy="185" r="6" fill="%232dd4bf"/><line x1="300" y1="185" x2="260" y2="250"/><line x1="300" y1="185" x2="340" y2="250"/></g></svg>`;
 
@@ -1109,7 +1109,7 @@ export const examStore = {
         id: subject.id || `sub-${Date.now()}`,
         name: cleanName,
         code: subject.code || "SUB101",
-        dotColor: subject.dotColor || "#6366f1",
+        dotColor: subject.dotColor || "#d4a780",
         totalQuestions: Number(subject.totalQuestions || 0),
         completed: subject.completed || "0 (0%)",
         approved: Number(subject.approved || 0),
@@ -1233,7 +1233,7 @@ export const examStore = {
         id: `sub-${Date.now()}-${idx}`,
         name: s.name || "Untitled Subject",
         code: s.code || `SUB-${100 + idx}`,
-        dotColor: s.dotColor || "#6366f1",
+        dotColor: s.dotColor || "#d4a780",
         totalQuestions: Number(s.totalQuestions || 0),
         completed: s.completed || "0 (0%)",
         approved: Number(s.approved || 0),
@@ -2270,7 +2270,7 @@ export const examStore = {
       questionsContributed: Number(item.questionsContributed || 0),
       pendingReviews: Number(item.pendingReviews || 0),
       status: item.status || "Active",
-      avatarBg: item.avatarBg || "linear-gradient(135deg, #6366f1, #818cf8)",
+      avatarBg: item.avatarBg || "linear-gradient(135deg, #d4a780, #deba9b)",
     };
     list.unshift(newItem);
     saveToStorage("staff_faculty", list);
@@ -3028,6 +3028,34 @@ export const examStore = {
     return updated;
   },
 
+  /**
+   * Deletes every question imported from one uploaded file by one staff
+   * member, locally and on Supabase, so it also disappears from the HOD /
+   * Dean / COE review screens. Returns the number of questions removed.
+   */
+  deleteQuestionsBySource(sourceFile: string, ownerEmail?: string, ownerName?: string): number {
+    const clean = (value: string) => value.toLowerCase().replace(/^(mr\.|mrs\.|ms\.|dr\.|prof\.)\s*/i, "").trim();
+    const ids = this.getQuestions()
+      .filter((q) => q.sourceFile === sourceFile)
+      .filter((q) =>
+        (!ownerEmail && !ownerName) ||
+        (ownerEmail && (q.email || "").toLowerCase() === ownerEmail.toLowerCase()) ||
+        (ownerName && clean(q.uploadedBy || "") === clean(ownerName)),
+      )
+      .map((q) => String(q.id));
+    if (ids.length === 0) return 0;
+    const deleted = this.bulkDeleteQuestions(ids);
+    this.recalculateSubjectStats();
+    if (isSupabaseConfigured()) {
+      for (let i = 0; i < ids.length; i += 200) {
+        supabase.from("questions").delete().in("id", ids.slice(i, i + 200)).then(({ error }) => {
+          if (error) console.warn("Supabase question bank delete error:", error.message);
+        });
+      }
+    }
+    return deleted;
+  },
+
   bulkDeleteQuestions(ids: (number | string)[]): number {
     const list = this.getQuestions();
     const idSet = new Set(ids.map(String));
@@ -3283,7 +3311,7 @@ export const examStore = {
           questionsContributed: Number(f.questions_contributed || 0),
           pendingReviews: Number(f.pending_reviews || 0),
           status: f.status || "Active",
-          avatarBg: f.avatar_bg || "linear-gradient(135deg, #6366f1, #818cf8)",
+          avatarBg: f.avatar_bg || "linear-gradient(135deg, #d4a780, #deba9b)",
         }));
         this.setStaffFacultyList(remoteFaculty, false);
       }

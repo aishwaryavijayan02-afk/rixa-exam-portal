@@ -219,9 +219,9 @@ export default function StaffFacultyPage() {
         label: `${syllabusUnits}/5 Units Uploaded`,
         subtext: "In Progress (Partial)",
         badgeBg: "#eff6ff",
-        badgeColor: "#2563eb",
+        badgeColor: "#c3844d",
         badgeBorder: "1px solid #bfdbfe",
-        progressColor: "linear-gradient(90deg, #3b82f6, #2563eb)",
+        progressColor: "linear-gradient(90deg, #cc9565, #c3844d)",
         state: "In Progress",
       };
     } else {
@@ -272,9 +272,9 @@ export default function StaffFacultyPage() {
         label: `${questionsCount}/25 Qs Uploaded`,
         subtext: "Draft Submissions",
         badgeBg: "#eff6ff",
-        badgeColor: "#2563eb",
+        badgeColor: "#c3844d",
         badgeBorder: "1px solid #bfdbfe",
-        progressColor: "linear-gradient(90deg, #60a5fa, #3b82f6)",
+        progressColor: "linear-gradient(90deg, #d6aa84, #cc9565)",
         state: "In Progress",
       };
     } else {
@@ -381,25 +381,25 @@ export default function StaffFacultyPage() {
   const getDesignationBadge = (desig: string) => {
     if (desig.toLowerCase().includes("head") || desig.toLowerCase().includes("hod")) {
       return {
-        bg: "linear-gradient(135deg, rgba(79, 70, 229, 0.15) 0%, rgba(99, 102, 241, 0.25) 100%)",
-        border: "1px solid rgba(79, 70, 229, 0.4)",
-        color: "#4338ca",
+        bg: "linear-gradient(135deg, rgba(202, 146, 97, 0.15) 0%, rgba(212, 167, 128, 0.25) 100%)",
+        border: "1px solid rgba(202, 146, 97, 0.4)",
+        color: "#c07d42",
         label: "🏛️ " + desig,
       };
     }
     if (desig.toLowerCase().includes("associate professor")) {
       return {
-        bg: "linear-gradient(135deg, rgba(147, 51, 234, 0.12) 0%, rgba(168, 85, 247, 0.2) 100%)",
-        border: "1px solid rgba(147, 51, 234, 0.35)",
-        color: "#7e22ce",
+        bg: "linear-gradient(135deg, rgba(199, 139, 86, 0.12) 0%, rgba(211, 163, 122, 0.2) 100%)",
+        border: "1px solid rgba(199, 139, 86, 0.35)",
+        color: "#b4743c",
         label: "🌟 " + desig,
       };
     }
     if (desig.toLowerCase().includes("assistant professor")) {
       return {
-        bg: "linear-gradient(135deg, rgba(2, 132, 199, 0.12) 0%, rgba(56, 189, 248, 0.2) 100%)",
-        border: "1px solid rgba(2, 132, 199, 0.35)",
-        color: "#0369a1",
+        bg: "linear-gradient(135deg, rgba(151, 97, 50, 0.12) 0%, rgba(204, 149, 100, 0.2) 100%)",
+        border: "1px solid rgba(151, 97, 50, 0.35)",
+        color: "#7b4f29",
         label: "🎓 " + desig,
       };
     }
@@ -484,7 +484,7 @@ export default function StaffFacultyPage() {
       reportingTo: currentUser.role === "HOD" ? "HOD" : "DEAN",
       reportingOfficerName: `${hodObj.name} (HOD)`,
       status: "Active",
-      avatarBg: "linear-gradient(135deg, #4f46e5, #3b82f6)",
+      avatarBg: "linear-gradient(135deg, #ca9261, #cc9565)",
       questionsContributed: 0,
       pendingReviews: 0,
     });
@@ -721,10 +721,10 @@ export default function StaffFacultyPage() {
         }}
       >
         {/* ================= SIDEBAR ================= */}
-        <aside
+        <aside className="digital-vfx-sidebar"
           style={{
             width: "260px",
-            background: "linear-gradient(180deg, #090e1f 0%, #060914 100%)",
+            background: "linear-gradient(180deg, #1c120c 0%, #120c08 100%)",
             color: "#94a3b8",
             display: "flex",
             flexDirection: "column",
@@ -739,16 +739,7 @@ export default function StaffFacultyPage() {
           <div>
             {/* RGU Logo */}
             <div style={{ padding: "6px 10px 24px 10px", position: "relative" }}>
-              <img
-                src="/images/rgu-logo.svg"
-                alt="Rathinam Global University"
-                style={{
-                  maxHeight: "38px",
-                  width: "auto",
-                  objectFit: "contain",
-                  filter: "drop-shadow(0 0 12px rgba(99, 102, 241, 0.35))",
-                }}
-              />
+              <div className="brand-orbit-logo" aria-label="Rathinam Global (Deemed to be University)"><span className="brand-orbit-mark">RG</span><span className="brand-orbit-name">Rathinam Global</span></div>
             </div>
 
             {/* Navigation Items */}
@@ -882,8 +873,8 @@ export default function StaffFacultyPage() {
                     transition: "all 0.2s ease",
                   }}
                   onFocus={(e) => {
-                    e.currentTarget.style.borderColor = "#6366f1";
-                    e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99, 102, 241, 0.12)";
+                    e.currentTarget.style.borderColor = "#d4a780";
+                    e.currentTarget.style.boxShadow = "0 0 0 3px rgba(212, 167, 128, 0.12)";
                   }}
                   onBlur={(e) => {
                     e.currentTarget.style.borderColor = "#e2e8f0";
@@ -909,14 +900,14 @@ export default function StaffFacultyPage() {
                       style={{
                         padding: "7px 14px",
                         borderRadius: "8px",
-                        border: isActive ? "1px solid #4f46e5" : "1px solid #e2e8f0",
-                        background: isActive ? "#4f46e5" : "#ffffff",
+                        border: isActive ? "1px solid #ca9261" : "1px solid #e2e8f0",
+                        background: isActive ? "#ca9261" : "#ffffff",
                         color: isActive ? "#ffffff" : "#475569",
                         fontSize: "12px",
                         fontWeight: 700,
                         cursor: "pointer",
                         transition: "all 0.15s ease",
-                        boxShadow: isActive ? "0 2px 8px rgba(79, 70, 229, 0.3)" : "none",
+                        boxShadow: isActive ? "0 2px 8px rgba(202, 146, 97, 0.3)" : "none",
                       }}
                     >
                       {tab.label}
@@ -1014,12 +1005,12 @@ export default function StaffFacultyPage() {
                     padding: "8px 14px",
                     borderRadius: "8px",
                     border: "none",
-                    background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+                    background: "linear-gradient(135deg, #ca9261 0%, #c9905e 100%)",
                     color: "#ffffff",
                     fontSize: "12.5px",
                     fontWeight: 700,
                     cursor: "pointer",
-                    boxShadow: "0 2px 8px rgba(79, 70, 229, 0.3)",
+                    boxShadow: "0 2px 8px rgba(202, 146, 97, 0.3)",
                     transition: "all 0.15s ease",
                   }}
                   title="Allocate Faculty to Institutional Hierarchy"
@@ -1177,14 +1168,14 @@ export default function StaffFacultyPage() {
                               width: "48px",
                               height: "48px",
                               borderRadius: "14px",
-                              background: fac.avatarBg || "linear-gradient(135deg, #6366f1, #818cf8)",
+                              background: fac.avatarBg || "linear-gradient(135deg, #d4a780, #deba9b)",
                               color: "#ffffff",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
                               fontWeight: 800,
                               fontSize: "18px",
-                              boxShadow: "0 4px 12px rgba(99, 102, 241, 0.3)",
+                              boxShadow: "0 4px 12px rgba(212, 167, 128, 0.3)",
                               flexShrink: 0,
                             }}
                           >
@@ -1260,7 +1251,7 @@ export default function StaffFacultyPage() {
                             gap: "6px",
                           }}
                         >
-                          <Building size={14} color="#6366f1" style={{ flexShrink: 0 }} />
+                          <Building size={14} color="#d4a780" style={{ flexShrink: 0 }} />
                           <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             Reports to: <strong>{fac.reportingOfficerName}</strong>
                           </span>
@@ -1277,7 +1268,7 @@ export default function StaffFacultyPage() {
                                 key={idx}
                                 style={{
                                   background: "#eff6ff",
-                                  color: "#2563eb",
+                                  color: "#c3844d",
                                   border: "1px solid #dbeafe",
                                   borderRadius: "6px",
                                   padding: "3px 8px",
@@ -1310,7 +1301,7 @@ export default function StaffFacultyPage() {
                           </div>
                           <div>
                             <span style={{ fontSize: "10.5px", color: "#64748b", display: "block" }}>Questions Added:</span>
-                            <strong style={{ fontSize: "12px", color: "#4f46e5" }}>
+                            <strong style={{ fontSize: "12px", color: "#ca9261" }}>
                               {fac.questionsContributed} Questions
                             </strong>
                           </div>
@@ -1348,7 +1339,7 @@ export default function StaffFacultyPage() {
                             e.currentTarget.style.borderColor = "#e2e8f0";
                           }}
                         >
-                          <Eye size={14} color="#6366f1" />
+                          <Eye size={14} color="#d4a780" />
                           <span>View Profile</span>
                         </button>
 
@@ -1360,7 +1351,7 @@ export default function StaffFacultyPage() {
                             borderRadius: "9px",
                             border: "1px solid #c7d2fe",
                             background: "#eef2ff",
-                            color: "#4338ca",
+                            color: "#c07d42",
                             fontSize: "12px",
                             fontWeight: 700,
                             cursor: "pointer",
@@ -1385,7 +1376,7 @@ export default function StaffFacultyPage() {
                             borderRadius: "9px",
                             border: "1px solid #e2e8f0",
                             background: "#ffffff",
-                            color: "#2563eb",
+                            color: "#c3844d",
                             fontSize: "12px",
                             fontWeight: 600,
                             cursor: "pointer",
@@ -1427,7 +1418,7 @@ export default function StaffFacultyPage() {
                 <style>{`
                   .row-clicked {
                     background: #f1f5f9 !important;
-                    box-shadow: inset 4px 0 0 #4f46e5;
+                    box-shadow: inset 4px 0 0 #ca9261;
                     transition: all 0.2s ease;
                   }
                 `}</style>
@@ -1669,14 +1660,14 @@ export default function StaffFacultyPage() {
                                     width: "42px",
                                     height: "42px",
                                     borderRadius: "12px",
-                                    background: fac.avatarBg || "linear-gradient(135deg, #6366f1, #818cf8)",
+                                    background: fac.avatarBg || "linear-gradient(135deg, #d4a780, #deba9b)",
                                     color: "#ffffff",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
                                     fontWeight: 800,
                                     fontSize: "15px",
-                                    boxShadow: "0 2px 8px rgba(99, 102, 241, 0.25)",
+                                    boxShadow: "0 2px 8px rgba(212, 167, 128, 0.25)",
                                     flexShrink: 0,
                                   }}
                                 >
@@ -1742,7 +1733,7 @@ export default function StaffFacultyPage() {
                                     style={{
                                       fontSize: "10.5px",
                                       background: "#eff6ff",
-                                      color: "#2563eb",
+                                      color: "#c3844d",
                                       padding: "2px 6px",
                                       borderRadius: "4px",
                                       fontWeight: 700,
@@ -1970,7 +1961,7 @@ export default function StaffFacultyPage() {
                                     borderRadius: "8px",
                                     border: "1px solid #e0e7ff",
                                     background: "#eef2ff",
-                                    color: "#4f46e5",
+                                    color: "#ca9261",
                                     fontSize: "12px",
                                     fontWeight: 700,
                                     cursor: "pointer",
@@ -1980,12 +1971,12 @@ export default function StaffFacultyPage() {
                                     transition: "all 0.15s ease",
                                   }}
                                   onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = "#4f46e5";
+                                    e.currentTarget.style.background = "#ca9261";
                                     e.currentTarget.style.color = "#ffffff";
                                   }}
                                   onMouseLeave={(e) => {
                                     e.currentTarget.style.background = "#eef2ff";
-                                    e.currentTarget.style.color = "#4f46e5";
+                                    e.currentTarget.style.color = "#ca9261";
                                   }}
                                 >
                                   <Eye size={13} />
@@ -2001,7 +1992,7 @@ export default function StaffFacultyPage() {
                                     borderRadius: "8px",
                                     border: "1px solid #c7d2fe",
                                     background: "#eef2ff",
-                                    color: "#4338ca",
+                                    color: "#c07d42",
                                     fontSize: "12px",
                                     fontWeight: 700,
                                     cursor: "pointer",
@@ -2011,12 +2002,12 @@ export default function StaffFacultyPage() {
                                     transition: "all 0.15s ease",
                                   }}
                                   onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = "#4338ca";
+                                    e.currentTarget.style.background = "#c07d42";
                                     e.currentTarget.style.color = "#ffffff";
                                   }}
                                   onMouseLeave={(e) => {
                                     e.currentTarget.style.background = "#eef2ff";
-                                    e.currentTarget.style.color = "#4338ca";
+                                    e.currentTarget.style.color = "#c07d42";
                                   }}
                                 >
                                   <Layers size={12} />
@@ -2172,7 +2163,7 @@ export default function StaffFacultyPage() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              background: "rgba(15, 23, 42, 0.65)",
+              background: "rgba(40, 26, 17, 0.65)",
               backdropFilter: "blur(6px)",
               padding: "16px",
             }}
@@ -2189,7 +2180,7 @@ export default function StaffFacultyPage() {
                 display: "flex",
                 flexDirection: "column",
                 boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-                border: "1px solid rgba(226, 232, 240, 0.8)",
+                border: "1px solid rgba(240, 234, 226, 0.8)",
                 overflow: "hidden",
               }}
               onClick={(e) => e.stopPropagation()}
@@ -2211,12 +2202,12 @@ export default function StaffFacultyPage() {
                       width: "42px",
                       height: "42px",
                       borderRadius: "12px",
-                      background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+                      background: "linear-gradient(135deg, #ca9261 0%, #c9905e 100%)",
                       color: "#ffffff",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      boxShadow: "0 4px 12px rgba(79, 70, 229, 0.25)",
+                      boxShadow: "0 4px 12px rgba(202, 146, 97, 0.25)",
                     }}
                   >
                     <Layers size={20} />
@@ -2265,16 +2256,16 @@ export default function StaffFacultyPage() {
                 {/* Visual Institutional Hierarchy Trail Ribbon */}
                 <div
                   style={{
-                    background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)",
+                    background: "linear-gradient(135deg, #0f172a 0%, #482f1e 100%)",
                     borderRadius: "14px",
                     padding: "16px 18px",
-                    border: "1px solid rgba(99, 102, 241, 0.3)",
-                    boxShadow: "0 4px 16px rgba(15, 23, 42, 0.15)",
+                    border: "1px solid rgba(212, 167, 128, 0.3)",
+                    boxShadow: "0 4px 16px rgba(40, 26, 17, 0.15)",
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <Sparkles size={15} color="#a5b4fc" />
+                      <Sparkles size={15} color="#e8cfb9" />
                       <span style={{ fontSize: "11px", fontWeight: 800, color: "#e0e7ff", letterSpacing: "0.5px", textTransform: "uppercase" }}>
                         Active Institutional Allocation Chain
                       </span>
@@ -2315,19 +2306,19 @@ export default function StaffFacultyPage() {
                       </div>
                     </div>
 
-                    <ChevronRight size={16} color="#818cf8" style={{ flexShrink: 0 }} />
+                    <ChevronRight size={16} color="#deba9b" style={{ flexShrink: 0 }} />
 
                     {/* Node 2: Dean */}
                     <div style={{ flex: 1, minWidth: "120px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "10px", padding: "10px", border: "1px solid rgba(255,255,255,0.1)" }}>
                       <div style={{ fontSize: "10px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: "3px" }}>
                         2. School Dean
                       </div>
-                      <div style={{ fontSize: "12.5px", fontWeight: 800, color: "#38bdf8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={allocDean.name}>
+                      <div style={{ fontSize: "12.5px", fontWeight: 800, color: "#cc9564", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={allocDean.name}>
                         {allocDean.name}
                       </div>
                     </div>
 
-                    <ChevronRight size={16} color="#818cf8" style={{ flexShrink: 0 }} />
+                    <ChevronRight size={16} color="#deba9b" style={{ flexShrink: 0 }} />
 
                     {/* Node 3: Department */}
                     <div style={{ flex: 1, minWidth: "130px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "10px", padding: "10px", border: "1px solid rgba(255,255,255,0.1)" }}>
@@ -2339,7 +2330,7 @@ export default function StaffFacultyPage() {
                       </div>
                     </div>
 
-                    <ChevronRight size={16} color="#818cf8" style={{ flexShrink: 0 }} />
+                    <ChevronRight size={16} color="#deba9b" style={{ flexShrink: 0 }} />
 
                     {/* Node 4: HOD */}
                     <div style={{ flex: 1, minWidth: "120px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "10px", padding: "10px", border: "1px solid rgba(255,255,255,0.1)" }}>
@@ -2351,10 +2342,10 @@ export default function StaffFacultyPage() {
                       </div>
                     </div>
 
-                    <ChevronRight size={16} color="#818cf8" style={{ flexShrink: 0 }} />
+                    <ChevronRight size={16} color="#deba9b" style={{ flexShrink: 0 }} />
 
                     {/* Node 5: Faculty */}
-                    <div style={{ flex: 1, minWidth: "130px", background: "rgba(99, 102, 241, 0.2)", borderRadius: "10px", padding: "10px", border: "1px solid rgba(129, 140, 248, 0.4)" }}>
+                    <div style={{ flex: 1, minWidth: "130px", background: "rgba(212, 167, 128, 0.2)", borderRadius: "10px", padding: "10px", border: "1px solid rgba(222, 186, 155, 0.4)" }}>
                       <div style={{ fontSize: "10px", fontWeight: 700, color: "#c7d2fe", textTransform: "uppercase", marginBottom: "3px" }}>
                         5. Allocated Faculty
                       </div>
@@ -2545,7 +2536,7 @@ export default function StaffFacultyPage() {
                     <label style={{ fontSize: "12.5px", fontWeight: 700, color: "#1e293b", margin: 0 }}>
                       Step 6: Select Assigned Subject(s) / Exam Papers <span style={{ color: "#ef4444" }}>*</span>
                     </label>
-                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#4f46e5", background: "#eef2ff", padding: "2px 8px", borderRadius: "6px", border: "1px solid #c7d2fe" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#ca9261", background: "#eef2ff", padding: "2px 8px", borderRadius: "6px", border: "1px solid #c7d2fe" }}>
                       Dropdown Selection
                     </span>
                   </div>
@@ -2614,16 +2605,16 @@ export default function StaffFacultyPage() {
                                 alignItems: "center",
                                 gap: "6px",
                                 background: "#eff6ff",
-                                color: "#1e40af",
+                                color: "#9a6333",
                                 border: "1px solid #bfdbfe",
                                 borderRadius: "8px",
                                 padding: "5px 10px",
                                 fontSize: "12px",
                                 fontWeight: 700,
-                                boxShadow: "0 1px 3px rgba(37, 99, 235, 0.1)",
+                                boxShadow: "0 1px 3px rgba(195, 132, 77, 0.1)",
                               }}
                             >
-                              <BookOpen size={13} color="#2563eb" />
+                              <BookOpen size={13} color="#c3844d" />
                               <span>{sub}</span>
                               <button
                                 type="button"
@@ -2747,12 +2738,12 @@ export default function StaffFacultyPage() {
                     padding: "9px 22px",
                     borderRadius: "10px",
                     border: "none",
-                    background: allocErrors.length > 0 ? "#cbd5e1" : "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+                    background: allocErrors.length > 0 ? "#cbd5e1" : "linear-gradient(135deg, #ca9261 0%, #c9905e 100%)",
                     color: "#ffffff",
                     fontSize: "13px",
                     fontWeight: 700,
                     cursor: allocErrors.length > 0 ? "not-allowed" : "pointer",
-                    boxShadow: allocErrors.length > 0 ? "none" : "0 4px 14px rgba(79, 70, 229, 0.35)",
+                    boxShadow: allocErrors.length > 0 ? "none" : "0 4px 14px rgba(202, 146, 97, 0.35)",
                     transition: "all 0.15s ease",
                   }}
                 >

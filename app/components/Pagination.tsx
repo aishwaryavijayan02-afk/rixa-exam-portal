@@ -124,14 +124,14 @@ export default function Pagination({
                 borderRadius: "8px",
                 border: isActive ? "none" : "1px solid #e2e8f0",
                 background: isActive
-                  ? "linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)"
+                  ? "linear-gradient(135deg, #ca9261 0%, #c07d42 100%)"
                   : "#ffffff",
                 color: isActive ? "#ffffff" : "#475569",
                 fontSize: "13px",
                 fontWeight: isActive ? 800 : 600,
                 cursor: "pointer",
                 boxShadow: isActive
-                  ? "0 4px 12px rgba(79, 70, 229, 0.38)"
+                  ? "0 4px 12px rgba(202, 146, 97, 0.38)"
                   : "0 1px 2px rgba(0,0,0,0.03)",
                 display: "flex",
                 alignItems: "center",

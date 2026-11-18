@@ -301,11 +301,10 @@ export default function PrintPaperPage() {
         `}</style>
 
         {/* Sidebar */}
-        <aside
-          className="no-print"
+        <aside className="no-print digital-vfx-sidebar"
           style={{
             width: "260px",
-            background: "linear-gradient(180deg, #090e1f 0%, #060914 100%)",
+            background: "linear-gradient(180deg, #1c120c 0%, #120c08 100%)",
             color: "#94a3b8",
             display: "flex",
             flexDirection: "column",
@@ -319,11 +318,7 @@ export default function PrintPaperPage() {
         >
           <div>
             <div style={{ padding: "6px 10px 24px 10px" }}>
-              <img
-                src="/images/rgu-logo.svg"
-                alt="Rathinam Global (Deemed to be University)"
-                style={{ maxHeight: "38px", width: "auto", objectFit: "contain" }}
-              />
+              <div className="brand-orbit-logo" aria-label="Rathinam Global (Deemed to be University)"><span className="brand-orbit-mark">RG</span><span className="brand-orbit-name">Rathinam Global</span></div>
             </div>
 
             <nav style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -358,7 +353,7 @@ export default function PrintPaperPage() {
 
           <div className="support-card-3d">
             <div className="shield-icon-3d">
-              <Shield size={19} style={{ filter: "drop-shadow(0 0 6px rgba(96, 165, 250, 0.8))" }} />
+              <Shield size={19} style={{ filter: "drop-shadow(0 0 6px rgba(214, 170, 132, 0.8))" }} />
             </div>
             <strong style={{ display: "block", color: "#ffffff", fontSize: "13.5px", marginBottom: "4px", fontWeight: 700 }}>
               Official COE Exam Cell
@@ -398,12 +393,12 @@ export default function PrintPaperPage() {
                     padding: "10px 22px",
                     borderRadius: "12px",
                     border: "none",
-                    background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
+                    background: "linear-gradient(135deg, #c3844d 0%, #b8763d 100%)",
                     color: "#ffffff",
                     fontSize: "13.5px",
                     fontWeight: 700,
                     cursor: "pointer",
-                    boxShadow: "0 4px 14px rgba(37, 99, 235, 0.4)",
+                    boxShadow: "0 4px 14px rgba(195, 132, 77, 0.4)",
                   }}
                 >
                   <Printer size={16} />
@@ -417,7 +412,7 @@ export default function PrintPaperPage() {
               {/* Left Configurator Column */}
               <div className="no-print" style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "20px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "18px" }}>
                 <div style={{ fontSize: "15px", fontWeight: 800, color: "#1e293b", display: "flex", alignItems: "center", gap: "8px", borderBottom: "1px solid #f1f5f9", paddingBottom: "12px" }}>
-                  <SlidersHorizontal size={18} color="#2563eb" />
+                  <SlidersHorizontal size={18} color="#c3844d" />
                   <span>Question Paper Builder</span>
                 </div>
 
@@ -429,7 +424,7 @@ export default function PrintPaperPage() {
                   <select
                     value={selectedSubject}
                     onChange={(e) => setSelectedSubject(e.target.value)}
-                    style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid #cbd5e1", background: "#f8fafc", fontSize: "13px", fontWeight: 700, color: "#1e40af" }}
+                    style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid #cbd5e1", background: "#f8fafc", fontSize: "13px", fontWeight: 700, color: "#9a6333" }}
                   >
                     {subjectsList.map((subj) => (
                       <option key={subj} value={subj}>
@@ -503,7 +498,7 @@ export default function PrintPaperPage() {
                       gap: "10px",
                       padding: "10px 12px",
                       borderRadius: "10px",
-                      border: printMode === "all" ? "2px solid #2563eb" : "1px solid #cbd5e1",
+                      border: printMode === "all" ? "2px solid #c3844d" : "1px solid #cbd5e1",
                       background: printMode === "all" ? "#eff6ff" : "#ffffff",
                       marginBottom: "10px",
                       cursor: "pointer",
@@ -514,10 +509,10 @@ export default function PrintPaperPage() {
                       name="printMode"
                       checked={printMode === "all"}
                       onChange={() => setPrintMode("all")}
-                      style={{ accentColor: "#2563eb" }}
+                      style={{ accentColor: "#c3844d" }}
                     />
                     <div>
-                      <div style={{ fontSize: "12.5px", fontWeight: 700, color: "#1e3a8a" }}>
+                      <div style={{ fontSize: "12.5px", fontWeight: 700, color: "#7e512a" }}>
                         Print ALL Questions in Store ({subjectQs.length} Qs)
                       </div>
                       <div style={{ fontSize: "11px", color: "#64748b" }}>
@@ -534,7 +529,7 @@ export default function PrintPaperPage() {
                       gap: "10px",
                       padding: "10px 12px",
                       borderRadius: "10px",
-                      border: printMode === "custom" ? "2px solid #2563eb" : "1px solid #cbd5e1",
+                      border: printMode === "custom" ? "2px solid #c3844d" : "1px solid #cbd5e1",
                       background: printMode === "custom" ? "#eff6ff" : "#ffffff",
                       marginBottom: "14px",
                       cursor: "pointer",
@@ -545,10 +540,10 @@ export default function PrintPaperPage() {
                       name="printMode"
                       checked={printMode === "custom"}
                       onChange={() => setPrintMode("custom")}
-                      style={{ accentColor: "#2563eb" }}
+                      style={{ accentColor: "#c3844d" }}
                     />
                     <div>
-                      <div style={{ fontSize: "12.5px", fontWeight: 700, color: "#1e3a8a" }}>
+                      <div style={{ fontSize: "12.5px", fontWeight: 700, color: "#7e512a" }}>
                         Custom Question Breakdown Sliders
                       </div>
                       <div style={{ fontSize: "11px", color: "#64748b" }}>
@@ -563,18 +558,18 @@ export default function PrintPaperPage() {
                       {/* MCQ Questions Slider & Stepper */}
                       <div style={{ background: "#f0f9ff", padding: "12px 14px", borderRadius: "10px", border: "1px solid #bae6fd" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                          <span style={{ fontSize: "12px", fontWeight: 700, color: "#0369a1" }}>📝 Multiple Choice (MCQ) Questions</span>
+                          <span style={{ fontSize: "12px", fontWeight: 700, color: "#7b4f29" }}>📝 Multiple Choice (MCQ) Questions</span>
                           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                             <button
                               type="button"
                               onClick={() => setMcqCount((v) => Math.max(0, v - 1))}
-                              style={{ width: "26px", height: "26px", borderRadius: "50%", border: "1.5px solid #0284c7", background: "#ffffff", color: "#0284c7", fontSize: "15px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
+                              style={{ width: "26px", height: "26px", borderRadius: "50%", border: "1.5px solid #976132", background: "#ffffff", color: "#976132", fontSize: "15px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
                             >−</button>
                             <span style={{ minWidth: "32px", textAlign: "center", fontSize: "14px", fontWeight: 800, color: "#0f172a" }}>{mcqCount}</span>
                             <button
                               type="button"
                               onClick={() => setMcqCount((v) => v + 1)}
-                              style={{ width: "26px", height: "26px", borderRadius: "50%", border: "1.5px solid #0284c7", background: "#0284c7", color: "#ffffff", fontSize: "15px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
+                              style={{ width: "26px", height: "26px", borderRadius: "50%", border: "1.5px solid #976132", background: "#976132", color: "#ffffff", fontSize: "15px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
                             >+</button>
                           </div>
                         </div>
@@ -584,7 +579,7 @@ export default function PrintPaperPage() {
                           max={Math.max(50, subjectQs.length)}
                           value={mcqCount}
                           onChange={(e) => setMcqCount(Number(e.target.value))}
-                          style={{ width: "100%", accentColor: "#0284c7", cursor: "pointer" }}
+                          style={{ width: "100%", accentColor: "#976132", cursor: "pointer" }}
                         />
                       </div>
 
@@ -619,18 +614,18 @@ export default function PrintPaperPage() {
                       {/* Diagram Questions Slider & Stepper */}
                       <div style={{ background: "#faf5ff", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e9d5ff" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                          <span style={{ fontSize: "12px", fontWeight: 700, color: "#7e22ce" }}>📐 Diagram / Figure Attached Questions</span>
+                          <span style={{ fontSize: "12px", fontWeight: 700, color: "#b4743c" }}>📐 Diagram / Figure Attached Questions</span>
                           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                             <button
                               type="button"
                               onClick={() => setDiagramCount((v) => Math.max(0, v - 1))}
-                              style={{ width: "26px", height: "26px", borderRadius: "50%", border: "1.5px solid #9333ea", background: "#ffffff", color: "#9333ea", fontSize: "15px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
+                              style={{ width: "26px", height: "26px", borderRadius: "50%", border: "1.5px solid #c78b56", background: "#ffffff", color: "#c78b56", fontSize: "15px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
                             >−</button>
                             <span style={{ minWidth: "32px", textAlign: "center", fontSize: "14px", fontWeight: 800, color: "#0f172a" }}>{diagramCount}</span>
                             <button
                               type="button"
                               onClick={() => setDiagramCount((v) => v + 1)}
-                              style={{ width: "26px", height: "26px", borderRadius: "50%", border: "1.5px solid #9333ea", background: "#9333ea", color: "#ffffff", fontSize: "15px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
+                              style={{ width: "26px", height: "26px", borderRadius: "50%", border: "1.5px solid #c78b56", background: "#c78b56", color: "#ffffff", fontSize: "15px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
                             >+</button>
                           </div>
                         </div>
@@ -640,7 +635,7 @@ export default function PrintPaperPage() {
                           max={Math.max(30, subjectQs.length)}
                           value={diagramCount}
                           onChange={(e) => setDiagramCount(Number(e.target.value))}
-                          style={{ width: "100%", accentColor: "#9333ea", cursor: "pointer" }}
+                          style={{ width: "100%", accentColor: "#c78b56", cursor: "pointer" }}
                         />
                       </div>
 
