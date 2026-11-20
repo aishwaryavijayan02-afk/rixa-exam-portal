@@ -37,13 +37,21 @@ import JSZip from "jszip";
 import RoleGuard from "../components/RoleGuard";
 import { OriginalQuestionBankPreview, ToastNotification } from "../components/CrudModal";
 import MyUploadsList, { type MyUploadItem } from "../components/MyUploadsList";
-import { confirmDialog } from "../components/ConfirmDialog";
+import { alertDialog, confirmDialog } from "../components/ConfirmDialog";
+import { bloomLevelName, validateQuestionBankBloom, validateSyllabusBloom } from "../lib/bloomTaxonomy";
 import PortalFooter from "../components/PortalFooter";
 import PortalHeader from "../components/PortalHeader";
 import SyllabusDocumentPreview from "../components/SyllabusDocumentPreview";
 
-type ParsedBulkQuestion = Partial<QuestionItem> & { question: string };
+type ParsedBulkQuestion = Partial<QuestionItem> & { question: string; bloomCell?: string };
 type SyllabusUploadFormat = "excel" | "word" | "pdf" | "diagram";
+
+/** Thrown when an upload is not written in Bloom's Taxonomy format. */
+class BloomRejection extends Error {
+  constructor(title: string, public details: string[]) {
+    super(title);
+  }
+}
 
 const cleanCell = (value: unknown) => String(value ?? "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
 
@@ -152,11 +160,15 @@ function rowsToBulkQuestions(rows: string[][], sourceFile: string): ParsedBulkQu
         difficulty: parsedDifficulty as QuestionItem["difficulty"],
         options: options.length ? options : undefined,
         correctAnswer: get(row, ["correctanswer", "answer", "correctoption"], 11) || undefined,
+        bloomCell: get(row, ["bloom", "bloomlevel", "bloomslevel", "bloomstaxonomy", "bloomtaxonomy", "bloomstaxonomylevel", "bl", "btl", "klevel", "knowledgelevel", "cognitivelevel", "taxonomylevel"], -1) || undefined,
         sourceFile,
       } as ParsedBulkQuestion;
     })
     .filter((question): question is ParsedBulkQuestion => Boolean(question));
 }
+
+// Document header lines ("Subject Name: …", "Max Marks: 100", "Part A") are not questions.
+const METADATA_LINE = /^(?:(?:subject|course|paper|department|dept|programme|program|semester|sem|year|regulation|scheme|code|title|max(?:imum)?\s*marks|marks|time|duration|instructions?|note|section|faculty|staff|prepared\s+by|name|date|total)\b[^:?]{0,30}[:\-–]|(?:part|section)\s*[-–]?\s*[a-e]\b[^?]{0,60}$|question\s*bank\b[^?]*$)/i;
 
 function parseTextQuestionBank(text: string, sourceFile: string): ParsedBulkQuestion[] {
   if (/\uFFFD|[\uE000-\uF8FF]/.test(text)) {
@@ -215,7 +227,7 @@ function parseTextQuestionBank(text: string, sourceFile: string): ParsedBulkQues
       current.correctAnswer = answerMatch[1].trim();
     } else if (current) {
       current.question = `${current.question}\n${line}`;
-    } else if (!foundNumberedQuestions && !optionMatch && !answerMatch && line.length >= 5) {
+    } else if (!foundNumberedQuestions && !optionMatch && !answerMatch && line.length >= 5 && !METADATA_LINE.test(line)) {
       current = { question: line, sourceFile, unit: activeUnit, topic: "General", type: activeQuestionType, difficulty: "Medium", marks: 2 };
       finish();
     }
@@ -474,6 +486,29 @@ export default function AcademicVaultPage() {
       } catch {
         documentText = "";
       }
+    }
+
+    // Accept only syllabi whose Course Outcomes follow Bloom's Taxonomy.
+    const rejectSyllabus = (title: string, details: string[]) => {
+      setSyllabusFile(null);
+      setSyllabusFileName(null);
+      setSyllabusFileUrl(null);
+      setSyllabusPreviewText(null);
+      setCustomSyllabusSubject(null);
+      if (syllabusFileRef.current) syllabusFileRef.current.value = "";
+      void alertDialog(details.join("\n"), { title: `Upload rejected — ${title}`, confirmLabel: "OK, I will correct it" });
+    };
+    if (!documentText.trim()) {
+      rejectSyllabus("Syllabus could not be verified", [
+        "The text of this file could not be read, so its Bloom's Taxonomy Course Outcomes cannot be checked.",
+        "Please upload the syllabus as a Word (.docx), PDF or Excel file with Course Outcomes (CO1, CO2, …) written using Bloom's action verbs.",
+      ]);
+      return;
+    }
+    const bloom = validateSyllabusBloom(documentText);
+    if (!bloom.ok) {
+      rejectSyllabus(bloom.title, bloom.details);
+      return;
     }
 
     // Pick the subject (name + code) the uploaded syllabus belongs to: a known
@@ -737,7 +772,6 @@ export default function AcademicVaultPage() {
     setParsedBulkCount(0);
     setIsParsingBulk(true);
     try {
-      await saveQuestionBankDocument(file);
       if (extension === "docx") {
         setBulkSourceText(await extractDocxText(await file.arrayBuffer()));
       } else if (extension === "doc") {
@@ -746,7 +780,26 @@ export default function AcademicVaultPage() {
       if (extension === "doc") {
         throw new Error("Legacy .doc files cannot be decoded safely. Please save the same document as .docx so its original language and text are preserved.");
       }
-      const parsed = await parseBulkQuestionFile(file);
+      if (["png", "jpg", "jpeg", "svg", "webp"].includes(extension)) {
+        throw new BloomRejection("Question bank must be a Word, Excel or PDF document", [
+          "An image cannot be checked for Bloom's Taxonomy levels.",
+          "Put the questions (with diagrams) in a Word or Excel file, tag each question with its Bloom's level (L1–L6) and upload again.",
+        ]);
+      }
+      const rawParsed = await parseBulkQuestionFile(file);
+      if (rawParsed.length) {
+        // Accept only question banks written in Bloom's Taxonomy format.
+        const bloom = validateQuestionBankBloom(rawParsed.map((q) => ({ question: q.question, bloomCell: q.bloomCell })));
+        if (!bloom.ok) throw new BloomRejection(bloom.title, bloom.details);
+        rawParsed.forEach((q, index) => {
+          const level = bloom.levels[index];
+          if (level) q.bloomLevel = bloomLevelName(level) as QuestionItem["bloomLevel"];
+          delete q.bloomCell;
+        });
+      }
+      // Keep the original file (for "View original") only once it is accepted.
+      await saveQuestionBankDocument(file);
+      const parsed = rawParsed;
       setParsedBulkQuestions(parsed);
       setParsedBulkCount(parsed.length);
       if (!parsed.length) {
@@ -810,10 +863,18 @@ export default function AcademicVaultPage() {
         }
       }
     } catch (error) {
-      console.error("Bulk question parsing failed", error);
       setBulkFileName(null);
       setBulkFileUrl(null);
       setBulkSourceText(null);
+      setBulkUploadedSubject(null);
+      setParsedBulkQuestions([]);
+      setParsedBulkCount(0);
+      if (bulkFileRef.current) bulkFileRef.current.value = "";
+      if (error instanceof BloomRejection) {
+        void alertDialog(error.details.join("\n"), { title: `Upload rejected — ${error.message}`, confirmLabel: "OK, I will correct it" });
+        return;
+      }
+      console.error("Bulk question parsing failed", error);
       showToast(error instanceof Error ? error.message : `Unable to read ${file.name}.`, "danger");
     } finally {
       setIsParsingBulk(false);

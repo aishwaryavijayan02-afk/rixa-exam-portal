@@ -20,6 +20,8 @@ export interface ConfirmDialogOptions {
   cancelLabel?: string;
   /** Red styling for destructive actions (delete, clear). */
   danger?: boolean;
+  /** Show only the confirm button (an in-app alert). */
+  hideCancel?: boolean;
 }
 
 function ConfirmModal({
@@ -68,7 +70,7 @@ function ConfirmModal({
         onClick={(event) => event.stopPropagation()}
         style={{
           width: "100%",
-          maxWidth: "420px",
+          maxWidth: options.hideCancel ? "520px" : "420px",
           background: "#ffffff",
           borderRadius: "16px",
           padding: "22px",
@@ -96,14 +98,14 @@ function ConfirmModal({
             <div id="confirm-dialog-title" style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", marginBottom: "6px" }}>
               {options.title || (danger ? "Are you sure?" : "Please confirm")}
             </div>
-            <div id="confirm-dialog-message" style={{ fontSize: "13.5px", lineHeight: 1.5, color: "#475569", wordBreak: "break-word" }}>
+            <div id="confirm-dialog-message" style={{ fontSize: "13.5px", lineHeight: 1.5, color: "#475569", wordBreak: "break-word", whiteSpace: "pre-line", maxHeight: "50vh", overflowY: "auto" }}>
               {message}
             </div>
           </div>
         </div>
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "22px" }}>
-          <button
+          {!options.hideCancel && <button
             type="button"
             onClick={() => onClose(false)}
             style={{
@@ -118,7 +120,7 @@ function ConfirmModal({
             }}
           >
             {options.cancelLabel || "Cancel"}
-          </button>
+          </button>}
           <button
             ref={confirmRef}
             type="button"
@@ -162,4 +164,9 @@ export function confirmDialog(message: string, options: ConfirmDialogOptions = {
     };
     root.render(<ConfirmModal message={message} options={options} onClose={close} />);
   });
+}
+
+/** In-app replacement for window.alert(): resolves when the user clicks OK. */
+export function alertDialog(message: string, options: Omit<ConfirmDialogOptions, "hideCancel"> = {}): Promise<void> {
+  return confirmDialog(message, { danger: true, confirmLabel: "OK", ...options, hideCancel: true }).then(() => undefined);
 }
