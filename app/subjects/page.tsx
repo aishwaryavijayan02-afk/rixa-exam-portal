@@ -53,6 +53,7 @@ import { authStore, AuthUser, hasPermission } from "../lib/auth";
 import { menuForUser } from "../lib/auth";
 import { SCRUTINY_MENU_ITEMS } from "../lib/scrutinyMenu";
 import RoleGuard from "../components/RoleGuard";
+import AcademicSubmissions from "../components/AcademicSubmissions";
 import { ToastNotification } from "../components/CrudModal";
 import PortalFooter from "../components/PortalFooter";
 import PortalHeader from "../components/PortalHeader";
@@ -624,6 +625,9 @@ export default function DepartmentManagementPage() {
   const [schoolSearchQuery, setSchoolSearchQuery] = useState("");
   const [expandedSchoolId, setExpandedSchoolId] = useState<string | null>(null);
   const [showStaffProfiles, setShowStaffProfiles] = useState(false);
+  // Scrutinizer only: Academic Submissions (uploaded syllabi & question banks), opened from a school card.
+  const [submissionsSchool, setSubmissionsSchool] = useState<string | null>(null);
+  const isScrutinizer = currentUser.role === "SCRUTINIZER";
   const [mediaStaffList, setMediaStaffList] = useState<MediaStaffItem[]>(INITIAL_MEDIA_STAFF);
 
   // Reload saved faculty profiles from localStorage on client mount & browser refresh
@@ -1654,6 +1658,48 @@ export default function DepartmentManagementPage() {
                               <span>{showStaffProfiles && expandedSchoolId === school.id ? "Hide Staff Profiles" : "View Staff Profiles"}</span>
                             </div>
                           )}
+                          {isScrutinizer && (() => {
+                            const submissionsActive = submissionsSchool === school.name;
+                            return (
+                              <div
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (submissionsActive) {
+                                    setSubmissionsSchool(null);
+                                    return;
+                                  }
+                                  setSubmissionsSchool(school.name);
+                                  setTimeout(() => {
+                                    document.getElementById("academic-submissions-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                  }, 120);
+                                }}
+                                style={{
+                                  fontSize: "12px",
+                                  fontWeight: 700,
+                                  color: submissionsActive ? theme.surface : theme.accent,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                  background: submissionsActive ? theme.accent : theme.surface,
+                                  padding: "6px 12px",
+                                  borderRadius: "10px",
+                                  border: `1px solid ${submissionsActive ? theme.accent : theme.border}`,
+                                  width: "fit-content",
+                                  cursor: "pointer",
+                                  transition: "all 0.2s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.borderColor = theme.accent;
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.borderColor = submissionsActive ? theme.accent : theme.border;
+                                }}
+                              >
+                                <FileText size={13} />
+                                <span>{submissionsActive ? "Hide Academic Submissions" : "Academic Submissions"}</span>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
 
@@ -1685,6 +1731,11 @@ export default function DepartmentManagementPage() {
               </div>
             </div>
 
+
+            {/* ================= Academic Submissions (Scrutinizer only) ================= */}
+            {isScrutinizer && submissionsSchool && (
+              <AcademicSubmissions schools={RATHINAM_SCHOOLS} initialSchool={submissionsSchool} onClose={() => setSubmissionsSchool(null)} />
+            )}
 
                                     {/* ================= Staff Profiles Section (School of Media Only) ================= */}
             {showStaffProfiles && (
