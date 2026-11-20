@@ -117,7 +117,7 @@ export default function LoginPage() {
     // gentle sway, rotation and fade (replaces the old bubble particles).
     const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZABCD";
     const COLORS = ["245, 230, 204", "224, 169, 109", "236, 213, 176", "192, 133, 82"];
-    const FONTS = ["Georgia, 'Times New Roman', serif", "var(--font-jakarta), Inter, sans-serif"];
+    const FONTS = ["Georgia, 'Times New Roman', serif", "Inter, \"Segoe UI\", sans-serif"];
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     type FloatingLetter = {
@@ -147,39 +147,48 @@ export default function LoginPage() {
       rotation: (Math.random() - 0.5) * 0.6,
       spin: (Math.random() - 0.5) * 0.004,
       baseOpacity: 0.14 + Math.random() * 0.26,
-      color: COLORS[Math.floor(Math.random() * COLORS.length)],
-      font: FONTS[Math.floor(Math.random() * FONTS.length)],
+      color: `rgb(${COLORS[Math.floor(Math.random() * COLORS.length)]})`,
+      font: "",
     });
-    const letters: FloatingLetter[] = Array.from({ length: 28 }, () => makeLetter(true));
+    const withFont = (letter: FloatingLetter): FloatingLetter => {
+      // Built once per letter instead of re-parsing the font string every frame.
+      letter.font = `700 ${Math.round(letter.size)}px ${FONTS[Math.floor(Math.random() * FONTS.length)]}`;
+      return letter;
+    };
+    const letters: FloatingLetter[] = Array.from({ length: 28 }, () => withFont(makeLetter(true)));
 
-    const render = () => {
+    // Time-based motion: the same speed on 60, 90, 120 or 144 Hz screens.
+    let lastTime = performance.now();
+    const render = (time: number = performance.now()) => {
+      const step = Math.min(3, (time - lastTime) / (1000 / 60));
+      lastTime = time;
       ctx.clearRect(0, 0, width, height);
-      const now = Date.now();
+      const now = time;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
 
       letters.forEach((letter, index) => {
         if (!reduceMotion) {
-          letter.y -= letter.speedY;
-          letter.rotation += letter.spin;
+          letter.y -= letter.speedY * step;
+          letter.rotation += letter.spin * step;
         }
-        if (letter.y < -30) letters[index] = makeLetter(false);
+        if (letter.y < -30) letters[index] = withFont(makeLetter(false));
         const sway = reduceMotion ? 0 : Math.sin(now * letter.swaySpeed + letter.phase) * letter.swayAmp;
         // fade in near the bottom, out near the top, with a soft twinkle
         const edgeFade = Math.min(1, letter.y / 80, (height - letter.y) / 80);
         const twinkle = 0.75 + 0.25 * Math.sin(now * 0.0012 + letter.phase);
         const alpha = Math.max(0, letter.baseOpacity * edgeFade * twinkle);
 
-        ctx.save();
-        ctx.translate(letter.x + sway, letter.y);
+        // No shadowBlur: a per-letter blur is the most expensive canvas op.
+        ctx.setTransform(1, 0, 0, 1, letter.x + sway, letter.y);
         ctx.rotate(letter.rotation);
-        ctx.font = `700 ${letter.size}px ${letter.font}`;
-        ctx.shadowColor = `rgba(${letter.color}, ${alpha * 0.8})`;
-        ctx.shadowBlur = 8;
-        ctx.fillStyle = `rgba(${letter.color}, ${alpha})`;
+        ctx.font = letter.font;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = letter.color;
         ctx.fillText(letter.char, 0, 0);
-        ctx.restore();
       });
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalAlpha = 1;
 
       animationFrameId = requestAnimationFrame(render);
     };

@@ -233,7 +233,7 @@ export default function ApprovalPage() {
     // Staff uploads happen in a different tab/window. Refresh approval data
     // when localStorage changes there or when the HOD returns to this tab.
     const handleStorageSync = (event: StorageEvent) => {
-      if (!event.key || event.key === "subjects" || event.key === "syllabus_units" || event.key === "syllabus_approvals") {
+      if (!event.key || event.key.startsWith("exam_cell_") || event.key === "subjects" || event.key === "syllabus_units" || event.key === "syllabus_approvals") {
         loadQuestions();
       }
     };
@@ -241,7 +241,12 @@ export default function ApprovalPage() {
     window.addEventListener("storage", handleStorageSync);
     window.addEventListener("focus", handleWindowFocus);
     document.addEventListener("visibilitychange", handleWindowFocus);
-    const refreshTimer = window.setInterval(loadQuestions, 1500);
+    // Fallback poll only. Re-parsing the whole question store and re-rendering
+    // this page every 1.5 s caused visible stutter, so poll gently and never
+    // while the tab is hidden; store events above cover instant updates.
+    const refreshTimer = window.setInterval(() => {
+      if (document.visibilityState === "visible") loadQuestions();
+    }, 10000);
     return () => {
       window.removeEventListener("exam-cell-store-update", loadQuestions);
       window.removeEventListener("storage", handleStorageSync);

@@ -53,61 +53,84 @@ export default function PenCursor() {
     const ripples: Ripple[] = [];
     let frame = 0;
 
+    // Frames are only requested while something changes (pointer moved, a
+    // click ring is fading). An idle page runs no cursor work at all, and a
+    // 1000 Hz mouse still costs one update per display frame.
+    let lastTarget: Element | null = null;
+    let ringsDrawn = false;
+    let lastTime = performance.now();
+    const requestTick = () => {
+      if (!frame) frame = window.requestAnimationFrame(tick);
+    };
+
     const onMove = (event: PointerEvent) => {
       if (event.pointerType && event.pointerType !== "mouse") return;
       targetX = event.clientX;
       targetY = event.clientY;
+      lastTarget = event.target as Element | null;
       if (!visible) {
-        x = targetX;
-        y = targetY;
         visible = true;
         pen.style.opacity = "1";
       }
-      const el = event.target as Element | null;
-      inText = Boolean(el?.closest?.(TEXT_FIELD));
-      hovering = !inText && Boolean(el?.closest?.(INTERACTIVE));
-      pen.classList.toggle("is-hover", hovering);
-      pen.classList.toggle("is-text", inText);
+      requestTick();
     };
     const onDown = (event: PointerEvent) => {
       if (event.pointerType && event.pointerType !== "mouse") return;
       pressed = true;
       if (!inText) ripples.push({ x: event.clientX, y: event.clientY, life: 1 });
+      requestTick();
     };
     const onUp = () => {
       pressed = false;
+      requestTick();
     };
     const onLeave = () => {
       visible = false;
       pen.style.opacity = "0";
     };
 
-    const tick = () => {
+    let prevTarget: Element | null = null;
+    const tick = (time: number) => {
+      frame = 0;
+      // Time-based fade so the click ring lasts the same on 60/90/120/144 Hz.
+      const step = Math.min(3, (time - lastTime) / (1000 / 60));
+      lastTime = time;
+
+      if (lastTarget !== prevTarget) {
+        prevTarget = lastTarget;
+        inText = Boolean(lastTarget?.closest?.(TEXT_FIELD));
+        hovering = !inText && Boolean(lastTarget?.closest?.(INTERACTIVE));
+        pen.classList.toggle("is-hover", hovering);
+        pen.classList.toggle("is-text", inText);
+      }
+
       // The pencil sits exactly on the pointer: no trail or tilt while moving.
       x = targetX;
       y = targetY;
       const scale = pressed ? 0.92 : hovering ? 1.08 : 1;
       pen.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
 
-      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-      // only effect: a small quick ring where you click
-      for (let i = ripples.length - 1; i >= 0; i -= 1) {
-        const ring = ripples[i];
-        ring.life -= 0.07;
-        if (ring.life <= 0) {
-          ripples.splice(i, 1);
-          continue;
+      if (ripples.length > 0 || ringsDrawn) {
+        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        ringsDrawn = false;
+        // only effect: a small quick ring where you click
+        for (let i = ripples.length - 1; i >= 0; i -= 1) {
+          const ring = ripples[i];
+          ring.life -= 0.07 * step;
+          if (ring.life <= 0) {
+            ripples.splice(i, 1);
+            continue;
+          }
+          ctx.strokeStyle = `rgba(139, 90, 43, ${0.4 * ring.life})`;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.arc(ring.x, ring.y, (1 - ring.life) * 12 + 2, 0, Math.PI * 2);
+          ctx.stroke();
+          ringsDrawn = true;
         }
-        ctx.strokeStyle = `rgba(139, 90, 43, ${0.4 * ring.life})`;
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.arc(ring.x, ring.y, (1 - ring.life) * 12 + 2, 0, Math.PI * 2);
-        ctx.stroke();
+        if (ripples.length > 0 || ringsDrawn) requestTick();
       }
-
-      frame = window.requestAnimationFrame(tick);
     };
-    frame = window.requestAnimationFrame(tick);
 
     window.addEventListener("pointermove", onMove, { passive: true });
     window.addEventListener("pointerdown", onDown, { passive: true });

@@ -9975,3 +9975,53 @@ html body .profile-menu.profile-menu svg:not(.profile-menu-signout svg) { color:
   .qp-paper { max-width: none !important; padding: 0 !important; box-shadow: none !important; }
   .qp-q { border-bottom-color: #bbbbbb !important; }
 }
+
+/* ===================== Performance: smooth 90 / 120 Hz =====================
+   These infinite animations used to repaint every frame (box-shadow,
+   background-position, conic-gradient angle, left). Redefining the keyframes
+   here keeps each element's static look and moves the motion to cheap,
+   GPU-composited transform/opacity animations that remain elsewhere. */
+@property --perf-static { syntax: '<number>'; inherits: false; initial-value: 0; }
+@keyframes pulseIndicator { from, to { --perf-static: 0; } }
+@keyframes badgeNeonPulse { from, to { --perf-static: 0; } }
+@keyframes facultyPulseActive { from, to { --perf-static: 0; } }
+@keyframes facultyPulseLeave { from, to { --perf-static: 0; } }
+@keyframes facultyPulseDuty { from, to { --perf-static: 0; } }
+@keyframes digitalShimmer { from, to { --perf-static: 0; } }
+@keyframes menuActiveGlow { from, to { --perf-static: 0; } }
+@keyframes stageRingPulse { from, to { --perf-static: 0; } }
+@keyframes approvalThemeDrift { from, to { --perf-static: 0; } }
+@keyframes syllabusStageDrift { from, to { --perf-static: 0; } }
+@keyframes tierVfxGlow { from, to { --perf-static: 0; } }
+@keyframes tierVfxScan { from, to { --perf-static: 0; } }
+@keyframes vfxGridDrift { from, to { --perf-static: 0; } }
+@keyframes vfxBreath { from, to { --perf-static: 0; } }
+@keyframes vfxBreathSmall { from, to { --perf-static: 0; } }
+@keyframes vfxScan { from, to { --perf-static: 0; } }
+@keyframes vfxEdgeSpin { from, to { --perf-static: 0; } }
+@keyframes vfxPacket { from, to { --perf-static: 0; } }
+@keyframes vaultGrid { from, to { --perf-static: 0; } }
+@keyframes vaultEdgeSpin { from, to { --perf-static: 0; } }
+@keyframes apvUnderline { from, to { --perf-static: 0; } }
+@keyframes apvEdge { from, to { --perf-static: 0; } }
+@keyframes apvScan { from, to { --perf-static: 0; } }
+@keyframes apvPulse { from, to { --perf-static: 0; } }
+@keyframes apvButtonGlow { from, to { --perf-static: 0; } }
+@keyframes sideBgDrift { from, to { --perf-static: 0; } }
+@keyframes sideScan { from, to { --perf-static: 0; } }
+@keyframes sideActiveGlow { from, to { --perf-static: 0; } }
+@keyframes sideEdge { from, to { --perf-static: 0; } }
+@keyframes schoolEdge { from, to { --perf-static: 0; } }
+@keyframes schoolGlow { from, to { --perf-static: 0; } }
+@keyframes schoolScan { from, to { --perf-static: 0; } }
+@keyframes vrIconPulse { from, to { --perf-static: 0; } }
+@keyframes vrEdge { from, to { --perf-static: 0; } }
+@keyframes pulseGlowDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(0.85); } }
+@keyframes vfxArrowFlow { 0%, 100% { opacity: 0.45; transform: translateX(-2px); } 50% { opacity: 1; transform: translateX(2px); } }
+
+/* Live background blur re-renders everything behind an element on every
+   scroll frame; on the solid cream theme it adds almost nothing visually. */
+*, *::before, *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
