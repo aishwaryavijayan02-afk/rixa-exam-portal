@@ -2749,6 +2749,12 @@ export const examStore = {
       if (documentName === "augmented reality & vfx.docx" || (String(item.courseCode || "").toUpperCase() === "VIS-301" && !documentName)) {
         return false;
       }
+      // Old sample rows: a staff name in the id ("syl-appr-athreya-vis-303") and no
+      // uploaded document. Real uploads use "syl-appr-<timestamp>-<n>" and always
+      // carry a document name.
+      if (/^syl-appr-[a-z]/.test(id) && !documentName && !item.documentData) {
+        return false;
+      }
       if (
         id.startsWith("syl-appr-aish-") ||
         id.startsWith("syl-appr-vig-") ||
