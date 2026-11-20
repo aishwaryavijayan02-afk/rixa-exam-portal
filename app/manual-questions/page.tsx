@@ -706,7 +706,7 @@ export default function ManualQuestionsPage() {
           </div>
 
           {/* Navigation Items */}
-          <nav style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+          <nav style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             {menuItems.map((item) => {
               const IconComp = item.icon;
               const isActive = activeMenu === item.id;
@@ -723,7 +723,9 @@ export default function ManualQuestionsPage() {
                     isActive ? "sidebar-btn-active" : "sidebar-btn-inactive"
                   }`}
                 >
-                  <IconComp size={18} className="nav-icon-3d" />
+                  <span className="nav-icon-3d" style={{ display: "flex", alignItems: "center" }}>
+                    <IconComp size={18} />
+                  </span>
                   <span style={{ flex: 1 }}>{item.label}</span>
 
                   {item.badge && (
