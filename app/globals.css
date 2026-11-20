@@ -7560,6 +7560,7 @@ html.dark-theme .vault-panel { --vp-uploaded: #e0a96d; }
 :is(.drawer-nav, .digital-vfx-sidebar nav) > button[data-route="/academic-vault"] .nav-icon-3d { --tile: #b5c99a; }
 :is(.drawer-nav, .digital-vfx-sidebar nav) > button[data-route="/approval"] .nav-icon-3d { --tile: #d4b483; }
 :is(.drawer-nav, .digital-vfx-sidebar nav) > button[data-route="/scrutinizer"] .nav-icon-3d { --tile: #b5c99a; }
+:is(.drawer-nav, .digital-vfx-sidebar nav) > button[data-route="/academic-repository"] .nav-icon-3d { --tile: #e0a96d; }
 :is(.drawer-nav, .digital-vfx-sidebar nav) > button[data-route="/reports"] .nav-icon-3d { --tile: #e0a96d; }
 :is(.drawer-nav, .digital-vfx-sidebar nav) > button[data-route="/manual-questions"] .nav-icon-3d { --tile: #e08e6d; }
 :is(.drawer-nav, .digital-vfx-sidebar nav) > button[data-route="/notifications"] .nav-icon-3d { --tile: #d4b483; }

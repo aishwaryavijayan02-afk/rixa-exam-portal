@@ -1,27 +1,21 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
-  Bell,
   CheckCircle2,
-  ClipboardCheck,
   Flag,
-  Home,
   Layers,
   RotateCcw,
   Search,
-  Settings,
   ShieldCheck,
   AlertTriangle,
   FileText,
-  School,
-  Edit3,
 } from "lucide-react";
 import { examStore, QuestionItem } from "../lib/examStore";
-import { authStore, AuthUser, hasPermission } from "../lib/auth";
+import { authStore, AuthUser } from "../lib/auth";
 import { BLOOM_LEVELS, detectExplicitBloomLevel, inferBloomLevel, unitNumber } from "../lib/bloomTaxonomy";
 import RoleGuard from "../components/RoleGuard";
+import ScrutinizerSidebar from "../components/ScrutinizerSidebar";
 import PortalHeader from "../components/PortalHeader";
 import PortalFooter from "../components/PortalFooter";
 import { ToastNotification } from "../components/CrudModal";
@@ -61,7 +55,6 @@ function questionIssues(q: QuestionItem, duplicates: Set<string>): string[] {
 }
 
 export default function ScrutinizerPage() {
-  const router = useRouter();
   const [currentUser, setCurrentUser] = useState<AuthUser>(() => authStore.getCurrentUser());
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
   const [subject, setSubject] = useState<string>("");
@@ -207,15 +200,6 @@ export default function ScrutinizerPage() {
     showToast(`${pending.length} questions cleared for ${subject}.`);
   };
 
-  const menu = [
-    { id: "scrutinizer", label: "Scrutiny Dashboard", icon: ClipboardCheck, route: "/scrutinizer" },
-    { id: "dashboard", label: "Main Dashboard", icon: Home, route: "/dashboard" },
-    { id: "school", label: "School", icon: School, route: "/subjects" },
-    { id: "manual-questions", label: "Manual Questions", icon: Edit3, route: "/manual-questions" },
-    { id: "notifications", label: "Notifications", icon: Bell, route: "/notifications" },
-    { id: "settings", label: "Settings", icon: Settings, route: "/settings" },
-  ].filter((item) => (item.id === "dashboard" ? currentUser.role !== "SCRUTINIZER" : hasPermission(currentUser.role, item.route)));
-
   const card = { background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "20px 22px", boxShadow: "0 4px 16px rgba(0,0,0,0.02)" } as const;
   const selectedSubject = subjects.find((s) => s.name === subject);
 
@@ -316,28 +300,7 @@ export default function ScrutinizerPage() {
   return (
     <RoleGuard route="/scrutinizer">
       <div style={{ display: "flex", height: "100vh", maxHeight: "100vh", background: "#f4f6fb", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", color: "#0f172a", width: "100%", overflow: "hidden" }}>
-        <aside className="digital-vfx-sidebar" style={{ width: "260px", background: "linear-gradient(180deg, #1c120c 0%, #120c08 100%)", color: "#94a3b8", display: "flex", flexDirection: "column", flexShrink: 0, borderRight: "1px solid rgba(255, 255, 255, 0.06)", padding: "20px 14px", height: "100vh", overflowY: "auto" }}>
-          <div style={{ padding: "6px 10px 24px 10px" }}>
-            <div className="brand-orbit-logo" aria-label="Rathinam Global (Deemed to be University)">
-              <span className="brand-orbit-mark">RG</span>
-              <span className="brand-orbit-name">Rathinam Global</span>
-            </div>
-          </div>
-          <nav style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            {menu.map((item) => {
-              const Icon = item.icon;
-              const active = item.id === "scrutinizer";
-              return (
-                <button key={item.id} type="button" onClick={() => !active && router.push(item.route)} data-route={item.route} className={`sidebar-btn-3d ${active ? "sidebar-btn-active" : "sidebar-btn-inactive"}`}>
-                  <span className="nav-icon-3d" style={{ display: "flex", alignItems: "center" }}>
-                    <Icon size={18} />
-                  </span>
-                  <span style={{ flex: 1 }}>{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-        </aside>
+        <ScrutinizerSidebar currentUser={currentUser} active="scrutinizer" />
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, height: "100vh", overflow: "hidden" }}>
           <PortalHeader activeRoute="/scrutinizer" />

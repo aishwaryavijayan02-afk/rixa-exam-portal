@@ -377,10 +377,12 @@ export function hasPermission(role: UserRole, route: string, isSubjectFaculty: b
   // The Scrutinizer works in the Scrutiny dashboard, School, Manual Questions,
   // Notifications and Settings.
   if (role === "SCRUTINIZER") {
-    return ["", "/dashboard", "/scrutinizer", "/subjects", "/subject", "/manual-questions", "/notifications", "/settings"].includes(normalizedRoute);
+    return ["", "/dashboard", "/scrutinizer", "/academic-repository", "/subjects", "/subject", "/manual-questions", "/notifications", "/settings"].includes(normalizedRoute);
   }
 
   switch (normalizedRoute) {
+    case "/academic-repository":
+      return false; // Scrutinizer only (handled above)
     case "/scrutinizer":
       return role === "COE"; // COE can also follow the scrutiny progress
 

@@ -30,7 +30,7 @@ import {
   X,
 } from "lucide-react";
 import { examStore, QuestionItem, SyllabusUnit, SubjectItem, SyllabusApprovalItem, INSTITUTIONAL_SUBJECTS } from "../lib/examStore";
-import { saveQuestionBankDocument } from "../lib/questionBankDocuments";
+import { getQuestionBankDocument, saveQuestionBankDocument, syncLocalQuestionBankDocuments, uploadQuestionBankDocumentToCloud } from "../lib/questionBankDocuments";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
 import { detectSubjectFromDocument, extractDocxText, extractFileText, extractSubjectHeader, inferDepartmentFromSubject } from "../lib/aiSyllabusParser";
 import JSZip from "jszip";
@@ -907,6 +907,20 @@ export default function AcademicVaultPage() {
     }));
 
     importedQuestions.forEach((question) => examStore.saveQuestion(question));
+    // Share the original file so reviewers (Academic Repository) can open it on any device.
+    const sharedFileName = bulkFileName;
+    void getQuestionBankDocument(sharedFileName)
+      .then((blob) =>
+        blob
+          ? uploadQuestionBankDocumentToCloud(blob, sharedFileName, {
+              uploadedBy: submitter.name || "Faculty",
+              uploaderEmail: submitter.email,
+              subject: targetSub,
+              department: importedQuestions[0]?.department || bulkSubjectInfo.department,
+            })
+          : false,
+      )
+      .catch(() => false);
     showToast(`${importedQuestions.length} questions from "${bulkFileName}" inserted into Question Bank.`);
     setParsedBulkCount(0);
     setParsedBulkQuestions([]);
@@ -960,6 +974,20 @@ export default function AcademicVaultPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [syllabusApprovalList, currentUser],
   );
+
+  // Question bank files uploaded before the shared repository existed live only
+  // in this browser; copy them up so reviewers on other devices can open them.
+  useEffect(() => {
+    const files = new Map<string, { fileName: string; meta: { uploadedBy?: string; uploaderEmail?: string; subject?: string; department?: string } }>();
+    questions
+      .filter((q) => q.sourceFile && isMine(q.email, q.uploadedBy))
+      .forEach((q) => {
+        const fileName = q.sourceFile as string;
+        if (!files.has(fileName)) files.set(fileName, { fileName, meta: { uploadedBy: q.uploadedBy, uploaderEmail: q.email, subject: q.subject, department: q.department } });
+      });
+    if (files.size) void syncLocalQuestionBankDocuments([...files.values()]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questions.length, currentUser.email]);
 
   const handleDeleteSavedQuestionBank = async (item: MyUploadItem) => {
     if (!(await confirmDialog(`Delete the question bank "${item.fileName}" (${item.detail})? It will also be removed from the HOD, Dean and COE review pages.`, { danger: true }))) return;
