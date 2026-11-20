@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, BookOpen, Download, Eye, FileText, Layers, Loader2, Search, X } from "lucide-react";
-import { examStore, QuestionItem, SyllabusApprovalItem } from "../lib/examStore";
+import { examStore, INSTITUTIONAL_SUBJECTS, QuestionItem, StaffFacultyItem, SyllabusApprovalItem } from "../lib/examStore";
 import { fetchQuestionBankDocument } from "../lib/questionBankDocuments";
 import { unitNumber } from "../lib/bloomTaxonomy";
 
@@ -23,6 +23,7 @@ interface SubmissionRow {
   department: string;
   subject: string;
   staff: string;
+  staffEmail?: string;
   documentName: string;
   uploadedAt: string;
   syllabus?: SyllabusApprovalItem;
@@ -49,6 +50,8 @@ const EXTRA_SCHOOL_WORDS: Record<string, string[]> = {
 
 const normalize = (value?: string) => (value || "").toLowerCase().replace(/^department of\s+/, "").replace(/[^a-z0-9]+/g, " ").trim();
 const cleanDepartment = (value?: string) => (value || "").replace(/^Department of\s+/i, "").trim();
+/** Same person whatever the title: "Dr. T.J Raju" = "T.J Raju". */
+const personKey = (name?: string) => (name || "").toLowerCase().replace(/^(mr|mrs|ms|dr|prof)\.?\s+/, "").replace(/[^a-z0-9]+/g, " ").trim();
 const extensionOf = (name: string) => (name.split(".").pop() || "").toLowerCase();
 
 /** School a department / subject belongs to, from the School page's own programme lists and keywords. */
@@ -178,6 +181,7 @@ function DocxView({ blob }: { blob: Blob }) {
 export default function AcademicSubmissions({ schools, initialSchool, onClose }: { schools: SubmissionSchool[]; initialSchool?: string; onClose: () => void }) {
   const [syllabi, setSyllabi] = useState<SyllabusApprovalItem[]>([]);
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
+  const [staffDirectory, setStaffDirectory] = useState<StaffFacultyItem[]>([]);
   const [tab, setTab] = useState<SubmissionTab>("syllabus");
   const [school, setSchool] = useState(initialSchool || "All");
   const [department, setDepartment] = useState("All");
@@ -192,6 +196,7 @@ export default function AcademicSubmissions({ schools, initialSchool, onClose }:
     const load = () => {
       setSyllabi(examStore.getSyllabusApprovals());
       setQuestions(examStore.getQuestions());
+      setStaffDirectory(examStore.getStaffFaculty("COE"));
     };
     load();
     window.addEventListener("exam-cell-store-update", load);
@@ -217,6 +222,7 @@ export default function AcademicSubmissions({ schools, initialSchool, onClose }:
           department: cleanDepartment(item.department) || "—",
           subject: item.courseCode ? `${item.courseName} (${item.courseCode})` : item.courseName || "—",
           staff: item.submittedBy || "—",
+          staffEmail: item.submitterEmail,
           documentName: item.documentName || "Syllabus document",
           uploadedAt: item.submittedAt,
           syllabus: item,
@@ -240,6 +246,7 @@ export default function AcademicSubmissions({ schools, initialSchool, onClose }:
           department: cleanDepartment(first.department) || "—",
           subject: first.subject || "—",
           staff: first.uploadedBy || "—",
+          staffEmail: first.email,
           documentName: fileName,
           uploadedAt: first.uploadedOnDate || first.submittedDate || first.date || first.addedOn || "",
           questions: qs,
@@ -250,28 +257,65 @@ export default function AcademicSubmissions({ schools, initialSchool, onClose }:
 
   const rows = tab === "syllabus" ? syllabusRows : questionBankRows;
   const schoolOptions = useMemo(() => [...schools.map((s) => s.name), ...(rows.some((r) => r.school === UNASSIGNED_SCHOOL) ? [UNASSIGNED_SCHOOL] : [])], [schools, rows]);
-  const departmentOptions = useMemo(
-    () => Array.from(new Set(rows.filter((r) => school === "All" || r.school === school).map((r) => r.department).filter((d) => d !== "—"))).sort(),
-    [rows, school],
-  );
-  const staffOptions = useMemo(
-    () =>
-      Array.from(
-        new Set(rows.filter((r) => (school === "All" || r.school === school) && (department === "All" || r.department === department)).map((r) => r.staff).filter((s) => s !== "—")),
-      ).sort(),
-    [rows, school, department],
-  );
+  const sameDept = (a: string, b: string) => normalize(a) === normalize(b);
+
+  // Every department of every school: the subject catalogue, the staff directory and the uploads.
+  const departmentsBySchool = useMemo(() => {
+    const map = new Map<string, Map<string, string>>();
+    const add = (dept?: string, schoolName?: string) => {
+      const label = cleanDepartment(dept);
+      if (!label || label === "—" || /exam cell|^school of/i.test(label)) return;
+      const owner = schoolName || schoolFor(schools, label);
+      const entries = map.get(owner) || new Map<string, string>();
+      if (!entries.has(normalize(label))) entries.set(normalize(label), label);
+      map.set(owner, entries);
+    };
+    INSTITUTIONAL_SUBJECTS.forEach((s) => add(s.department));
+    staffDirectory.forEach((s) => add(s.department));
+    [...syllabusRows, ...questionBankRows].forEach((r) => add(r.department, r.school));
+    return map;
+  }, [schools, staffDirectory, syllabusRows, questionBankRows]);
+
+  const departmentOptions = useMemo(() => {
+    const groups = school === "All" ? [...departmentsBySchool.values()] : [departmentsBySchool.get(school) || new Map<string, string>()];
+    return Array.from(new Set(groups.flatMap((g) => [...g.values()]))).sort((a, b) => a.localeCompare(b));
+  }, [departmentsBySchool, school]);
+
+  // Every staff member of the selected school / department (directory + anyone who uploaded).
+  const staffOptions = useMemo(() => {
+    const people = new Map<string, { key: string; name: string; email?: string; department: string; school: string }>();
+    const add = (name: string, email: string | undefined, dept: string, schoolName?: string) => {
+      const key = personKey(name);
+      if (!key || name === "—") return;
+      const owner = schoolName || schoolFor(schools, dept);
+      if (!people.has(key)) people.set(key, { key, name, email, department: cleanDepartment(dept), school: owner });
+    };
+    staffDirectory.forEach((s) => add(s.name, s.email, s.department));
+    [...syllabusRows, ...questionBankRows].forEach((r) => add(r.staff, r.staffEmail, r.department, r.school));
+    const uploads = (key: string, email?: string) =>
+      rows.filter((r) => personKey(r.staff) === key || (email && r.staffEmail && r.staffEmail.toLowerCase() === email.toLowerCase())).length;
+    return [...people.values()]
+      .filter((p) => (school === "All" || p.school === school) && (department === "All" || sameDept(p.department, department)))
+      .map((p) => ({ ...p, uploads: uploads(p.key, p.email) }))
+      .sort((a, b) => a.name.replace(/^(mr|mrs|ms|dr|prof)\.?\s+/i, "").localeCompare(b.name.replace(/^(mr|mrs|ms|dr|prof)\.?\s+/i, "")));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [staffDirectory, syllabusRows, questionBankRows, rows, school, department, schools]);
+
+  const selectedStaff = staffOptions.find((p) => p.key === staff);
 
   const visible = useMemo(() => {
     const term = subject.trim().toLowerCase();
     return rows.filter(
       (r) =>
         (school === "All" || r.school === school) &&
-        (department === "All" || r.department === department) &&
-        (staff === "All" || r.staff === staff) &&
+        (department === "All" || sameDept(r.department, department)) &&
+        (staff === "All" ||
+          personKey(r.staff) === staff ||
+          Boolean(selectedStaff?.email && r.staffEmail && r.staffEmail.toLowerCase() === selectedStaff.email.toLowerCase())) &&
         (!term || r.subject.toLowerCase().includes(term)),
     );
-  }, [rows, school, department, staff, subject]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, school, department, staff, subject, selectedStaff]);
 
   const view = async (row: SubmissionRow) => {
     releaseUrl();
@@ -436,11 +480,7 @@ export default function AcademicSubmissions({ schools, initialSchool, onClose }:
                 <button
                   key={key}
                   type="button"
-                  onClick={() => {
-                    setTab(key);
-                    setDepartment("All");
-                    setStaff("All");
-                  }}
+                  onClick={() => setTab(key)}
                   style={{ ...btn(tab === key), padding: "9px 15px", fontSize: "12.5px" }}
                 >
                   <Icon size={15} /> {label}
@@ -458,15 +498,18 @@ export default function AcademicSubmissions({ schools, initialSchool, onClose }:
                 ))}
               </select>
               <select value={department} onChange={(e) => { setDepartment(e.target.value); setStaff("All"); }} style={select} aria-label="Filter by department">
-                <option value="All">All departments</option>
+                <option value="All">All departments ({departmentOptions.length})</option>
                 {departmentOptions.map((d) => (
                   <option key={d} value={d}>{d}</option>
                 ))}
               </select>
               <select value={staff} onChange={(e) => setStaff(e.target.value)} style={select} aria-label="Filter by staff name">
-                <option value="All">All staff</option>
+                <option value="All">All staff ({staffOptions.length})</option>
                 {staffOptions.map((s) => (
-                  <option key={s} value={s}>{s}</option>
+                  <option key={s.key} value={s.key}>
+                    {s.name}
+                    {department === "All" && s.department ? ` — ${s.department}` : ""} ({s.uploads})
+                  </option>
                 ))}
               </select>
               <div style={{ position: "relative", flex: "2 1 220px", minWidth: 0 }}>
@@ -484,11 +527,15 @@ export default function AcademicSubmissions({ schools, initialSchool, onClose }:
             <div style={{ border: "1px solid #ede4da", borderRadius: "12px", overflow: "hidden" }}>
               {visible.length === 0 ? (
                 <div style={{ padding: "40px 20px", textAlign: "center", color: "#746252", fontSize: "13.5px" }}>
-                  {rows.length === 0
-                    ? tab === "syllabus"
-                      ? "No syllabus has been uploaded by faculty yet."
-                      : "No question bank has been uploaded by faculty yet."
-                    : "No submissions match the selected filters."}
+                  {selectedStaff
+                    ? `${selectedStaff.name} has not uploaded any ${tab === "syllabus" ? "syllabus" : "question bank"} yet.`
+                    : department !== "All"
+                      ? `No ${tab === "syllabus" ? "syllabus" : "question bank"} has been uploaded for ${department} yet.`
+                      : rows.length === 0
+                        ? tab === "syllabus"
+                          ? "No syllabus has been uploaded by faculty yet."
+                          : "No question bank has been uploaded by faculty yet."
+                        : "No submissions match the selected filters."}
                 </div>
               ) : (
                 <div style={{ overflowX: "auto" }}>
