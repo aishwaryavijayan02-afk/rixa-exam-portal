@@ -50,6 +50,8 @@ import {
 } from "lucide-react";
 import { examStore, SubjectItem, StaffFacultyItem, SyllabusApprovalItem, INSTITUTIONAL_SUBJECTS } from "../lib/examStore";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
+import { showInMenu } from "../lib/auth";
+import { SCRUTINY_MENU_ITEMS } from "../lib/scrutinyMenu";
 import RoleGuard from "../components/RoleGuard";
 import {
   ViewModal,
@@ -564,11 +566,11 @@ export default function DashboardPage() {
     hasArrow?: boolean;
   }> = [
     { id: "dashboard", label: "Dashboard", icon: Home, route: "/dashboard" },
+    ...SCRUTINY_MENU_ITEMS,
     { id: "school", label: "School", icon: School, route: "/subjects" },
     { id: "staff-work-status", label: "Staff Work Status", icon: Briefcase, route: "/staff-work-status" },
     { id: "academic-vault", label: "Academic Vault", icon: Archive, route: "/academic-vault" },
     { id: "verify-approval", label: "Verify & Approval", icon: CheckSquare, route: "/approval" },
-    { id: "scrutinizer", label: "Scrutinizer", icon: ShieldCheck, route: "/scrutinizer" },
     { id: "reports", label: "Reports", icon: BarChart2, route: "/reports" },
     { id: "manual-questions", label: "Manual Questions", icon: Edit3, badge: "New", route: "/manual-questions" },
     { id: "notifications", label: "Notifications", icon: Bell, route: "/notifications" },
@@ -577,7 +579,7 @@ export default function DashboardPage() {
   ];
 
   const menuItems = rawMenuItems.filter((item) =>
-    hasPermission(currentUser.role, item.route, currentUser.isSubjectFaculty)
+    showInMenu(currentUser.role, item.route, currentUser.isSubjectFaculty)
   );
 
   return (

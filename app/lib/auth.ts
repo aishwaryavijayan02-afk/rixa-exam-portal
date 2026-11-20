@@ -431,6 +431,16 @@ export function hasPermission(role: UserRole, route: string, isSubjectFaculty: b
   }
 }
 
+/**
+ * Whether a sidebar entry is shown for this role. Same as hasPermission, except
+ * the Scrutinizer does not get the plain "Dashboard" entry: its dashboard is the
+ * "Scrutiny Dashboard" (/dashboard only redirects there).
+ */
+export function showInMenu(role: UserRole, route: string, isSubjectFaculty: boolean = true): boolean {
+  if (role === "SCRUTINIZER" && route.replace(/\/$/, "") === "/dashboard") return false;
+  return hasPermission(role, route, isSubjectFaculty);
+}
+
 export type AllocationLevel = "HOD" | "DEAN";
 
 // Faculty allocation policy: HOD -> HOD level only, DEAN -> Dean level only,

@@ -32,6 +32,8 @@ import {
 import { examStore, QuestionItem, SyllabusUnit, SubjectItem, SyllabusApprovalItem, INSTITUTIONAL_SUBJECTS } from "../lib/examStore";
 import { getQuestionBankDocument, saveQuestionBankDocument, syncLocalQuestionBankDocuments, uploadQuestionBankDocumentToCloud } from "../lib/questionBankDocuments";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
+import { showInMenu } from "../lib/auth";
+import { SCRUTINY_MENU_ITEMS } from "../lib/scrutinyMenu";
 import { detectSubjectFromDocument, extractDocxText, extractFileText, extractSubjectHeader, inferDepartmentFromSubject } from "../lib/aiSyllabusParser";
 import JSZip from "jszip";
 import RoleGuard from "../components/RoleGuard";
@@ -310,6 +312,7 @@ export default function AcademicVaultPage() {
 
   const rawMenuItems: MenuItemDef[] = [
     { id: "dashboard", label: "Dashboard", icon: Home, route: "/dashboard" },
+    ...SCRUTINY_MENU_ITEMS,
     { id: "school", label: "School", icon: School, route: "/subjects" },
     {
       id: "staff-work-status",
@@ -356,7 +359,7 @@ export default function AcademicVaultPage() {
   ];
 
   const menuItems = rawMenuItems.filter((item) =>
-    hasPermission(currentUser.role, item.route, currentUser.isSubjectFaculty)
+    showInMenu(currentUser.role, item.route, currentUser.isSubjectFaculty)
   );
 
   // Store data

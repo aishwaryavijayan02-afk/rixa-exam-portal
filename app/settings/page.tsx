@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { examStore, ActivityItem, UserItem } from "../lib/examStore";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
+import { showInMenu } from "../lib/auth";
+import { SCRUTINY_MENU_ITEMS } from "../lib/scrutinyMenu";
 import RoleGuard from "../components/RoleGuard";
 import {
   ViewModal,
@@ -86,6 +88,8 @@ export default function SettingsPage() {
 
   const rawMenuItems = [
     { id: "dashboard", label: "Dashboard", icon: Home, route: "/dashboard" },
+
+    ...SCRUTINY_MENU_ITEMS,
     { id: "school", label: "School", icon: School, route: "/subjects" },
     { id: "staff-work-status", label: "Staff Work Status", icon: Briefcase, route: "/staff-work-status" },
     { id: "academic-vault", label: "Academic Vault", icon: Archive, route: "/academic-vault" },
@@ -98,7 +102,7 @@ export default function SettingsPage() {
   ];
 
   const menuItems = rawMenuItems.filter((item) =>
-    hasPermission(currentUser.role, item.route, currentUser.isSubjectFaculty)
+    showInMenu(currentUser.role, item.route, currentUser.isSubjectFaculty)
   );
 
   const categories = [

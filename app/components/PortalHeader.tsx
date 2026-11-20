@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { examStore, SubjectItem, QuestionItem, NotificationItem, MessageItem } from "../lib/examStore";
 import { authStore, AuthUser, UserRole, hasPermission } from "../lib/auth";
+import { showInMenu } from "../lib/auth";
 
 interface PortalHeaderProps {
   activeRoute?: string;
@@ -123,7 +124,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
   ];
 
   const mobileNavItems = rawMobileNavItems.filter((item) =>
-    hasPermission(currentUser.role, item.route, currentUser.isSubjectFaculty)
+    showInMenu(currentUser.role, item.route, currentUser.isSubjectFaculty)
   );
 
   useEffect(() => {
@@ -208,7 +209,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
   ];
 
   const portalPages = rawPortalPages.filter((page) =>
-    hasPermission(currentUser.role, page.route, currentUser.isSubjectFaculty)
+    showInMenu(currentUser.role, page.route, currentUser.isSubjectFaculty)
   );
 
   // Filter items based on searchQuery
