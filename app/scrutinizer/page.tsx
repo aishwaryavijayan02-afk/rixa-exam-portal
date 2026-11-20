@@ -15,6 +15,8 @@ import {
   ShieldCheck,
   AlertTriangle,
   FileText,
+  School,
+  Edit3,
 } from "lucide-react";
 import { examStore, QuestionItem } from "../lib/examStore";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
@@ -208,6 +210,8 @@ export default function ScrutinizerPage() {
   const menu = [
     { id: "scrutinizer", label: "Scrutiny Dashboard", icon: ClipboardCheck, route: "/scrutinizer" },
     { id: "dashboard", label: "Main Dashboard", icon: Home, route: "/dashboard" },
+    { id: "school", label: "School", icon: School, route: "/subjects" },
+    { id: "manual-questions", label: "Manual Questions", icon: Edit3, route: "/manual-questions" },
     { id: "notifications", label: "Notifications", icon: Bell, route: "/notifications" },
     { id: "settings", label: "Settings", icon: Settings, route: "/settings" },
   ].filter((item) => (item.id === "dashboard" ? currentUser.role !== "SCRUTINIZER" : hasPermission(currentUser.role, item.route)));

@@ -573,7 +573,7 @@ export default function DepartmentManagementPage() {
   );
 
   // Staff profile edit permissions (Strictly hidden for HOD; visible for Staff, COE & Dean)
-  const canEditStaff = currentUser.role !== "HOD";
+  const canEditStaff = currentUser.role !== "HOD" && currentUser.role !== "SCRUTINIZER";
   const canDeleteStaff = currentUser.role === "COE";
 
   useEffect(() => {

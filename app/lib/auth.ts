@@ -374,9 +374,10 @@ export function authenticateUser(
 export function hasPermission(role: UserRole, route: string, isSubjectFaculty: boolean = true): boolean {
   const normalizedRoute = route.replace(/\/$/, "").split("?")[0];
 
-  // The Scrutinizer works only in the Scrutiny dashboard (plus notifications & settings).
+  // The Scrutinizer works in the Scrutiny dashboard, School, Manual Questions,
+  // Notifications and Settings.
   if (role === "SCRUTINIZER") {
-    return ["", "/dashboard", "/scrutinizer", "/notifications", "/settings"].includes(normalizedRoute);
+    return ["", "/dashboard", "/scrutinizer", "/subjects", "/subject", "/manual-questions", "/notifications", "/settings"].includes(normalizedRoute);
   }
 
   switch (normalizedRoute) {
