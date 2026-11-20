@@ -328,7 +328,7 @@ export default function ScrutinizerPage() {
               const Icon = item.icon;
               const active = item.id === "scrutinizer";
               return (
-                <button key={item.id} type="button" onClick={() => !active && router.push(item.route)} className={`sidebar-btn-3d ${active ? "sidebar-btn-active" : "sidebar-btn-inactive"}`}>
+                <button key={item.id} type="button" onClick={() => !active && router.push(item.route)} data-route={item.route} className={`sidebar-btn-3d ${active ? "sidebar-btn-active" : "sidebar-btn-inactive"}`}>
                   <span className="nav-icon-3d" style={{ display: "flex", alignItems: "center" }}>
                     <Icon size={18} />
                   </span>

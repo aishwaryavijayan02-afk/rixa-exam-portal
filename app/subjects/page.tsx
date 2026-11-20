@@ -1183,7 +1183,7 @@ export default function DepartmentManagementPage() {
                       setActiveMenu(item.id);
                       if (item.route) router.push(item.route);
                     }}
-                    className={`sidebar-btn-3d ${
+                    data-route={item.route} className={`sidebar-btn-3d ${
                       isActive ? "sidebar-btn-active" : "sidebar-btn-inactive"
                     }`}
                   >

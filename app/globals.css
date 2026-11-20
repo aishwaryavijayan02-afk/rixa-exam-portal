@@ -7552,6 +7552,19 @@ html.dark-theme .vault-panel { --vp-uploaded: #e0a96d; }
 .digital-vfx-sidebar nav > button:nth-child(6n+5) .nav-icon-3d { --tile: #c9b79c; } /* latte */
 .drawer-nav > button:nth-child(6n+6) .nav-icon-3d,
 .digital-vfx-sidebar nav > button:nth-child(6n+6) .nav-icon-3d { --tile: #b5c99a; } /* sage */
+/* Each menu item keeps its own colour wherever it sits in the menu, so
+   reordering or hiding items for a role never changes an item's icon. */
+:is(.drawer-nav, .digital-vfx-sidebar nav) > button[data-route="/dashboard"] .nav-icon-3d { --tile: #f5e6cc; }
+:is(.drawer-nav, .digital-vfx-sidebar nav) > button[data-route="/subjects"] .nav-icon-3d { --tile: #e0a96d; }
+:is(.drawer-nav, .digital-vfx-sidebar nav) > button[data-route="/staff-work-status"] .nav-icon-3d { --tile: #c9b79c; }
+:is(.drawer-nav, .digital-vfx-sidebar nav) > button[data-route="/academic-vault"] .nav-icon-3d { --tile: #b5c99a; }
+:is(.drawer-nav, .digital-vfx-sidebar nav) > button[data-route="/approval"] .nav-icon-3d { --tile: #d4b483; }
+:is(.drawer-nav, .digital-vfx-sidebar nav) > button[data-route="/scrutinizer"] .nav-icon-3d { --tile: #b5c99a; }
+:is(.drawer-nav, .digital-vfx-sidebar nav) > button[data-route="/reports"] .nav-icon-3d { --tile: #e0a96d; }
+:is(.drawer-nav, .digital-vfx-sidebar nav) > button[data-route="/manual-questions"] .nav-icon-3d { --tile: #e08e6d; }
+:is(.drawer-nav, .digital-vfx-sidebar nav) > button[data-route="/notifications"] .nav-icon-3d { --tile: #d4b483; }
+:is(.drawer-nav, .digital-vfx-sidebar nav) > button[data-route="/print-paper"] .nav-icon-3d { --tile: #b5c99a; }
+:is(.drawer-nav, .digital-vfx-sidebar nav) > button[data-route="/settings"] .nav-icon-3d { --tile: #c9b79c; }
 .digital-vfx-sidebar .sidebar-btn-inactive:hover .nav-icon-3d {
   color: var(--tile) !important;
   transform: scale(1.08);

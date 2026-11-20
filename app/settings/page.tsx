@@ -729,7 +729,7 @@ export default function SettingsPage() {
                     setActiveMenu(item.id);
                     if (item.route) router.push(item.route);
                   }}
-                  className={`sidebar-btn-3d ${isActive ? "sidebar-btn-active" : ""}`}
+                  data-route={item.route} className={`sidebar-btn-3d ${isActive ? "sidebar-btn-active" : ""}`}
                   style={{
                     display: "flex",
                     alignItems: "center",
