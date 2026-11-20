@@ -157,8 +157,8 @@ export default function StaffFacultyPage() {
     { id: "academic-vault", label: "Academic Vault", icon: Archive, route: "/academic-vault" },
     { id: "verify-approval", label: "Verify & Approval", icon: CheckSquare, route: "/approval" },
     { id: "reports", label: "Reports", icon: BarChart2, route: "/reports" },
-    { id: "notifications", label: "Notifications", icon: Bell, route: "/notifications" },
     { id: "manual-questions", label: "Manual Questions", icon: Edit3, badge: "New", route: "/manual-questions" },
+    { id: "notifications", label: "Notifications", icon: Bell, route: "/notifications" },
     { id: "print-paper", label: "Print Question Paper", icon: Printer, badge: "Print", route: "/print-paper" },
     { id: "settings", label: "Settings", icon: Settings, hasArrow: true, route: "/settings" },
   ];

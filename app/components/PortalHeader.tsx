@@ -200,8 +200,8 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
     { id: "verify-approval", label: "Verify & Approval", desc: "Review, verify & approve question pool", icon: CheckSquare, route: "/approval" },
     { id: "scrutinizer", label: "Scrutinizer", desc: "Scrutinize questions: Bloom's levels, units, MCQ & descriptive checks", icon: Shield, route: "/scrutinizer" },
     { id: "reports", label: "Reports & Analytics", desc: "Exam metrics, audits & CSV export", icon: BarChart2, route: "/reports" },
-    { id: "notifications", label: "Notifications", desc: "System updates, alerts & reminders", icon: Bell, route: "/notifications" },
     { id: "manual-questions", label: "Manual Questions", desc: "Add single or multiple questions manually", icon: Edit3, route: "/manual-questions" },
+    { id: "notifications", label: "Notifications", desc: "System updates, alerts & reminders", icon: Bell, route: "/notifications" },
     { id: "settings", label: "Settings", desc: "System preferences, roles & backup", icon: Settings, route: "/settings" },
   ];
 
