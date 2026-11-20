@@ -433,11 +433,14 @@ export function hasPermission(role: UserRole, route: string, isSubjectFaculty: b
 
 /**
  * Whether a sidebar entry is shown for this role. Same as hasPermission, except
- * the Scrutinizer does not get the plain "Dashboard" entry: its dashboard is the
- * "Scrutiny Dashboard" (/dashboard only redirects there).
+ * the Scrutinizer does not get the plain "Dashboard" entry (its dashboard is the
+ * "Scrutiny Dashboard"; /dashboard only redirects there) nor a separate "School"
+ * entry (it has the single "School & Academic Repository" entry instead).
  */
 export function showInMenu(role: UserRole, route: string, isSubjectFaculty: boolean = true): boolean {
-  if (role === "SCRUTINIZER" && route.replace(/\/$/, "") === "/dashboard") return false;
+  const normalized = route.replace(/\/$/, "");
+  // "School & Academic Repository" is a single entry for the Scrutinizer.
+  if (role === "SCRUTINIZER" && (normalized === "/dashboard" || normalized === "/subjects")) return false;
   return hasPermission(role, route, isSubjectFaculty);
 }
 

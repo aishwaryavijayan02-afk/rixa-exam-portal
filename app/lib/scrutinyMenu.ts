@@ -16,5 +16,5 @@ interface SidebarMenuItem {
  */
 export const SCRUTINY_MENU_ITEMS: SidebarMenuItem[] = [
   { id: "scrutinizer", label: "Scrutiny Dashboard", icon: ClipboardCheck, route: "/scrutinizer" },
-  { id: "academic-repository", label: "Academic Repository", icon: FolderOpen, route: "/academic-repository" },
+  { id: "academic-repository", label: "School & Academic Repository", icon: FolderOpen, route: "/academic-repository" },
 ];

@@ -357,7 +357,7 @@ export default function AcademicRepositoryPage() {
           <main className="digital-vfx-main" style={{ flex: 1, padding: "clamp(16px, 3vw, 28px) clamp(16px, 3vw, 32px)", overflowY: "auto", overflowX: "hidden", minWidth: 0, boxSizing: "border-box" }}>
             <div style={{ marginBottom: "20px" }}>
               <h1 style={{ fontSize: "24px", fontWeight: 800, margin: "0 0 6px 0", letterSpacing: "-0.4px", display: "flex", alignItems: "center", gap: "10px" }}>
-                <FolderOpen size={24} color="#774c28" /> Academic Repository
+                <FolderOpen size={24} color="#774c28" /> School &amp; Academic Repository
               </h1>
               <p style={{ fontSize: "13.5px", color: "#64748b", margin: 0 }}>Syllabus and question bank documents uploaded by faculty members.</p>
             </div>
