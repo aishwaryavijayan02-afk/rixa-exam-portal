@@ -1,11 +1,13 @@
 /**
- * Bloom's Taxonomy compliance checks for staff uploads in the Academic Vault.
+ * Bloom's Taxonomy conversion for question banks uploaded to the Academic Vault.
  *
- * Question bank: every question must carry an explicit Bloom's level, e.g.
- *   "L1", "K2", "BL3", "BTL4", "Level 5", "(Remember)", or a Bloom column in
- *   a spreadsheet. A bank must also span several levels (not only recall).
- * Syllabus: it must list Course Outcomes (CO1, CO2, ...) and each outcome must
- *   be written with a Bloom's action verb or tagged with a level.
+ * Staff may upload a question bank in any layout. After upload every question
+ * is converted to the Bloom's Taxonomy pattern:
+ *   - its Bloom's level comes from an explicit tag when the file has one
+ *     ("L1", "K2", "BTL4", "Level 5", "(Remember)", a Bloom column in Excel),
+ *     otherwise it is inferred from the question's action verb;
+ *   - questions are arranged unit-wise, MCQs first and Descriptive after,
+ *     each ordered from L1 Remember up to L6 Create.
  */
 
 export const BLOOM_LEVELS = ["Remember", "Understand", "Apply", "Analyze", "Evaluate", "Create"] as const;
@@ -20,19 +22,20 @@ const LEVEL_NAME_TO_NUMBER: Record<string, number> = {
   create: 6, creating: 6, synthesis: 6,
 };
 
-/** Standard Bloom's action verbs per level (revised taxonomy). */
+/** Bloom's action verbs (revised taxonomy); each verb belongs to one level. */
 const ACTION_VERBS: Record<number, string[]> = {
-  1: ["define", "list", "state", "name", "identify", "recall", "recognize", "recognise", "label", "match", "memorize", "outline", "reproduce", "select", "tell", "describe", "write", "mention", "find", "show", "what", "who", "when", "where", "which"],
-  2: ["explain", "describe", "discuss", "summarize", "summarise", "classify", "compare", "interpret", "illustrate", "distinguish", "differentiate", "paraphrase", "infer", "predict", "translate", "understand", "demonstrate understanding", "give example", "represent", "relate", "express", "why", "how"],
-  3: ["apply", "solve", "use", "compute", "calculate", "determine", "demonstrate", "implement", "execute", "carry out", "construct", "find", "operate", "practice", "prepare", "produce", "sketch", "draw", "modify", "plot", "simulate", "derive", "evaluate the value", "prove", "verify", "employ", "utilize", "utilise", "make use"],
-  4: ["analyze", "analyse", "examine", "investigate", "categorize", "categorise", "differentiate", "distinguish", "compare", "contrast", "deconstruct", "inspect", "organize", "organise", "outline", "attribute", "break down", "test", "diagnose", "infer", "relate", "identify the cause"],
-  5: ["evaluate", "assess", "justify", "critique", "criticize", "criticise", "judge", "appraise", "argue", "defend", "recommend", "rate", "support", "validate", "prioritize", "prioritise", "conclude", "decide", "select the best", "measure", "review"],
-  6: ["create", "design", "develop", "formulate", "construct", "compose", "invent", "plan", "produce", "propose", "generate", "devise", "build", "assemble", "integrate", "combine", "originate", "author", "model", "synthesize", "synthesise", "improve", "innovate"],
+  1: ["define", "list", "state", "name", "identify", "recall", "recognize", "recognise", "label", "match", "memorize", "mention", "write", "enumerate", "tabulate", "what", "who", "when", "where", "which", "fill in", "choose", "true or false", "expand", "abbreviate"],
+  2: ["explain", "describe", "discuss", "summarize", "summarise", "classify", "interpret", "illustrate", "outline", "paraphrase", "give an example", "give examples", "give example", "represent", "express", "elaborate", "indicate", "why", "how", "brief", "short note", "notes on", "translate", "predict", "understand"],
+  3: ["apply", "solve", "use", "compute", "calculate", "determine", "demonstrate", "implement", "execute", "carry out", "construct", "find", "sketch", "draw", "plot", "derive", "prove", "verify", "show that", "estimate", "simulate", "convert", "employ", "utilize", "utilise", "make use", "modify", "operate", "prepare", "write a program", "write a query"],
+  4: ["analyze", "analyse", "examine", "investigate", "compare", "contrast", "differentiate", "distinguish", "categorize", "categorise", "deconstruct", "inspect", "infer", "break down", "relate", "organize", "organise", "attribute", "diagnose", "identify the cause", "trace"],
+  5: ["evaluate", "assess", "justify", "critique", "criticize", "criticise", "judge", "appraise", "argue", "defend", "recommend", "validate", "prioritize", "prioritise", "conclude", "decide", "comment on", "rate", "review", "select the best", "support your answer"],
+  6: ["create", "design", "develop", "formulate", "compose", "invent", "plan", "propose", "generate", "devise", "build", "assemble", "integrate", "synthesize", "synthesise", "originate", "innovate", "improve", "construct a model"],
 };
-const ALL_ACTION_VERBS = Array.from(new Set(Object.values(ACTION_VERBS).flat())).sort((a, b) => b.length - a.length);
 
-export const BLOOM_HELP_TEXT =
-  "Bloom's format: tag every question with its level — L1 Remember, L2 Understand, L3 Apply, L4 Analyze, L5 Evaluate, L6 Create (K1–K6 or BTL1–BTL6 also accepted).";
+const VERB_TO_LEVEL: [string, number][] = Object.entries(ACTION_VERBS)
+  .flatMap(([level, verbs]) => verbs.map((verb) => [verb, Number(level)] as [string, number]))
+  // Longer phrases first so "write a program" beats "write".
+  .sort((a, b) => b[0].length - a[0].length);
 
 export function bloomLevelName(level: number): BloomLevelName {
   return BLOOM_LEVELS[Math.min(6, Math.max(1, level)) - 1];
@@ -50,11 +53,11 @@ export function detectExplicitBloomLevel(text: string): number | null {
   const code = value.match(/(?:^|[\s(\[|,;:/-])(?:BTL|BT|BL|KL|CL|K|L)\s*[-.]?\s*([1-6])(?=$|[\s)\],;:|./-])/i);
   if (code) return Number(code[1]);
 
-  // "Level 3", "Bloom's Level: 4", "Bloom Level - Apply"
+  // "Level 3", "Bloom's Level: 4"
   const levelNumber = value.match(/\b(?:bloom'?s?\s*)?(?:taxonomy\s*)?level\s*[-:]?\s*([1-6])\b/i);
   if (levelNumber) return Number(levelNumber[1]);
 
-  // A level name used as a tag: "(Remember)", "[Apply]", "- Analyze", "Bloom: Create",
+  // A level name used as a tag: "(Remember)", "[Apply]", "Bloom: Create",
   // or the whole cell being the level name.
   const names = Object.keys(LEVEL_NAME_TO_NUMBER).join("|");
   const whole = value.match(new RegExp(`^(?:bloom'?s?\\s*(?:level|taxonomy)?\\s*[-:]?\\s*)?(${names})$`, "i"));
@@ -65,120 +68,115 @@ export function detectExplicitBloomLevel(text: string): number | null {
   return null;
 }
 
-/** True when the sentence uses a Bloom's action verb (any level). */
-export function hasBloomActionVerb(text: string): boolean {
-  const value = ` ${(text || "").toLowerCase().replace(/[^a-z\s]/g, " ").replace(/\s+/g, " ")} `;
-  return ALL_ACTION_VERBS.some((verb) => value.includes(` ${verb} `));
+/**
+ * Infers a Bloom's level from the action verb a question uses. The verb that
+ * appears earliest in the question wins ("Define and explain …" → Remember);
+ * when two start at the same place the higher level wins. Returns null when
+ * the question has no recognisable action verb.
+ */
+export function inferBloomLevel(text: string): number | null {
+  const value = ` ${(text || "").toLowerCase().replace(/[^a-z\s]/g, " ").replace(/\s+/g, " ").trim()} `;
+  let best: { position: number; level: number } | null = null;
+  for (const [verb, level] of VERB_TO_LEVEL) {
+    const position = value.indexOf(` ${verb} `);
+    if (position < 0) continue;
+    if (!best || position < best.position || (position === best.position && level > best.level)) best = { position, level };
+  }
+  return best ? best.level : null;
 }
 
-export interface BloomQuestionInput {
+/** Removes Bloom / CO tags ("CO1 L2", "(BTL3)", "[Apply]") around the question text. */
+export function stripBloomTags(text: string): string {
+  const names = Object.keys(LEVEL_NAME_TO_NUMBER).join("|");
+  const tag = `(?:CO\\s*\\d{1,2}|(?:BTL|BT|BL|KL|CL|K|L)\\s*[-.]?\\s*[1-6])`;
+  return (text || "")
+    .replace(new RegExp(`^(?:\\s*[(\\[]?\\s*${tag}\\s*[)\\]]?\\s*[,|/:-]?)+\\s+`, "i"), "")
+    .replace(new RegExp(`(?:\\s*[(\\[]\\s*(?:${tag}|${names})\\s*[)\\]])+\\s*$`, "i"), "")
+    .replace(new RegExp(`(?:\\s+[|,/-]?\\s*${tag})+\\s*$`, "i"), "")
+    .trim();
+}
+
+const ROMAN: Record<string, number> = { i: 1, v: 5, x: 10, l: 50, c: 100, d: 500, m: 1000 };
+function romanToNumber(value: string): number {
+  let total = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    const current = ROMAN[value[i]] || 0;
+    const next = ROMAN[value[i + 1]] || 0;
+    total += current < next ? -current : current;
+  }
+  return total;
+}
+
+/** "Unit III - Thermodynamics" → 3, "2" → 2, "Module 4" → 4; unknown → 99. */
+export function unitNumber(unit: string | undefined): number {
+  const value = (unit || "").trim().toLowerCase();
+  const match = value.match(/^(?:unit|module|chapter)?\s*[-:]?\s*(\d+|[ivxlcdm]+)\b/);
+  if (!match) return 99;
+  const n = /^\d+$/.test(match[1]) ? Number(match[1]) : romanToNumber(match[1]);
+  return n > 0 ? n : 99;
+}
+
+interface BloomConvertible {
   question: string;
+  type?: string;
+  unit?: string;
+  options?: string[];
+  marks?: number;
+  bloomLevel?: string;
   /** Value of a Bloom / BL / BTL / K-level column, when the file has one. */
   bloomCell?: string;
 }
 
-export interface BloomCheckResult {
-  ok: boolean;
-  /** Short reason shown as the dialog title. */
-  title: string;
-  /** Detailed, staff-facing explanation of what to fix. */
-  details: string[];
-  /** Detected level (1–6) per question, null when missing. */
-  levels: (number | null)[];
+/**
+ * Converts any parsed question bank to the Bloom's Taxonomy pattern: assigns a
+ * Bloom's level to every question, splits questions into MCQ and Descriptive,
+ * and orders them unit-wise (MCQ before Descriptive, L1 → L6 within each).
+ */
+export function convertToBloomPattern<T extends BloomConvertible>(questions: T[]): (T & { type: "MCQ" | "Descriptive"; bloomLevel: BloomLevelName })[] {
+  const converted = questions.map((q, index) => {
+    const hasOptions = (q.options || []).filter((option) => option && option.trim()).length >= 2;
+    const type: "MCQ" | "Descriptive" = hasOptions || /mcq|multiple[\s-]*choice|objective/i.test(q.type || "") ? "MCQ" : "Descriptive";
+    const level =
+      detectExplicitBloomLevel(q.bloomCell || "") ??
+      detectExplicitBloomLevel(q.bloomLevel || "") ??
+      detectExplicitBloomLevel(q.question) ??
+      inferBloomLevel(q.question) ??
+      (type === "MCQ" ? 1 : (q.marks || 0) >= 10 ? 4 : 2);
+    const { bloomCell: _bloomCell, ...rest } = q;
+    void _bloomCell;
+    return {
+      item: {
+        ...rest,
+        question: stripBloomTags(q.question) || q.question,
+        options: hasOptions ? q.options : undefined,
+        type,
+        bloomLevel: bloomLevelName(level),
+      } as unknown as T & { type: "MCQ" | "Descriptive"; bloomLevel: BloomLevelName },
+      unit: unitNumber(q.unit),
+      level,
+      index,
+    };
+  });
+
+  converted.sort(
+    (a, b) =>
+      a.unit - b.unit ||
+      (a.item.type === b.item.type ? 0 : a.item.type === "MCQ" ? -1 : 1) ||
+      a.level - b.level ||
+      a.index - b.index,
+  );
+  return converted.map((entry) => entry.item);
 }
 
-export function validateQuestionBankBloom(questions: BloomQuestionInput[]): BloomCheckResult {
-  const levels = questions.map((q) => detectExplicitBloomLevel(q.bloomCell || "") ?? detectExplicitBloomLevel(q.question));
-  const missing = levels.map((level, index) => (level ? -1 : index)).filter((index) => index >= 0);
-  const distinct = new Set(levels.filter((level): level is number => Boolean(level)));
-
-  if (questions.length === 0) {
-    return { ok: false, title: "No questions found", details: ["The file has no readable questions."], levels };
-  }
-
-  if (missing.length > 0) {
-    const sample = missing.slice(0, 5).map((index) => {
-      const text = questions[index].question.replace(/\s+/g, " ").trim();
-      return `Q${index + 1}: “${text.length > 70 ? `${text.slice(0, 70)}…` : text}”`;
-    });
-    return {
-      ok: false,
-      title: "Question bank is not in Bloom's Taxonomy format",
-      details: [
-        `${missing.length} of ${questions.length} questions have no Bloom's level.`,
-        ...sample,
-        ...(missing.length > sample.length ? [`…and ${missing.length - sample.length} more.`] : []),
-        BLOOM_HELP_TEXT,
-        "Example: “1  CO1  L2  Explain the working of a transformer.” or add a “Bloom Level” column in Excel.",
-        "Please convert the question bank to Bloom's Taxonomy format and upload again.",
-      ],
-      levels,
-    };
-  }
-
-  if (questions.length >= 10 && distinct.size < 3) {
-    const used = [...distinct].sort().map((level) => `L${level} ${bloomLevelName(level)}`).join(", ");
-    return {
-      ok: false,
-      title: "Bloom's levels are not balanced",
-      details: [
-        `All ${questions.length} questions use only: ${used}.`,
-        "A Bloom's Taxonomy question bank must cover at least 3 different levels (e.g. Remember, Understand, Apply, Analyze …).",
-        "Please add higher-order questions and upload again.",
-      ],
-      levels,
-    };
-  }
-
-  return { ok: true, title: "Bloom's Taxonomy verified", details: [], levels };
-}
-
-export function validateSyllabusBloom(text: string): BloomCheckResult {
-  const lines = (text || "")
-    .split(/\r?\n/)
-    .map((line) => line.replace(/\s+/g, " ").trim())
-    .filter(Boolean);
-
-  // "CO1: Explain …", "CO 2 - Apply …", "CO3. …"; continuation lines are joined.
-  const outcomes: { label: string; text: string }[] = [];
-  for (let i = 0; i < lines.length; i += 1) {
-    const match = lines[i].match(/^(?:\(?\s*)(CO\s*[-.]?\s*\d{1,2})\s*\)?\s*[:.)\-–—]?\s*(.*)$/i);
-    if (!match) continue;
-    let body = match[2].trim();
-    if (body.length < 12 && lines[i + 1] && !/^(?:CO\s*\d|unit\b|module\b)/i.test(lines[i + 1])) body = `${body} ${lines[i + 1]}`.trim();
-    if (body.length < 5) continue;
-    outcomes.push({ label: match[1].replace(/\s|[-.]/g, "").toUpperCase(), text: body });
-  }
-
-  if (outcomes.length === 0) {
-    return {
-      ok: false,
-      title: "Syllabus is not in Bloom's Taxonomy format",
-      details: [
-        "No Course Outcomes (CO1, CO2, …) were found in this syllabus.",
-        "A Bloom's Taxonomy syllabus must list Course Outcomes written with Bloom's action verbs, e.g.:",
-        "CO1: Define the basic concepts of … (L1 Remember)",
-        "CO2: Explain … (L2 Understand)   CO3: Apply … (L3 Apply)",
-        "Please add Course Outcomes in Bloom's format and upload again.",
-      ],
-      levels: [],
-    };
-  }
-
-  const weak = outcomes.filter((co) => detectExplicitBloomLevel(co.text) === null && !hasBloomActionVerb(co.text));
-  if (weak.length > 0) {
-    return {
-      ok: false,
-      title: "Course Outcomes are not in Bloom's Taxonomy format",
-      details: [
-        `${weak.length} of ${outcomes.length} Course Outcomes do not use a Bloom's action verb or level:`,
-        ...weak.slice(0, 5).map((co) => `${co.label}: “${co.text.length > 70 ? `${co.text.slice(0, 70)}…` : co.text}”`),
-        "Start each outcome with a Bloom's verb — Define, Explain, Apply, Analyze, Evaluate, Design … — or tag it with L1–L6.",
-        "Please correct the Course Outcomes and upload again.",
-      ],
-      levels: outcomes.map((co) => detectExplicitBloomLevel(co.text)),
-    };
-  }
-
-  return { ok: true, title: "Bloom's Taxonomy verified", details: [], levels: outcomes.map((co) => detectExplicitBloomLevel(co.text)) };
+/** Groups converted questions as Unit → { MCQ, Descriptive } for display. */
+export function groupByUnitAndType<T extends { unit?: string; type?: string }>(questions: T[]) {
+  const units = new Map<string, { unit: string; mcq: T[]; descriptive: T[] }>();
+  questions.forEach((q) => {
+    const n = unitNumber(q.unit);
+    const key = n === 99 ? q.unit || "General" : `Unit ${n}`;
+    const group = units.get(key) || { unit: n === 99 ? key : (q.unit && /[-–—:]/.test(q.unit) ? q.unit : key), mcq: [], descriptive: [] };
+    (q.type === "MCQ" ? group.mcq : group.descriptive).push(q);
+    units.set(key, group);
+  });
+  return [...units.values()];
 }

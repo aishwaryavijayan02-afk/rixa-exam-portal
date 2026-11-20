@@ -37,21 +37,14 @@ import JSZip from "jszip";
 import RoleGuard from "../components/RoleGuard";
 import { OriginalQuestionBankPreview, ToastNotification } from "../components/CrudModal";
 import MyUploadsList, { type MyUploadItem } from "../components/MyUploadsList";
-import { alertDialog, confirmDialog } from "../components/ConfirmDialog";
-import { bloomLevelName, validateQuestionBankBloom, validateSyllabusBloom } from "../lib/bloomTaxonomy";
+import { confirmDialog } from "../components/ConfirmDialog";
+import { convertToBloomPattern, groupByUnitAndType } from "../lib/bloomTaxonomy";
 import PortalFooter from "../components/PortalFooter";
 import PortalHeader from "../components/PortalHeader";
 import SyllabusDocumentPreview from "../components/SyllabusDocumentPreview";
 
 type ParsedBulkQuestion = Partial<QuestionItem> & { question: string; bloomCell?: string };
 type SyllabusUploadFormat = "excel" | "word" | "pdf" | "diagram";
-
-/** Thrown when an upload is not written in Bloom's Taxonomy format. */
-class BloomRejection extends Error {
-  constructor(title: string, public details: string[]) {
-    super(title);
-  }
-}
 
 const cleanCell = (value: unknown) => String(value ?? "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
 
@@ -170,11 +163,24 @@ function rowsToBulkQuestions(rows: string[][], sourceFile: string): ParsedBulkQu
 // Document header lines ("Subject Name: …", "Max Marks: 100", "Part A") are not questions.
 const METADATA_LINE = /^(?:(?:subject|course|paper|department|dept|programme|program|semester|sem|year|regulation|scheme|code|title|max(?:imum)?\s*marks|marks|time|duration|instructions?|note|section|faculty|staff|prepared\s+by|name|date|total)\b[^:?]{0,30}[:\-–]|(?:part|section)\s*[-–]?\s*[a-e]\b[^?]{0,60}$|question\s*bank\b[^?]*$)/i;
 
+const UNIT_HEADING = /^unit\s+([ivxlcdm]+|\d+)\s*(?:[-–—:]\s*(.*))?$/i;
+// "SECTION A – MCQ", "Part B (10 × 8 = 80)", "SECTION A" — but not an instruction
+// such as "Section A contains 20 multiple-choice questions".
+const SECTION_HEADING = /^(?:section|part)\s*[-–—]?\s*(?:[a-e]|[ivx]+)\s*(?:$|[-–—:(.)])[^?]{0,90}$/i;
+const MARKS_SUMMARY = /^\(?\s*(?:\d+\s*[×xX*]\s*\d+\s*=\s*)?\d+\s*marks?\s*\)?$/i;
+const END_OF_PAPER = /^\*{3}|^end\s+of\s+(?:the\s+)?question\s+paper/i;
+
 function parseTextQuestionBank(text: string, sourceFile: string): ParsedBulkQuestion[] {
   if (/\uFFFD|[\uE000-\uF8FF]/.test(text)) {
     throw new Error("This file's text encoding cannot be read faithfully. The original upload is preserved; please upload the same content as Unicode .docx or .xlsx to keep its language unchanged.");
   }
-  const lines = text.split(/\r?\n/).map((line) => cleanCell(line)).filter(Boolean);
+  const allLines = text.split(/\r?\n/).map((line) => cleanCell(line)).filter(Boolean);
+  // A question paper starts with institution details, exam title, date/time
+  // and general instructions. Questions begin at the first Section/Part or
+  // Unit heading (or the first "Q1." line), so everything above it is skipped.
+  const bodyStart = allLines.findIndex((line) => UNIT_HEADING.test(line) || SECTION_HEADING.test(line) || /^Q\s*\d+\s*[.)]/i.test(line));
+  const lines = bodyStart > 0 ? allLines.slice(bodyStart) : allLines;
+  let inInstructions = false;
   const numberedQuestion = /^(?:(?:question|q)\s*)?\d+\s*[.)\-:]\s*(.+)$/i;
   const optionLine = /^(?:\(?([A-D])\)?\s*[.)\-:]|\(([A-D])\))\s*(.+)$/i;
   const answerLine = /^(?:correct\s+)?answer\s*[:\-]\s*(.+)$/i;
@@ -190,8 +196,19 @@ function parseTextQuestionBank(text: string, sourceFile: string): ParsedBulkQues
   };
 
   for (const line of lines) {
-    const unitHeading = line.match(/^unit\s+([ivxlcdm]+|\d+)\s*(?:[-–—:]\s*(.*))?$/i);
+    if (END_OF_PAPER.test(line)) {
+      finish();
+      continue;
+    }
+    if (MARKS_SUMMARY.test(line)) continue;
+    if (/^(?:general\s+)?instructions?\b[^?]{0,60}$/i.test(line)) {
+      finish();
+      inInstructions = true;
+      continue;
+    }
+    const unitHeading = line.match(UNIT_HEADING);
     if (unitHeading) {
+      inInstructions = false;
       finish();
       const unitNumber = unitHeading[1];
       const unitTitle = unitHeading[2]?.trim();
@@ -209,6 +226,14 @@ function parseTextQuestionBank(text: string, sourceFile: string): ParsedBulkQues
       activeQuestionType = "Descriptive";
       continue;
     }
+    if (SECTION_HEADING.test(line)) {
+      inInstructions = false;
+      finish();
+      if (/\b(?:mcq|multiple[\s-]*choice|objective)\b/i.test(line)) activeQuestionType = "MCQ";
+      else if (/\b(?:descriptive|short|long|essay)\b/i.test(line)) activeQuestionType = "Descriptive";
+      continue;
+    }
+    if (inInstructions) continue;
 
     const questionMatch = line.match(numberedQuestion);
     if (questionMatch) {
@@ -221,7 +246,10 @@ function parseTextQuestionBank(text: string, sourceFile: string): ParsedBulkQues
     const optionMatch = line.match(optionLine);
     const answerMatch = line.match(answerLine);
     if (optionMatch && current) {
-      current.options = [...(current.options || []), optionMatch[3].trim()];
+      // "A) x   B) y   C) z   D) w" on one line holds four options.
+      const inline = line.split(/\s*\(?\b([A-D])\)\s*/).slice(1);
+      const lineOptions = inline.length >= 8 ? inline.filter((_, i) => i % 2 === 1).map((o) => o.trim()).filter(Boolean) : [optionMatch[3].trim()];
+      current.options = [...(current.options || []), ...lineOptions];
       current.type = "MCQ";
     } else if (answerMatch && current) {
       current.correctAnswer = answerMatch[1].trim();
@@ -488,28 +516,7 @@ export default function AcademicVaultPage() {
       }
     }
 
-    // Accept only syllabi whose Course Outcomes follow Bloom's Taxonomy.
-    const rejectSyllabus = (title: string, details: string[]) => {
-      setSyllabusFile(null);
-      setSyllabusFileName(null);
-      setSyllabusFileUrl(null);
-      setSyllabusPreviewText(null);
-      setCustomSyllabusSubject(null);
-      if (syllabusFileRef.current) syllabusFileRef.current.value = "";
-      void alertDialog(details.join("\n"), { title: `Upload rejected — ${title}`, confirmLabel: "OK, I will correct it" });
-    };
-    if (!documentText.trim()) {
-      rejectSyllabus("Syllabus could not be verified", [
-        "The text of this file could not be read, so its Bloom's Taxonomy Course Outcomes cannot be checked.",
-        "Please upload the syllabus as a Word (.docx), PDF or Excel file with Course Outcomes (CO1, CO2, …) written using Bloom's action verbs.",
-      ]);
-      return;
-    }
-    const bloom = validateSyllabusBloom(documentText);
-    if (!bloom.ok) {
-      rejectSyllabus(bloom.title, bloom.details);
-      return;
-    }
+    // Syllabi are accepted in any layout; no Bloom's format is required.
 
     // Pick the subject (name + code) the uploaded syllabus belongs to: a known
     // catalogue subject first, otherwise the document's own name and code.
@@ -719,6 +726,8 @@ export default function AcademicVaultPage() {
   const [isParsingBulk, setIsParsingBulk] = useState(false);
   const [isBulkDragOver, setIsBulkDragOver] = useState(false);
   const [showBulkPreview, setShowBulkPreview] = useState(false);
+  const [bulkPreviewTab, setBulkPreviewTab] = useState<"bloom" | "original">("bloom");
+  const bloomGroups = React.useMemo(() => groupByUnitAndType(parsedBulkQuestions), [parsedBulkQuestions]);
 
   // Keep the question bank subject valid for this user. Only a single allowed
   // subject is picked automatically; otherwise it comes from the uploaded file
@@ -780,26 +789,12 @@ export default function AcademicVaultPage() {
       if (extension === "doc") {
         throw new Error("Legacy .doc files cannot be decoded safely. Please save the same document as .docx so its original language and text are preserved.");
       }
-      if (["png", "jpg", "jpeg", "svg", "webp"].includes(extension)) {
-        throw new BloomRejection("Question bank must be a Word, Excel or PDF document", [
-          "An image cannot be checked for Bloom's Taxonomy levels.",
-          "Put the questions (with diagrams) in a Word or Excel file, tag each question with its Bloom's level (L1–L6) and upload again.",
-        ]);
-      }
+      // Any layout is accepted. The questions are then converted to the Bloom's
+      // Taxonomy pattern: a Bloom's level on every question, arranged unit-wise
+      // with MCQs and Descriptive questions in separate groups.
       const rawParsed = await parseBulkQuestionFile(file);
-      if (rawParsed.length) {
-        // Accept only question banks written in Bloom's Taxonomy format.
-        const bloom = validateQuestionBankBloom(rawParsed.map((q) => ({ question: q.question, bloomCell: q.bloomCell })));
-        if (!bloom.ok) throw new BloomRejection(bloom.title, bloom.details);
-        rawParsed.forEach((q, index) => {
-          const level = bloom.levels[index];
-          if (level) q.bloomLevel = bloomLevelName(level) as QuestionItem["bloomLevel"];
-          delete q.bloomCell;
-        });
-      }
-      // Keep the original file (for "View original") only once it is accepted.
       await saveQuestionBankDocument(file);
-      const parsed = rawParsed;
+      const parsed: ParsedBulkQuestion[] = convertToBloomPattern(rawParsed);
       setParsedBulkQuestions(parsed);
       setParsedBulkCount(parsed.length);
       if (!parsed.length) {
@@ -870,10 +865,6 @@ export default function AcademicVaultPage() {
       setParsedBulkQuestions([]);
       setParsedBulkCount(0);
       if (bulkFileRef.current) bulkFileRef.current.value = "";
-      if (error instanceof BloomRejection) {
-        void alertDialog(error.details.join("\n"), { title: `Upload rejected — ${error.message}`, confirmLabel: "OK, I will correct it" });
-        return;
-      }
       console.error("Bulk question parsing failed", error);
       showToast(error instanceof Error ? error.message : `Unable to read ${file.name}.`, "danger");
     } finally {
@@ -1787,7 +1778,12 @@ export default function AcademicVaultPage() {
                         {isParsingBulk && <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--vp-text)" }}>Reading every question from the file...</div>}
                         {!isParsingBulk && (parsedBulkCount > 0 || bulkSourceText !== null) && (
                           <div style={{ fontSize: "12px", fontWeight: 800, color: "#15803d" }}>
-                            ✓ {parsedBulkCount} questions found and ready to insert
+                            ✓ {parsedBulkCount} questions found and converted to Bloom&apos;s Taxonomy pattern
+                            {parsedBulkCount > 0 && (
+                              <div style={{ fontSize: "11px", fontWeight: 700, color: "#475569", marginTop: "2px" }}>
+                                {bloomGroups.length} unit{bloomGroups.length === 1 ? "" : "s"} · {parsedBulkQuestions.filter((q) => q.type === "MCQ").length} MCQ · {parsedBulkQuestions.filter((q) => q.type !== "MCQ").length} Descriptive
+                              </div>
+                            )}
                           </div>
                         )}
                         {!isParsingBulk && parsedBulkCount > 0 && (
@@ -1795,6 +1791,7 @@ export default function AcademicVaultPage() {
                             type="button"
                             onClick={(event) => {
                               event.stopPropagation();
+                              setBulkPreviewTab("bloom");
                               setShowBulkPreview(true);
                             }}
                             style={{
@@ -1812,7 +1809,7 @@ export default function AcademicVaultPage() {
                             }}
                           >
                             <Eye size={14} />
-                            Open File Preview
+                            View Bloom&apos;s Pattern
                           </button>
                         )}
                       </div>
@@ -1821,7 +1818,7 @@ export default function AcademicVaultPage() {
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", padding: "9px 11px", borderRadius: "8px", background: "#f0f9ff", border: "1px solid #bae6fd" }}>
                           <div style={{ minWidth: 0, fontSize: "11.5px", color: "var(--vp-text)", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>📊 {bulkFileName}</div>
                           <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
-                            <button type="button" onClick={() => setShowBulkPreview(true)} style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "6px 10px", borderRadius: "7px", border: "1px solid #deba9b", background: "#ffffff", color: "var(--vp-text)", fontSize: "11px", fontWeight: 800, cursor: "pointer" }}>
+                            <button type="button" onClick={() => { setBulkPreviewTab("original"); setShowBulkPreview(true); }} style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "6px 10px", borderRadius: "7px", border: "1px solid #deba9b", background: "#ffffff", color: "var(--vp-text)", fontSize: "11px", fontWeight: 800, cursor: "pointer" }}>
                               <Eye size={13} /> View Original File
                             </button>
                           </div>
@@ -2080,9 +2077,72 @@ export default function AcademicVaultPage() {
               </button>
             </div>
             <div style={{ overflow: "auto", padding: "20px 22px 24px" }}>
-              <div style={{ marginBottom: "16px", padding: "12px 15px", borderRadius: "10px", border: "1px solid #dbeafe", background: "linear-gradient(100deg, #eff6ff, #f0fdfa)", color: "#475569", fontSize: "12px" }}><strong style={{ color: "#0f172a" }}>Check before importing.</strong> Review the uploaded file or inspect the questions that will be added to the bank.</div>
-              {/* Word question banks: show the original document exactly as uploaded */}
-              {bulkFileUrl && /\.docx$/i.test(bulkFileName) ? (
+              <div style={{ marginBottom: "16px", padding: "12px 15px", borderRadius: "10px", border: "1px solid #dbeafe", background: "linear-gradient(100deg, #eff6ff, #f0fdfa)", color: "#475569", fontSize: "12px" }}><strong style={{ color: "#0f172a" }}>Check before importing.</strong> Questions are converted to the Bloom&apos;s Taxonomy pattern — unit-wise, with MCQ and Descriptive questions separated. You can also view the original file.</div>
+              <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+                {([["bloom", "Bloom's Taxonomy Pattern"], ["original", "Original File"]] as const).map(([key, label]) => (
+                  <button key={key} type="button" onClick={() => setBulkPreviewTab(key)} style={{ padding: "8px 14px", borderRadius: "8px", border: "1px solid #deba9b", background: bulkPreviewTab === key ? "#774c28" : "#ffffff", color: bulkPreviewTab === key ? "#ffffff" : "#774c28", fontSize: "12px", fontWeight: 800, cursor: "pointer" }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {bulkPreviewTab === "bloom" ? (
+                bloomGroups.length === 0 ? (
+                  <div style={{ padding: "18px", color: "#64748b", fontSize: "13px" }}>No questions were found in this file.</div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+                    {bloomGroups.map((group) => (
+                      <section key={group.unit} style={{ border: "1px solid #e2e8f0", borderRadius: "12px", background: "#ffffff", overflow: "hidden" }}>
+                        <div style={{ padding: "11px 16px", background: "linear-gradient(90deg, #ecfeff, #f8fafc)", borderLeft: "4px solid #754b27", color: "#4c311f", fontSize: "15px", fontWeight: 800 }}>
+                          {group.unit}
+                          <span style={{ marginLeft: "10px", fontSize: "11.5px", fontWeight: 700, color: "#64748b" }}>{group.mcq.length} MCQ · {group.descriptive.length} Descriptive</span>
+                        </div>
+                        {([["Part A — Multiple Choice Questions (MCQ)", group.mcq], ["Part B — Descriptive Questions", group.descriptive]] as const).map(([title, items]) =>
+                          items.length === 0 ? null : (
+                            <div key={title} style={{ padding: "12px 16px 14px" }}>
+                              <div style={{ fontSize: "12.5px", fontWeight: 800, color: "#774c28", marginBottom: "8px", letterSpacing: "0.02em" }}>{title}</div>
+                              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12.5px" }}>
+                                <thead>
+                                  <tr style={{ background: "#f8fafc", color: "#475569", textAlign: "left" }}>
+                                    <th style={{ padding: "6px 8px", width: "40px" }}>#</th>
+                                    <th style={{ padding: "6px 8px" }}>Question</th>
+                                    <th style={{ padding: "6px 8px", width: "140px" }}>Bloom&apos;s Level</th>
+                                    <th style={{ padding: "6px 8px", width: "60px" }}>Marks</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {items.map((q, i) => {
+                                    const levelIndex = ["Remember", "Understand", "Apply", "Analyze", "Evaluate", "Create"].indexOf(q.bloomLevel || "") + 1;
+                                    return (
+                                      <tr key={`${title}-${i}`} style={{ borderTop: "1px solid #edf1f5", verticalAlign: "top" }}>
+                                        <td style={{ padding: "7px 8px", color: "#64748b", fontWeight: 700 }}>{i + 1}</td>
+                                        <td style={{ padding: "7px 8px", color: "#1e293b", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+                                          {q.question}
+                                          {q.options && q.options.length > 0 && (
+                                            <div style={{ marginTop: "4px", color: "#746252", display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
+                                              {q.options.map((option, oi) => <span key={oi}>({String.fromCharCode(97 + oi)}) {option}</span>)}
+                                            </div>
+                                          )}
+                                        </td>
+                                        <td style={{ padding: "7px 8px" }}>
+                                          <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: "999px", background: "#fdf4ec", border: "1px solid #deba9b", color: "#774c28", fontSize: "11px", fontWeight: 800, whiteSpace: "nowrap" }}>
+                                            {levelIndex ? `L${levelIndex} · ` : ""}{q.bloomLevel}
+                                          </span>
+                                        </td>
+                                        <td style={{ padding: "7px 8px", color: "#475569" }}>{q.marks ?? "—"}</td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          ),
+                        )}
+                      </section>
+                    ))}
+                  </div>
+                )
+              ) : /* Word question banks: show the original document exactly as uploaded */
+              bulkFileUrl && /\.docx$/i.test(bulkFileName) ? (
                 <OriginalQuestionBankPreview name={bulkFileName} url={bulkFileUrl} fileAvailable />
               ) : bulkSourceText !== null && (
                 <section style={{ border: "1px solid #d8e1ec", borderRadius: "13px", background: "#e9eef5", overflow: "hidden", padding: "18px" }}>
