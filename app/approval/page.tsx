@@ -413,27 +413,6 @@ export default function ApprovalPage() {
     return q.status === "Verified";
   });
 
-  const syllabusAwaitsCurrentRole = (item: SyllabusApprovalItem) => {
-    if (currentUser.role === "HOD") return item.hodStatus === "Pending" && item.status === "Pending";
-    if (currentUser.role === "DEAN") return item.hodStatus === "Approved" && item.deanStatus === "Pending";
-    if (currentUser.role === "COE") return item.deanStatus === "Approved" && (item.coeStatus === "Pending" || item.coeStatus === "Locked");
-    return false;
-  };
-
-  const handleApproveSyllabus = () => {
-    if (!selectedSyllabus) return;
-    const role = currentUser.role;
-    const updates = buildSyllabusApprovalUpdates();
-
-    if (Object.keys(updates).length === 0) return;
-    const updated = examStore.updateSyllabusApproval(selectedSyllabus.id, updates);
-    if (updated) {
-      setSelectedSyllabus(updated);
-      triggerToast(role === "HOD" ? "Syllabus verified and forwarded to Dean." : role === "DEAN" ? "Syllabus approved and forwarded to COE." : "Syllabus final approval completed.");
-      window.setTimeout(() => setSelectedSyllabus(null), 900);
-    }
-  };
-
   useEffect(() => {
     const handleAuth = () => {
       setCurrentUser(authStore.getCurrentUser());
@@ -981,11 +960,7 @@ export default function ApprovalPage() {
               <div style={{ fontSize: "11px", color: "#64748b" }}>
                 {selectedSyllabus.hodStatus === "Approved" ? "Verified and forwarded in the approval workflow." : "Review the complete Unit 1–5 document before forwarding."}
               </div>
-              {syllabusAwaitsCurrentRole(selectedSyllabus) && (
-                <button type="button" onClick={handleApproveSyllabus} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "9px 16px", borderRadius: "10px", border: "none", background: "linear-gradient(135deg, #ca9261, #c3844d)", color: "#ffffff", fontSize: "12px", fontWeight: 800, cursor: "pointer", boxShadow: "0 6px 16px rgba(195, 132, 77,0.25)", whiteSpace: "nowrap" }}>
-                  {currentUser.role === "HOD" ? "✓ Verify & Send to Dean" : currentUser.role === "DEAN" ? "✓ Approve & Send to COE" : "✓ Final Approve"}
-                </button>
-              )}
+              {/* Read-only preview: approval is done with "Verify & Forward" on the review page. */}
             </div>
           </div>
         </div>

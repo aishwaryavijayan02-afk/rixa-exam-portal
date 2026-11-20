@@ -37,6 +37,76 @@ import PortalHeader from "../components/PortalHeader";
 import PortalFooter from "../components/PortalFooter";
 import { ToastNotification } from "../components/CrudModal";
 
+const BLOOM_NAMES: Record<string, string> = {
+  L1: "Remember",
+  L2: "Understand",
+  L3: "Apply",
+  L4: "Analyze",
+  L5: "Evaluate",
+  L6: "Create",
+};
+
+const ROMAN_UNITS = ["I", "II", "III", "IV", "V", "VI"];
+
+interface ParsedQuestion {
+  text: string;
+  options: string[];
+  unit: string;
+  co: string;
+  level: string;
+}
+
+/**
+ * Uploaded question banks store each row as one string, e.g.
+ *   "26 IV CO4 L1 The derivative of xⁿ is: A) xⁿ⁻¹B) nxⁿ⁻¹C) n+xD) nxⁿ B"
+ * Split it into the question text, its options, and the Unit / CO / Bloom
+ * level so the paper prints cleanly. The trailing answer key is dropped.
+ */
+function parseQuestion(q: QuestionItem): ParsedQuestion {
+  let text = (q.question || "").replace(/\s*\(Question\s*#\d+\)/gi, "").trim();
+  let unit = "";
+  let co = "";
+  let level = "";
+
+  text = text.replace(/^\d+[.)]?\s+/, "");
+  const unitMatch = text.match(/^(VI|IV|V|III|II|I)\s+/);
+  if (unitMatch) {
+    unit = unitMatch[1];
+    text = text.slice(unitMatch[0].length);
+  }
+  const coMatch = text.match(/^CO\s*(\d+)\s+/i);
+  if (coMatch) {
+    co = `CO${coMatch[1]}`;
+    text = text.slice(coMatch[0].length);
+  }
+  const levelMatch = text.match(/^L\s*([1-6])\s+/i);
+  if (levelMatch) {
+    level = `L${levelMatch[1]}`;
+    text = text.slice(levelMatch[0].length);
+  }
+
+  let options = (q.options || []).filter((opt) => (opt || "").trim());
+  if (options.length === 0 && /\bA\)\s*\S/.test(text) && /B\)\s*\S/.test(text)) {
+    const parts = text.split(/\s*\(?([A-D])\)\s*/);
+    // parts = [stem, "A", optA, "B", optB, ...]
+    if (parts.length >= 5) {
+      text = parts[0].trim();
+      options = [];
+      for (let i = 1; i + 1 < parts.length; i += 2) options.push(parts[i + 1].trim());
+      const last = options.length - 1;
+      options[last] = options[last].replace(/\s+[A-D]$/, "").trim();
+    }
+  }
+
+  if (!unit && q.unit) {
+    const n = Number(String(q.unit).replace(/[^0-9]/g, ""));
+    unit = n >= 1 && n <= 6 ? ROMAN_UNITS[n - 1] : String(q.unit).replace(/^unit\s*/i, "");
+  }
+  if (!level && q.bloomLevel) level = q.bloomLevel;
+
+  return { text, options, unit, co, level };
+}
+
 export default function PrintPaperPage() {
   const router = useRouter();
   const [activeMenu, setActiveMenu] = useState("print-paper");
@@ -149,9 +219,6 @@ export default function PrintPaperPage() {
     setTimeout(() => setToast((prev) => ({ ...prev, isVisible: false })), 3000);
   };
 
-  const cleanQuestionText = (text: string) => {
-    return (text || "").replace(/\s*\(Question\s*#\d+\)/gi, "").trim();
-  };
 
   // Filter Questions based on subject selection
   const subjectQs = allQuestions.filter((q) => {
@@ -372,532 +439,262 @@ export default function PrintPaperPage() {
 
           <main style={{ flex: 1, padding: "24px 28px", overflowY: "auto", overflowX: "hidden", width: "100%", boxSizing: "border-box" }}>
             {/* Header Title */}
-            <div className="no-print" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "22px", gap: "16px", flexWrap: "wrap" }}>
-              <div>
-                <h1 style={{ fontSize: "24px", fontWeight: 800, color: "#0f172a", margin: "0 0 6px 0", letterSpacing: "-0.4px", display: "flex", alignItems: "center", gap: "8px" }}>
-                  Print Question Paper Generator 🖨️
-                </h1>
-                <p style={{ fontSize: "13.5px", color: "#64748b", margin: 0 }}>
-                  {approvedOnly ? "Final COE-approved questions for this subject are ready to print." : "Customize MCQ, Descriptive, and Diagram question counts for official paper prints."}
+            <div className="no-print qp-hero">
+              <div className="qp-hero-text">
+                <div className="qp-eyebrow">COE · Examination Output</div>
+                <h1 className="qp-title">Question Paper Generator</h1>
+                <p className="qp-subtitle">
+                  {approvedOnly ? "Final COE-approved questions for this subject are ready to print." : "Choose the subject, format and question counts, then print the official paper."}
                 </p>
               </div>
 
-              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                <button
-                  type="button"
-                  onClick={handleTriggerPrint}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "10px 22px",
-                    borderRadius: "12px",
-                    border: "none",
-                    background: "linear-gradient(135deg, #c3844d 0%, #b8763d 100%)",
-                    color: "#ffffff",
-                    fontSize: "13.5px",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    boxShadow: "0 4px 14px rgba(195, 132, 77, 0.4)",
-                  }}
-                >
+              <div className="qp-hero-side">
+                <div className="qp-stat">
+                  <span className="qp-stat-value">{totalQuestionsInPaper}</span>
+                  <span className="qp-stat-label">Questions</span>
+                </div>
+                <div className="qp-stat">
+                  <span className="qp-stat-value">{maxMarks}</span>
+                  <span className="qp-stat-label">Max Marks</span>
+                </div>
+                <div className="qp-stat">
+                  <span className="qp-stat-value">{duration.replace(" Hours", "h")}</span>
+                  <span className="qp-stat-label">Duration</span>
+                </div>
+                <button type="button" onClick={handleTriggerPrint} className="qp-btn-primary">
                   <Printer size={16} />
-                  <span>Print Question Paper (PDF)</span>
+                  <span>Print Paper (PDF)</span>
                 </button>
               </div>
             </div>
 
-            {/* Grid Layout: Configurator Controls (Left) & Live Word Paper Preview (Right) */}
-            <div className="print-layout-container" style={{ display: "grid", gridTemplateColumns: "360px 1fr", gap: "22px", alignItems: "start" }}>
+            {/* Grid Layout: Configurator Controls (Left) & Live Paper Preview (Right) */}
+            <div className="print-layout-container qp-layout">
               {/* Left Configurator Column */}
-              <div className="no-print" style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "20px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "18px" }}>
-                <div style={{ fontSize: "15px", fontWeight: 800, color: "#1e293b", display: "flex", alignItems: "center", gap: "8px", borderBottom: "1px solid #f1f5f9", paddingBottom: "12px" }}>
-                  <SlidersHorizontal size={18} color="#c3844d" />
-                  <span>Question Paper Builder</span>
+              <div className="no-print qp-panel">
+                <div className="qp-panel-head">
+                  <span className="qp-panel-icon"><SlidersHorizontal size={16} /></span>
+                  <div>
+                    <div className="qp-panel-title">Paper Builder</div>
+                    <div className="qp-panel-sub">Settings update the preview instantly</div>
+                  </div>
                 </div>
 
-                {/* Subject Selector */}
-                <div>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#475569", marginBottom: "6px" }}>
-                    Select Subject Title:
-                  </label>
-                  <select
-                    value={selectedSubject}
-                    onChange={(e) => setSelectedSubject(e.target.value)}
-                    style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid #cbd5e1", background: "#f8fafc", fontSize: "13px", fontWeight: 700, color: "#9a6333" }}
-                  >
+                <div className="qp-section-label">Paper details</div>
+
+                <label className="qp-field">
+                  <span className="qp-label">Subject</span>
+                  <select value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)} className="qp-select qp-select-strong">
                     {subjectsList.map((subj) => (
-                      <option key={subj} value={subj}>
-                        📚 {subj}
-                      </option>
+                      <option key={subj} value={subj}>{subj}</option>
                     ))}
                   </select>
-                </div>
+                </label>
 
-                {/* Examination Type */}
-                <div>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#475569", marginBottom: "6px" }}>
-                    Examination Format / Type:
-                  </label>
-                  <select
-                    value={examType}
-                    onChange={(e) => setExamType(e.target.value)}
-                    style={{ width: "100%", padding: "9px 12px", borderRadius: "10px", border: "1px solid #cbd5e1", background: "#ffffff", fontSize: "12.5px" }}
-                  >
+                <label className="qp-field">
+                  <span className="qp-label">Examination type</span>
+                  <select value={examType} onChange={(e) => setExamType(e.target.value)} className="qp-select">
                     <option value="Odd Semester Examination">Odd Semester Examination</option>
                     <option value="End Semester Examination (Regular)">End Semester Examination (Regular)</option>
                     <option value="Mid-Term Internal Assessment">Mid-Term Internal Assessment</option>
                     <option value="Continuous Assessment Test (CAT-I)">Continuous Assessment Test (CAT-I)</option>
                     <option value="Model Examination Paper">Model Examination Paper</option>
                   </select>
-                </div>
+                </label>
 
-                {/* Duration & Max Marks */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: "11.5px", fontWeight: 700, color: "#475569", marginBottom: "4px" }}>
-                      Max Marks:
-                    </label>
-                    <select
-                      value={maxMarks}
-                      onChange={(e) => setMaxMarks(Number(e.target.value))}
-                      style={{ width: "100%", padding: "8px 10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "12.5px" }}
-                    >
+                <div className="qp-field-row">
+                  <label className="qp-field">
+                    <span className="qp-label">Max marks</span>
+                    <select value={maxMarks} onChange={(e) => setMaxMarks(Number(e.target.value))} className="qp-select">
                       <option value={100}>100 Marks</option>
                       <option value={75}>75 Marks</option>
                       <option value={50}>50 Marks</option>
                     </select>
-                  </div>
-
-                  <div>
-                    <label style={{ display: "block", fontSize: "11.5px", fontWeight: 700, color: "#475569", marginBottom: "4px" }}>
-                      Duration:
-                    </label>
-                    <select
-                      value={duration}
-                      onChange={(e) => setDuration(e.target.value)}
-                      style={{ width: "100%", padding: "8px 10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "12.5px" }}
-                    >
+                  </label>
+                  <label className="qp-field">
+                    <span className="qp-label">Duration</span>
+                    <select value={duration} onChange={(e) => setDuration(e.target.value)} className="qp-select">
                       <option value="3 Hours">3 Hours</option>
                       <option value="2 Hours">2 Hours</option>
                       <option value="1.5 Hours">1.5 Hours</option>
                     </select>
-                  </div>
+                  </label>
                 </div>
 
-                <div style={{ borderTop: "1px dashed #cbd5e1", paddingTop: "14px" }}>
-                  <div style={{ fontSize: "13px", fontWeight: 800, color: "#0f172a", marginBottom: "10px" }}>
-                    📋 Question Selection Mode:
+                <div className="qp-section-label">Question selection</div>
+
+                <div className="qp-mode-group" role="radiogroup">
+                  <label className={`qp-mode ${printMode === "all" ? "is-active" : ""}`}>
+                    <input type="radio" name="printMode" checked={printMode === "all"} onChange={() => setPrintMode("all")} />
+                    <div>
+                      <div className="qp-mode-title">All questions <span className="qp-pill">{subjectQs.length}</span></div>
+                      <div className="qp-mode-sub">Every question uploaded for this subject</div>
+                    </div>
+                  </label>
+                  <label className={`qp-mode ${printMode === "custom" ? "is-active" : ""}`}>
+                    <input type="radio" name="printMode" checked={printMode === "custom"} onChange={() => setPrintMode("custom")} />
+                    <div>
+                      <div className="qp-mode-title">Custom count</div>
+                      <div className="qp-mode-sub">Choose how many of each question type</div>
+                    </div>
+                  </label>
+                </div>
+
+                {printMode === "custom" && (
+                  <div className="qp-counts">
+                    {[
+                      { label: "Multiple choice", hint: "Part A", value: mcqCount, set: setMcqCount, max: Math.max(50, subjectQs.length) },
+                      { label: "Descriptive", hint: "Part B", value: descriptiveCount, set: setDescriptiveCount, max: Math.max(50, subjectQs.length) },
+                      { label: "Diagram / problem", hint: "Part C", value: diagramCount, set: setDiagramCount, max: Math.max(30, subjectQs.length) },
+                    ].map((row) => (
+                      <div key={row.label} className="qp-count-row">
+                        <div className="qp-count-top">
+                          <div>
+                            <div className="qp-count-label">{row.label}</div>
+                            <div className="qp-count-hint">{row.hint}</div>
+                          </div>
+                          <div className="qp-stepper">
+                            <button type="button" aria-label={`Decrease ${row.label}`} onClick={() => row.set((v) => Math.max(0, v - 1))}>−</button>
+                            <span>{row.value}</span>
+                            <button type="button" aria-label={`Increase ${row.label}`} onClick={() => row.set((v) => v + 1)}>+</button>
+                          </div>
+                        </div>
+                        <input type="range" min={0} max={row.max} value={row.value} onChange={(e) => row.set(Number(e.target.value))} className="qp-range" />
+                      </div>
+                    ))}
                   </div>
+                )}
 
-                  {/* Mode Option 1: ALL Questions */}
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      padding: "10px 12px",
-                      borderRadius: "10px",
-                      border: printMode === "all" ? "2px solid #c3844d" : "1px solid #cbd5e1",
-                      background: printMode === "all" ? "#eff6ff" : "#ffffff",
-                      marginBottom: "10px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="printMode"
-                      checked={printMode === "all"}
-                      onChange={() => setPrintMode("all")}
-                      style={{ accentColor: "#c3844d" }}
-                    />
-                    <div>
-                      <div style={{ fontSize: "12.5px", fontWeight: 700, color: "#7e512a" }}>
-                        Print ALL Questions in Store ({subjectQs.length} Qs)
-                      </div>
-                      <div style={{ fontSize: "11px", color: "#64748b" }}>
-                        Includes every single question uploaded for {selectedSubject}
-                      </div>
-                    </div>
-                  </label>
-
-                  {/* Mode Option 2: Custom Question Count */}
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      padding: "10px 12px",
-                      borderRadius: "10px",
-                      border: printMode === "custom" ? "2px solid #c3844d" : "1px solid #cbd5e1",
-                      background: printMode === "custom" ? "#eff6ff" : "#ffffff",
-                      marginBottom: "14px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="printMode"
-                      checked={printMode === "custom"}
-                      onChange={() => setPrintMode("custom")}
-                      style={{ accentColor: "#c3844d" }}
-                    />
-                    <div>
-                      <div style={{ fontSize: "12.5px", fontWeight: 700, color: "#7e512a" }}>
-                        Custom Question Breakdown Sliders
-                      </div>
-                      <div style={{ fontSize: "11px", color: "#64748b" }}>
-                        Manually choose MCQ, Descriptive, & Diagram counts
-                      </div>
-                    </div>
-                  </label>
-
+                <div className="qp-summary">
+                  <div>
+                    <div className="qp-summary-value">{totalQuestionsInPaper} questions</div>
+                    <div className="qp-summary-sub">selected for {selectedSubject}</div>
+                  </div>
                   {printMode === "custom" && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-
-                      {/* MCQ Questions Slider & Stepper */}
-                      <div style={{ background: "#f0f9ff", padding: "12px 14px", borderRadius: "10px", border: "1px solid #bae6fd" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                          <span style={{ fontSize: "12px", fontWeight: 700, color: "#7b4f29" }}>📝 Multiple Choice (MCQ) Questions</span>
-                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                            <button
-                              type="button"
-                              onClick={() => setMcqCount((v) => Math.max(0, v - 1))}
-                              style={{ width: "26px", height: "26px", borderRadius: "50%", border: "1.5px solid #976132", background: "#ffffff", color: "#976132", fontSize: "15px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
-                            >−</button>
-                            <span style={{ minWidth: "32px", textAlign: "center", fontSize: "14px", fontWeight: 800, color: "#0f172a" }}>{mcqCount}</span>
-                            <button
-                              type="button"
-                              onClick={() => setMcqCount((v) => v + 1)}
-                              style={{ width: "26px", height: "26px", borderRadius: "50%", border: "1.5px solid #976132", background: "#976132", color: "#ffffff", fontSize: "15px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
-                            >+</button>
-                          </div>
-                        </div>
-                        <input
-                          type="range"
-                          min={0}
-                          max={Math.max(50, subjectQs.length)}
-                          value={mcqCount}
-                          onChange={(e) => setMcqCount(Number(e.target.value))}
-                          style={{ width: "100%", accentColor: "#976132", cursor: "pointer" }}
-                        />
-                      </div>
-
-                      {/* Descriptive Questions Slider & Stepper */}
-                      <div style={{ background: "#f0fdf4", padding: "12px 14px", borderRadius: "10px", border: "1px solid #bbf7d0" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                          <span style={{ fontSize: "12px", fontWeight: 700, color: "#15803d" }}>✍️ Descriptive / Short Answer Questions</span>
-                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                            <button
-                              type="button"
-                              onClick={() => setDescriptiveCount((v) => Math.max(0, v - 1))}
-                              style={{ width: "26px", height: "26px", borderRadius: "50%", border: "1.5px solid #16a34a", background: "#ffffff", color: "#16a34a", fontSize: "15px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
-                            >−</button>
-                            <span style={{ minWidth: "32px", textAlign: "center", fontSize: "14px", fontWeight: 800, color: "#0f172a" }}>{descriptiveCount}</span>
-                            <button
-                              type="button"
-                              onClick={() => setDescriptiveCount((v) => v + 1)}
-                              style={{ width: "26px", height: "26px", borderRadius: "50%", border: "1.5px solid #16a34a", background: "#16a34a", color: "#ffffff", fontSize: "15px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
-                            >+</button>
-                          </div>
-                        </div>
-                        <input
-                          type="range"
-                          min={0}
-                          max={Math.max(50, subjectQs.length)}
-                          value={descriptiveCount}
-                          onChange={(e) => setDescriptiveCount(Number(e.target.value))}
-                          style={{ width: "100%", accentColor: "#16a34a", cursor: "pointer" }}
-                        />
-                      </div>
-
-                      {/* Diagram Questions Slider & Stepper */}
-                      <div style={{ background: "#faf5ff", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e9d5ff" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                          <span style={{ fontSize: "12px", fontWeight: 700, color: "#b4743c" }}>📐 Diagram / Figure Attached Questions</span>
-                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                            <button
-                              type="button"
-                              onClick={() => setDiagramCount((v) => Math.max(0, v - 1))}
-                              style={{ width: "26px", height: "26px", borderRadius: "50%", border: "1.5px solid #c78b56", background: "#ffffff", color: "#c78b56", fontSize: "15px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
-                            >−</button>
-                            <span style={{ minWidth: "32px", textAlign: "center", fontSize: "14px", fontWeight: 800, color: "#0f172a" }}>{diagramCount}</span>
-                            <button
-                              type="button"
-                              onClick={() => setDiagramCount((v) => v + 1)}
-                              style={{ width: "26px", height: "26px", borderRadius: "50%", border: "1.5px solid #c78b56", background: "#c78b56", color: "#ffffff", fontSize: "15px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
-                            >+</button>
-                          </div>
-                        </div>
-                        <input
-                          type="range"
-                          min={0}
-                          max={Math.max(30, subjectQs.length)}
-                          value={diagramCount}
-                          onChange={(e) => setDiagramCount(Number(e.target.value))}
-                          style={{ width: "100%", accentColor: "#c78b56", cursor: "pointer" }}
-                        />
-                      </div>
-
-                    </div>
+                    <button
+                      type="button"
+                      className="qp-btn-ghost"
+                      onClick={() => {
+                        setMcqCount(0);
+                        setDescriptiveCount(0);
+                        setDiagramCount(0);
+                      }}
+                    >
+                      Reset
+                    </button>
                   )}
                 </div>
 
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", padding: "12px", borderRadius: "10px", border: "1px solid #e2e8f0", fontSize: "11.5px", color: "#64748b" }}>
-                  <div>
-                    <strong>Summary:</strong> Total <strong>{totalQuestionsInPaper}</strong> questions selected from bank for <strong>{selectedSubject}</strong>.
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMcqCount(0);
-                      setDescriptiveCount(0);
-                      setDiagramCount(0);
-                    }}
-                    style={{
-                      padding: "4px 8px",
-                      borderRadius: "6px",
-                      border: "1px solid #cbd5e1",
-                      background: "#ffffff",
-                      fontSize: "10.5px",
-                      fontWeight: 700,
-                      color: "#dc2626",
-                      cursor: "pointer",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    Reset to 0
-                  </button>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleTriggerPrint}
-                  style={{
-                    width: "100%",
-                    padding: "11px",
-                    borderRadius: "10px",
-                    border: "none",
-                    background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                    color: "#ffffff",
-                    fontSize: "13px",
-                    fontWeight: 800,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "8px",
-                    boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)",
-                  }}
-                >
+                <button type="button" onClick={handleTriggerPrint} className="qp-btn-primary qp-btn-block">
                   <Printer size={16} />
                   <span>Print Official Paper</span>
                 </button>
               </div>
 
-              {/* Right Printable Word Document Paper Area */}
-              <div
-                id="official-printable-paper"
-                style={{
-                  background: "#ffffff",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: "12px",
-                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
-                  padding: "36px 44px",
-                  position: "relative",
-                  overflow: "hidden",
-                  fontFamily: "'Times New Roman', Times, serif",
-                  color: "#0f172a",
-                  lineHeight: 1.5,
-                }}
-              >
-                {/* QP Code & Reg No Box */}
-                <div style={{ textTransform: "uppercase", fontSize: "11px", fontWeight: "bold", textAlign: "right", marginBottom: "2px" }}>
-                  QP CODE: 252S099
-                </div>
-                <div style={{ fontSize: "11px", fontWeight: "bold", textAlign: "right", marginBottom: "12px" }}>
-                  Reg. No.:.........................
+              {/* Right: live paper preview */}
+              <div className="qp-stage">
+                <div className="no-print qp-stage-bar">
+                  <span className="qp-live-dot" /> Live preview
+                  <span className="qp-stage-meta">A4 · Portrait</span>
                 </div>
 
-                {/* Header Specification */}
-                <div style={{ textAlign: "center", lineHeight: 1.3, borderBottom: "1.5px solid #000000", paddingBottom: "10px", marginBottom: "14px" }}>
-                  <div style={{ fontSize: "16.5px", fontWeight: "bold", letterSpacing: "0.5px" }}>
-                    RATHINAM GLOBAL (DEEMED TO BE UNIVERSITY)
-                  </div>
-                  <div style={{ fontSize: "11.5px", color: "#334155" }}>
-                    (An Autonomous Institution, Eachanari, Coimbatore - 641021 | Affiliated to UGC & AICTE)
-                  </div>
-                  <div style={{ fontSize: "13px", fontWeight: "bold", textTransform: "uppercase", marginTop: "4px" }}>
-                    {examType}
-                  </div>
-                  <div style={{ fontSize: "12.5px", fontWeight: "bold", marginTop: "2px" }}>
-                    {semesterYear.toUpperCase()}
-                  </div>
-                  <div style={{ fontSize: "12.5px", fontWeight: "bold", marginTop: "2px" }}>
-                    SUBJECT: {selectedSubject.toUpperCase()}
-                  </div>
-                </div>
-
-                {/* Time (left) & Marks (right) */}
-                <div className="paper-meta-row" style={{ borderBottom: "1.5px solid #000000", padding: "4px 2px 6px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12.5px", fontWeight: "bold", marginBottom: "16px" }}>
-                  <span>Time: {duration}</span>
-                  <span>Mark: {maxMarks} Marks</span>
-                </div>
-
-                {/* PART A: MCQ & Short Answer Questions */}
-                {finalMcqs.length > 0 && (
-                  <div style={{ marginBottom: "22px" }}>
-                    <div className="part-header" style={{ textAlign: "center", borderBottom: "1.5px solid #0f172a", paddingBottom: "3px", marginBottom: "12px" }}>
-                      <strong style={{ fontSize: "13px", letterSpacing: "0.5px", textTransform: "uppercase" }}>
-                        PART — A (MULTIPLE CHOICE & SHORT ANSWER QUESTIONS)
-                      </strong>
-                      <div style={{ fontSize: "11px", fontFamily: "sans-serif", color: "#475569", marginTop: "1px" }}>
-                        Answer ALL Questions ({finalMcqs.length} × 2 = {finalMcqs.length * 2} Marks)
-                      </div>
+                <div id="official-printable-paper" className="qp-paper">
+                  <div className="qp-paper-top">
+                    <div>QP Code: <strong>252S099</strong></div>
+                    <div className="qp-regno">
+                      <span>Reg. No.</span>
+                      {Array.from({ length: 10 }).map((_, i) => <i key={i} />)}
                     </div>
+                  </div>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                      {finalMcqs.map((q, idx) => (
-                        <div key={q.id || idx} className="question-block" style={{ fontSize: "12.5px" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "14px" }}>
-                            <div style={{ flex: 1 }}>
-                              <strong>Q{idx + 1}.</strong> {cleanQuestionText(q.question)}
+                  <div className="qp-paper-head">
+                    <div className="qp-uni">RATHINAM GLOBAL (DEEMED TO BE UNIVERSITY)</div>
+                    <div className="qp-uni-sub">Eachanari, Coimbatore – 641021 · Approved by UGC &amp; AICTE</div>
+                    <div className="qp-exam">{examType}</div>
+                    <div className="qp-sem">{semesterYear}</div>
+                  </div>
+
+                  <div className="paper-meta-row qp-meta">
+                    <div><span>Subject</span><strong>{selectedSubject}</strong></div>
+                    <div><span>Time</span><strong>{duration}</strong></div>
+                    <div><span>Maximum Marks</span><strong>{maxMarks}</strong></div>
+                  </div>
+
+                  <div className="qp-instructions">
+                    <strong>Instructions:</strong> Answer all questions. Figures to the right indicate full marks. CO – Course Outcome, BL – Bloom&apos;s Level.
+                  </div>
+
+                  {[
+                    { key: "A", title: "Multiple Choice & Short Answer", items: finalMcqs, start: 0, marks: () => 2 },
+                    { key: "B", title: "Descriptive & Analytical", items: finalDescriptives, start: finalMcqs.length, marks: () => 5 },
+                    { key: "C", title: "Problem Solving & Diagram Based", items: finalDiagrams, start: finalMcqs.length + finalDescriptives.length, marks: (q: QuestionItem) => q.marks || 10 },
+                    { key: "D", title: "Additional Questions", items: finalOthers, start: finalMcqs.length + finalDescriptives.length + finalDiagrams.length, marks: (q: QuestionItem) => q.marks || 5 },
+                  ]
+                    .filter((part) => part.items.length > 0)
+                    .map((part) => {
+                      const partTotal = part.items.reduce((sum, q) => sum + Number(part.marks(q)), 0);
+                      const uniform = part.items.every((q) => part.marks(q) === part.marks(part.items[0]));
+                      return (
+                        <section key={part.key} className="qp-part">
+                          <div className="part-header qp-part-head">
+                            <div className="qp-part-title">PART – {part.key}</div>
+                            <div className="qp-part-sub">{part.title}</div>
+                            <div className="qp-part-marks">
+                              {uniform ? `(${part.items.length} × ${part.marks(part.items[0])} = ${partTotal} Marks)` : `(${partTotal} Marks)`}
                             </div>
-                            <div style={{ fontWeight: 700, flexShrink: 0, fontSize: "12px" }}>[2]</div>
                           </div>
 
-                          {q.options && q.options.length > 0 && (
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginTop: "6px", marginLeft: "18px", fontSize: "11.5px", fontFamily: "sans-serif" }}>
-                              {q.options.map((opt: string, optIdx: number) => (
-                                <div key={optIdx}>
-                                  <strong>({String.fromCharCode(65 + optIdx)})</strong> {opt}
+                          <div className="qp-qhead">
+                            <span>Q.No</span>
+                            <span>Question</span>
+                            <span>CO</span>
+                            <span>BL</span>
+                            <span>Marks</span>
+                          </div>
+
+                          {part.items.map((q, idx) => {
+                            const p = parseQuestion(q);
+                            const number = part.start + idx + 1;
+                            const image = q.imageUrl || (q as { raw?: { imageUrl?: string } }).raw?.imageUrl;
+                            return (
+                              <div key={q.id || `${part.key}-${idx}`} className="question-block qp-q">
+                                <span className="qp-qno">{number}.</span>
+                                <div className="qp-qbody">
+                                  <div className="qp-qtext">{p.text}</div>
+                                  {p.options.length > 0 && (
+                                    <div className="qp-options">
+                                      {p.options.map((opt, optIdx) => (
+                                        <div key={optIdx}>
+                                          <b>({String.fromCharCode(97 + optIdx)})</b> {opt}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  {image && (
+                                    <figure className="qp-figure">
+                                      <img src={image} alt={`Figure for question ${number}`} />
+                                      <figcaption>Fig. {number}: {q.diagramTitle || "Diagram"}</figcaption>
+                                    </figure>
+                                  )}
+                                  {p.unit && <div className="qp-unit">Unit {p.unit}</div>}
                                 </div>
-                              ))}
-                            </div>
-                          )}
-
-                          <div style={{ display: "flex", gap: "10px", fontSize: "10px", color: "#64748b", fontFamily: "sans-serif", marginTop: "3px", marginLeft: "18px" }}>
-                            <span>Unit: {q.unit || "Unit I"}</span>
-                            {q.bloomLevel && <span>Bloom's: {q.bloomLevel}</span>}
-                            <span>CO: CO{(idx % 4) + 1}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* PART B: Descriptive Questions */}
-                {finalDescriptives.length > 0 && (
-                  <div style={{ marginBottom: "22px" }}>
-                    <div className="part-header" style={{ textAlign: "center", borderBottom: "1.5px solid #0f172a", paddingBottom: "3px", marginBottom: "12px" }}>
-                      <strong style={{ fontSize: "13px", letterSpacing: "0.5px", textTransform: "uppercase" }}>
-                        PART — B (DESCRIPTIVE & ANALYTICAL QUESTIONS)
-                      </strong>
-                      <div style={{ fontSize: "11px", fontFamily: "sans-serif", color: "#475569", marginTop: "1px" }}>
-                        Answer ALL Questions ({finalDescriptives.length} × 5 = {finalDescriptives.length * 5} Marks)
-                      </div>
-                    </div>
-
-                    <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                      {finalDescriptives.map((q, idx) => (
-                        <div key={q.id || idx} className="question-block" style={{ fontSize: "12.5px" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "14px" }}>
-                            <div style={{ flex: 1 }}>
-                              <strong>Q{finalMcqs.length + idx + 1}.</strong> {cleanQuestionText(q.question)}
-                            </div>
-                            <div style={{ fontWeight: 700, flexShrink: 0, fontSize: "12px" }}>[5]</div>
-                          </div>
-
-                          <div style={{ display: "flex", gap: "10px", fontSize: "10px", color: "#64748b", fontFamily: "sans-serif", marginTop: "3px", marginLeft: "18px" }}>
-                            <span>Unit: {q.unit || "Unit II"}</span>
-                            {q.bloomLevel && <span>Bloom's: {q.bloomLevel}</span>}
-                            <span>CO: CO{(idx % 4) + 1}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* PART C: Diagram / Problem-Solving Questions */}
-                {finalDiagrams.length > 0 && (
-                  <div style={{ marginBottom: "22px" }}>
-                    <div className="part-header" style={{ textAlign: "center", borderBottom: "1.5px solid #0f172a", paddingBottom: "3px", marginBottom: "12px" }}>
-                      <strong style={{ fontSize: "13px", letterSpacing: "0.5px", textTransform: "uppercase" }}>
-                        PART — C (PROBLEM SOLVING & DIAGRAM-BASED QUESTIONS)
-                      </strong>
-                      <div style={{ fontSize: "11px", fontFamily: "sans-serif", color: "#475569", marginTop: "1px" }}>
-                        Answer ALL Questions ({finalDiagrams.length} × 10 = {finalDiagrams.length * 10} Marks)
-                      </div>
-                    </div>
-
-                    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                      {finalDiagrams.map((q, idx) => (
-                        <div key={q.id || idx} className="question-block" style={{ fontSize: "12.5px" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "14px" }}>
-                            <div style={{ flex: 1 }}>
-                              <strong>Q{finalMcqs.length + finalDescriptives.length + idx + 1}.</strong> {cleanQuestionText(q.question)}
-                            </div>
-                            <div style={{ fontWeight: 700, flexShrink: 0, fontSize: "12px" }}>[{q.marks || 10}]</div>
-                          </div>
-
-                          {(q.imageUrl || (q as any).raw?.imageUrl) && (
-                            <div style={{ marginTop: "6px", marginLeft: "18px", textAlign: "center", border: "1px solid #e2e8f0", padding: "6px", borderRadius: "6px", background: "#fafafa" }}>
-                              <img src={q.imageUrl || (q as any).raw?.imageUrl} alt="Question Diagram" style={{ maxHeight: "135px", maxWidth: "100%", objectFit: "contain" }} />
-                              <div style={{ fontSize: "10.5px", color: "#64748b", marginTop: "3px", fontStyle: "italic" }}>
-                                Figure Q{finalMcqs.length + finalDescriptives.length + idx + 1}: {q.diagramTitle || "Engineering Diagram"}
+                                <span className="qp-cell">{p.co || "–"}</span>
+                                <span className="qp-cell" title={BLOOM_NAMES[p.level] || ""}>{p.level || "–"}</span>
+                                <span className="qp-cell qp-mark">{part.marks(q)}</span>
                               </div>
-                            </div>
-                          )}
+                            );
+                          })}
+                        </section>
+                      );
+                    })}
 
-                          <div style={{ display: "flex", gap: "10px", fontSize: "10px", color: "#64748b", fontFamily: "sans-serif", marginTop: "3px", marginLeft: "18px" }}>
-                            <span>Unit: {q.unit || "Unit III"}</span>
-                            {q.bloomLevel && <span>Bloom's: {q.bloomLevel}</span>}
-                            <span>CO: CO{(idx % 4) + 1}</span>
-                          </div>
-                        </div>
-                      ))}
+                  {totalQuestionsInPaper === 0 && (
+                    <div className="no-print qp-empty">
+                      No questions selected yet. Choose “All questions” or increase the counts in the Paper Builder.
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* PART D: Additional Subject Questions */}
-                {finalOthers.length > 0 && (
-                  <div style={{ marginBottom: "22px" }}>
-                    <div className="part-header" style={{ textAlign: "center", borderBottom: "1.5px solid #0f172a", paddingBottom: "3px", marginBottom: "12px" }}>
-                      <strong style={{ fontSize: "13px", letterSpacing: "0.5px", textTransform: "uppercase" }}>
-                        PART — D (ADDITIONAL SUBJECT QUESTIONS)
-                      </strong>
-                      <div style={{ fontSize: "11px", fontFamily: "sans-serif", color: "#475569", marginTop: "1px" }}>
-                        Answer ALL Questions ({finalOthers.length} Questions)
-                      </div>
-                    </div>
-
-                    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                      {finalOthers.map((q, idx) => (
-                        <div key={q.id || idx} className="question-block" style={{ fontSize: "12.5px" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "14px" }}>
-                            <div style={{ flex: 1 }}>
-                              <strong>Q{finalMcqs.length + finalDescriptives.length + finalDiagrams.length + idx + 1}.</strong> {cleanQuestionText(q.question)}
-                            </div>
-                            <div style={{ fontWeight: 700, flexShrink: 0, fontSize: "12px" }}>[{q.marks || 5}]</div>
-                          </div>
-
-                          <div style={{ display: "flex", gap: "10px", fontSize: "10px", color: "#64748b", fontFamily: "sans-serif", marginTop: "3px", marginLeft: "18px" }}>
-                            <span>Unit: {q.unit || "Unit IV"}</span>
-                            {q.bloomLevel && <span>Bloom's: {q.bloomLevel}</span>}
-                            <span>CO: CO{(idx % 4) + 1}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Footer Specification */}
-                <div className="end-paper-footer" style={{ textAlign: "center", marginTop: "24px", borderTop: "1px solid #cbd5e1", paddingTop: "12px", fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px" }}>
-                  *** END OF QUESTION PAPER ***
+                  <div className="end-paper-footer qp-end">*** End of Question Paper ***</div>
                 </div>
               </div>
             </div>
