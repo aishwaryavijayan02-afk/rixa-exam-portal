@@ -181,12 +181,22 @@ export default function StaffFacultyPage() {
       });
     };
 
-    const liveUnits = allUnits.filter((u) => subMatches(u.subject));
-    const syllabusUnits = liveUnits.length;
+    // Uploads made by this staff member themselves (by email or name) count
+    // too, even when no subject has been allocated to them yet.
+    const personKey = (value: string) => (value || "").toLowerCase().replace(/^(mr\.|mrs\.|ms\.|dr\.|prof\.)\s*/i, "").replace(/[^a-z0-9]/g, "");
+    const isOwnUpload = (name?: string, email?: string) =>
+      Boolean((fac.email && email && email.toLowerCase() === fac.email.toLowerCase()) || (fac.name && name && personKey(name) === personKey(fac.name)));
+    const ownSyllabi = examStore.getSyllabusApprovals().filter((s) => isOwnUpload(s.submittedBy, s.submitterEmail));
+    const ownSubjects = ownSyllabi.map((s) => s.courseName.toLowerCase());
+
+    const liveUnits = allUnits.filter((u) => subMatches(u.subject) || ownSubjects.includes((u.subject || "").toLowerCase()));
+    const approvedSyllabus = ownSyllabi.some((s) => s.hodStatus === "Approved" || s.deanStatus === "Approved" || s.coeStatus === "Approved");
+    // An uploaded syllabus document counts as all 5 units submitted.
+    const syllabusUnits = approvedSyllabus || ownSyllabi.length > 0 ? Math.max(liveUnits.length, 5) : liveUnits.length;
     const expectedUnits = 5;
     const syllabusPct = Math.min(100, Math.round((syllabusUnits / expectedUnits) * 100));
 
-    const liveQuestions = allQuestions.filter((q) => subMatches(q.subject));
+    const liveQuestions = allQuestions.filter((q) => subMatches(q.subject) || isOwnUpload(q.uploadedBy, q.email));
     const questionsCount = liveQuestions.length;
     const expectedQuestions = 25;
     const questionsPct = Math.min(100, Math.round((questionsCount / expectedQuestions) * 100));
@@ -204,7 +214,17 @@ export default function StaffFacultyPage() {
       state: "Completed" | "In Progress" | "Pending";
     };
 
-    if (syllabusUnits >= 5) {
+    if (ownSyllabi.length > 0 && !approvedSyllabus) {
+      syllabusStatus = {
+        label: "5/5 Units Uploaded",
+        subtext: "Awaiting HOD review",
+        badgeBg: "#fef3c7",
+        badgeColor: "#b45309",
+        badgeBorder: "1px solid #fde68a",
+        progressColor: "linear-gradient(90deg, #eab308, #ca8a04)",
+        state: "In Progress",
+      };
+    } else if (syllabusUnits >= 5) {
       syllabusStatus = {
         label: "5/5 Units Completed",
         subtext: "Uploaded & Approved",
@@ -320,7 +340,37 @@ export default function StaffFacultyPage() {
       };
     }
 
+    // Real subject shown in the Subject column: own syllabus first, then the
+    // most common subject among the staff member's own questions.
+    let primarySubject = "";
+    let primaryCode = "";
+    if (ownSyllabi.length > 0) {
+      primarySubject = ownSyllabi[0].courseName || "";
+      primaryCode = ownSyllabi[0].courseCode || "";
+    }
+    if (!primarySubject && liveQuestions.length > 0) {
+      const counts = new Map<string, { n: number; code: string }>();
+      liveQuestions.forEach((q) => {
+        const key = q.subject || "";
+        if (!key) return;
+        const entry = counts.get(key) || { n: 0, code: (q as { subjectCode?: string }).subjectCode || "" };
+        entry.n += 1;
+        counts.set(key, entry);
+      });
+      const top = [...counts.entries()].sort((a, b) => b[1].n - a[1].n)[0];
+      if (top) {
+        primarySubject = top[0];
+        primaryCode = top[1].code;
+      }
+    }
+    if (!primarySubject && fac.assignedSubjects[0]) {
+      primarySubject = fac.assignedSubjects[0].replace(/\s*\([^)]*\)\s*$/, "");
+      primaryCode = fac.assignedSubjects[0].match(/\(([^)]+)\)/)?.[1] || "";
+    }
+
     return {
+      primarySubject: primarySubject || "No subject uploaded",
+      primaryCode: primaryCode || "—",
       syllabusUnits,
       expectedUnits,
       syllabusPct,
@@ -1063,23 +1113,6 @@ export default function StaffFacultyPage() {
                   >
                     Table View
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("grid")}
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: "6px",
-                      border: "none",
-                      background: viewMode === "grid" ? "#ffffff" : "transparent",
-                      color: viewMode === "grid" ? "#0f172a" : "#64748b",
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      boxShadow: viewMode === "grid" ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
-                    }}
-                  >
-                    Cards View
-                  </button>
                 </div>
               </div>
             </div>
@@ -1726,7 +1759,7 @@ export default function StaffFacultyPage() {
                             <td style={{ padding: "16px 18px" }}>
                               <div>
                                 <div style={{ fontSize: "13px", fontWeight: 700, color: "#1e293b", marginBottom: "4px" }}>
-                                  {fac.assignedSubjects[0] || "General Subject"}
+                                  {work.primarySubject}
                                 </div>
                                 <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", marginBottom: "3px" }}>
                                   <span
@@ -1740,7 +1773,7 @@ export default function StaffFacultyPage() {
                                       border: "1px solid #bfdbfe",
                                     }}
                                   >
-                                    {fac.assignedSubjects[0]?.match(/\(([^)]+)\)/)?.[1] || "VIS-301"}
+                                    {work.primaryCode}
                                   </span>
                                   <span
                                     style={{

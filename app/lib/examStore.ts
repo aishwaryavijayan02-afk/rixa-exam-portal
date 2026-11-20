@@ -1,7 +1,7 @@
 "use client";
 
 import { supabase, isSupabaseConfigured } from "./supabaseClient";
-import { canAllocateFaculty, AllocationLevel } from "./auth";
+import { canAllocateFaculty, AllocationLevel, STAFF_FACULTY_ACCOUNTS } from "./auth";
 
 // Types
 export interface SubjectItem {
@@ -2171,7 +2171,71 @@ export const examStore = {
 
   // ----------------- STAFF / FACULTY CRUD -----------------
   getAllStaffFaculty(): StaffFacultyItem[] {
-    return getFromStorage<StaffFacultyItem[]>("staff_faculty", defaultStaffFaculty);
+    const stored = getFromStorage<StaffFacultyItem[]>("staff_faculty", defaultStaffFaculty);
+    // Always include the portal's staff accounts and anyone who has uploaded
+    // a syllabus or question bank, so Staff Work Status / allocation screens
+    // are never empty even before HOD adds faculty records manually.
+    const key = (value: string) => (value || "").toLowerCase().replace(/^(mr\.|mrs\.|ms\.|dr\.|prof\.)\s*/i, "").replace(/[^a-z0-9]/g, "");
+    const known = new Set<string>();
+    stored.forEach((s) => {
+      if (s.email) known.add(`e:${s.email.toLowerCase()}`);
+      if (s.name) known.add(`n:${key(s.name)}`);
+    });
+    const isKnown = (name?: string, email?: string) =>
+      Boolean((email && known.has(`e:${email.toLowerCase()}`)) || (name && known.has(`n:${key(name)}`)));
+    const remember = (name?: string, email?: string) => {
+      if (email) known.add(`e:${email.toLowerCase()}`);
+      if (name) known.add(`n:${key(name)}`);
+    };
+    // School that contains a department (e.g. Visual Communication ->
+    // School of Fashion Design, Media and Performing Arts).
+    const schoolOf = (department: string) => {
+      const dept = key(department);
+      if (!dept) return "";
+      const school = INSTITUTIONAL_HIERARCHY.find((s) =>
+        s.departments.some((d) => {
+          const name = key(d.name.replace(/^department of /i, ""));
+          return name === dept || name.includes(dept) || dept.includes(name);
+        }),
+      );
+      return school?.name || "";
+    };
+    const makeRecord = (name: string, email: string, department: string, designation: string, avatarBg: string): StaffFacultyItem => ({
+      id: `fac-auto-${key(email || name)}`,
+      name,
+      designation: designation || "Assistant Professor",
+      employeeId: "",
+      department: department || "Visual Communication",
+      school: schoolOf(department || "Visual Communication"),
+      email: email || "",
+      phone: "",
+      qualification: "",
+      experience: "",
+      reportingTo: "Both",
+      reportingOfficerName: "",
+      assignedSubjects: [],
+      questionsContributed: 0,
+      pendingReviews: 0,
+      status: "Active",
+      avatarBg: avatarBg || "#a0673a",
+    });
+    const extra: StaffFacultyItem[] = [];
+    STAFF_FACULTY_ACCOUNTS.forEach((account) => {
+      if (isKnown(account.name, account.email)) return;
+      // the shared demo login (staff@rathinam.in) is the same person as the first account
+      remember(account.name, account.email);
+      extra.push(makeRecord(account.name, account.email, account.department, account.roleTitle, account.avatarBg));
+    });
+    const uploaders: Array<{ name: string; email: string; department?: string }> = [
+      ...getFromStorage<QuestionItem[]>("questions", []).map((q) => ({ name: q.uploadedBy || "", email: q.email || "", department: q.department })),
+      ...getFromStorage<SyllabusApprovalItem[]>("syllabus_approvals", []).map((s) => ({ name: s.submittedBy || "", email: s.submitterEmail || "", department: s.department })),
+    ];
+    uploaders.forEach((u) => {
+      if (!u.name || /^faculty( member)?$/i.test(u.name) || isKnown(u.name, u.email)) return;
+      remember(u.name, u.email);
+      extra.push(makeRecord(u.name, u.email, (u.department || "").replace(/^Department of /i, ""), "Assistant Professor", "#a0673a"));
+    });
+    return extra.length ? [...stored, ...extra] : stored;
   },
   getStaffFaculty(role?: "HOD" | "DEAN" | "COE" | string): StaffFacultyItem[] {
     let all = this.getAllStaffFaculty();
