@@ -43,7 +43,7 @@ import {
 } from "lucide-react";
 import { examStore, QuestionItem, SyllabusUnit, SyllabusApprovalItem } from "../lib/examStore";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
-import { showInMenu } from "../lib/auth";
+import { menuForUser } from "../lib/auth";
 import { SCRUTINY_MENU_ITEMS } from "../lib/scrutinyMenu";
 import RoleGuard from "../components/RoleGuard";
 import {
@@ -443,9 +443,7 @@ export default function ApprovalPage() {
     { id: "settings", label: "Settings", icon: Settings, hasArrow: true, route: "/settings" },
   ];
 
-  const menuItems = rawMenuItems.filter((item) =>
-    showInMenu(currentUser.role, item.route, currentUser.isSubjectFaculty)
-  );
+  const menuItems = menuForUser(rawMenuItems, currentUser);
 
   const handleApproveQuestion = (id: number | string) => {
     const q = questions.find((item) => String(item.id) === String(id));

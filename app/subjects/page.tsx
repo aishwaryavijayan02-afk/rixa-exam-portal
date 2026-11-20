@@ -50,7 +50,7 @@ import {
 } from "lucide-react";
 import { examStore, StaffFacultyItem, defaultStaffFaculty } from "../lib/examStore";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
-import { showInMenu } from "../lib/auth";
+import { menuForUser } from "../lib/auth";
 import { SCRUTINY_MENU_ITEMS } from "../lib/scrutinyMenu";
 import RoleGuard from "../components/RoleGuard";
 import { ToastNotification } from "../components/CrudModal";
@@ -601,9 +601,7 @@ export default function DepartmentManagementPage() {
     { id: "settings", label: "Settings", icon: Settings, hasArrow: true, route: "/settings" },
   ];
 
-  const menuItems = rawMenuItems.filter((item) =>
-    showInMenu(currentUser.role, item.route, currentUser.isSubjectFaculty)
-  );
+  const menuItems = menuForUser(rawMenuItems, currentUser);
 
   // School State
   const [departments, setDepartments] = useState<DepartmentItem[]>(() => {

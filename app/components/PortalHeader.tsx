@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 import { examStore, SubjectItem, QuestionItem, NotificationItem, MessageItem } from "../lib/examStore";
 import { authStore, AuthUser, UserRole, hasPermission } from "../lib/auth";
-import { showInMenu } from "../lib/auth";
+import { menuForUser } from "../lib/auth";
 
 interface PortalHeaderProps {
   activeRoute?: string;
@@ -117,15 +117,12 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
     { id: "manual-questions", label: "Manual Questions", icon: Edit3, route: "/manual-questions" },
     { id: "verify-approval", label: "Verify & Approval", icon: CheckSquare, route: "/approval" },
     { id: "scrutinizer", label: "Scrutinizer", icon: Shield, route: "/scrutinizer" },
-    { id: "academic-repository", label: "School & Academic Repository", icon: Archive, route: "/academic-repository" },
     { id: "reports", label: "Reports & Analytics", icon: BarChart2, route: "/reports" },
     { id: "notifications", label: "Notifications", icon: Bell, route: "/notifications", badge: unreadNotifCount > 0 ? String(unreadNotifCount) : undefined },
     { id: "settings", label: "Settings", icon: Settings, route: "/settings" },
   ];
 
-  const mobileNavItems = rawMobileNavItems.filter((item) =>
-    showInMenu(currentUser.role, item.route, currentUser.isSubjectFaculty)
-  );
+  const mobileNavItems = menuForUser(rawMobileNavItems, currentUser);
 
   useEffect(() => {
     const loadData = () => {
@@ -200,7 +197,6 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
     { id: "subject-allocation", label: "School Allocation", desc: "Allocate school subjects by department, semester & academic year", icon: BookCheck, route: "/subject-allocation" },
     { id: "academic-vault", label: "Academic Vault", desc: "Question bank, syllabus units & bulk ingestion", icon: Archive, route: "/academic-vault" },
     { id: "verify-approval", label: "Verify & Approval", desc: "Review, verify & approve question pool", icon: CheckSquare, route: "/approval" },
-    { id: "academic-repository", label: "School & Academic Repository", desc: "View syllabus & question bank files uploaded by faculty", icon: Archive, route: "/academic-repository" },
     { id: "scrutinizer", label: "Scrutinizer", desc:"Scrutinize questions: Bloom's levels, units, MCQ & descriptive checks", icon: Shield, route: "/scrutinizer" },
     { id: "reports", label: "Reports & Analytics", desc: "Exam metrics, audits & CSV export", icon: BarChart2, route: "/reports" },
     { id: "manual-questions", label: "Manual Questions", desc: "Add single or multiple questions manually", icon: Edit3, route: "/manual-questions" },
@@ -208,9 +204,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
     { id: "settings", label: "Settings", desc: "System preferences, roles & backup", icon: Settings, route: "/settings" },
   ];
 
-  const portalPages = rawPortalPages.filter((page) =>
-    showInMenu(currentUser.role, page.route, currentUser.isSubjectFaculty)
-  );
+  const portalPages = menuForUser(rawPortalPages, currentUser);
 
   // Filter items based on searchQuery
   const q = searchQuery.trim().toLowerCase();

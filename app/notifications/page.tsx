@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 import { examStore, QuestionItem, SubjectItem, SyllabusApprovalItem } from "../lib/examStore";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
-import { showInMenu } from "../lib/auth";
+import { menuForUser } from "../lib/auth";
 import { SCRUTINY_MENU_ITEMS } from "../lib/scrutinyMenu";
 import RoleGuard from "../components/RoleGuard";
 import { ToastNotification } from "../components/CrudModal";
@@ -108,9 +108,7 @@ export default function NotificationsApprovalPage() {
     { id: "settings", label: "Settings", icon: Settings, hasArrow: true, route: "/settings" },
   ];
 
-  const menuItems = rawMenuItems.filter((item) =>
-    showInMenu(currentUser.role, item.route, currentUser.isSubjectFaculty)
-  );
+  const menuItems = menuForUser(rawMenuItems, currentUser);
 
   // Store data
   const [subjects, setSubjects] = useState<SubjectItem[]>(() => examStore.getSubjects());

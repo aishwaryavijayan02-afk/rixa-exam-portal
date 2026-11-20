@@ -50,7 +50,7 @@ import {
 } from "lucide-react";
 import { examStore, QuestionItem, SubjectItem, SyllabusUnit } from "../lib/examStore";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
-import { showInMenu } from "../lib/auth";
+import { menuForUser } from "../lib/auth";
 import { SCRUTINY_MENU_ITEMS } from "../lib/scrutinyMenu";
 import RoleGuard from "../components/RoleGuard";
 import {
@@ -524,9 +524,7 @@ export default function VerifyQuestionsPage() {
     { id: "settings", label: "Settings", icon: Settings, hasArrow: true, route: "/settings" },
   ];
 
-  const menuItems = rawMenuItems.filter((item) =>
-    showInMenu(currentUser.role, item.route, currentUser.isSubjectFaculty)
-  );
+  const menuItems = menuForUser(rawMenuItems, currentUser);
 
   // Staff can review only the subjects assigned to their profile. Leadership
   // roles can continue to review the complete question bank.

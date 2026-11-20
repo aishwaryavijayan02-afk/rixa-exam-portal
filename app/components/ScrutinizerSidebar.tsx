@@ -2,13 +2,12 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Bell, ClipboardCheck, Edit3, FolderOpen, Home, School, Settings } from "lucide-react";
-import { AuthUser, showInMenu } from "../lib/auth";
+import { Bell, ClipboardCheck, Edit3, Home, School, Settings } from "lucide-react";
+import { AuthUser, menuForUser } from "../lib/auth";
 
 const MENU = [
   { id: "scrutinizer", label: "Scrutiny Dashboard", icon: ClipboardCheck, route: "/scrutinizer" },
   { id: "dashboard", label: "Main Dashboard", icon: Home, route: "/dashboard" },
-  { id: "academic-repository", label: "School & Academic Repository", icon: FolderOpen, route: "/academic-repository" },
   { id: "school", label: "School", icon: School, route: "/subjects" },
   { id: "manual-questions", label: "Manual Questions", icon: Edit3, route: "/manual-questions" },
   { id: "notifications", label: "Notifications", icon: Bell, route: "/notifications" },
@@ -18,7 +17,7 @@ const MENU = [
 /** Sidebar for the Scrutinizer pages (same look as the other portal sidebars). */
 export default function ScrutinizerSidebar({ currentUser, active }: { currentUser: AuthUser; active: string }) {
   const router = useRouter();
-  const items = MENU.filter((item) => showInMenu(currentUser.role, item.route, currentUser.isSubjectFaculty));
+  const items = menuForUser(MENU, currentUser);
   return (
     <aside className="digital-vfx-sidebar" style={{ width: "260px", background: "linear-gradient(180deg, #1c120c 0%, #120c08 100%)", color: "#94a3b8", display: "flex", flexDirection: "column", flexShrink: 0, borderRight: "1px solid rgba(255, 255, 255, 0.06)", padding: "20px 14px", height: "100vh", overflowY: "auto" }}>
       <div style={{ padding: "6px 10px 24px 10px" }}>

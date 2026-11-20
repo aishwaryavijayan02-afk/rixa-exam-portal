@@ -377,12 +377,10 @@ export function hasPermission(role: UserRole, route: string, isSubjectFaculty: b
   // The Scrutinizer works in the Scrutiny dashboard, School, Manual Questions,
   // Notifications and Settings.
   if (role === "SCRUTINIZER") {
-    return ["", "/dashboard", "/scrutinizer", "/academic-repository", "/subjects", "/subject", "/manual-questions", "/notifications", "/settings"].includes(normalizedRoute);
+    return ["", "/dashboard", "/scrutinizer", "/subjects", "/subject", "/manual-questions", "/notifications", "/settings"].includes(normalizedRoute);
   }
 
   switch (normalizedRoute) {
-    case "/academic-repository":
-      return false; // Scrutinizer only (handled above)
     case "/scrutinizer":
       return role === "COE"; // COE can also follow the scrutiny progress
 
@@ -433,15 +431,22 @@ export function hasPermission(role: UserRole, route: string, isSubjectFaculty: b
 
 /**
  * Whether a sidebar entry is shown for this role. Same as hasPermission, except
- * the Scrutinizer does not get the plain "Dashboard" entry (its dashboard is the
- * "Scrutiny Dashboard"; /dashboard only redirects there) nor a separate "School"
- * entry (it has the single "School & Academic Repository" entry instead).
+ * the Scrutinizer does not get the plain "Dashboard" entry: its dashboard is the
+ * "Scrutiny Dashboard" (/dashboard only redirects there).
  */
 export function showInMenu(role: UserRole, route: string, isSubjectFaculty: boolean = true): boolean {
-  const normalized = route.replace(/\/$/, "");
-  // "School & Academic Repository" is a single entry for the Scrutinizer.
-  if (role === "SCRUTINIZER" && (normalized === "/dashboard" || normalized === "/subjects")) return false;
+  if (role === "SCRUTINIZER" && route.replace(/\/$/, "") === "/dashboard") return false;
   return hasPermission(role, route, isSubjectFaculty);
+}
+
+/**
+ * A page's sidebar entries for this user: filtered with showInMenu, and for the
+ * Scrutinizer the School entry is named "School & Academic Repository".
+ */
+export function menuForUser<T extends { route: string; label: string }>(items: T[], user: Pick<AuthUser, "role" | "isSubjectFaculty">): T[] {
+  return items
+    .filter((item) => showInMenu(user.role, item.route, user.isSubjectFaculty))
+    .map((item) => (user.role === "SCRUTINIZER" && item.route === "/subjects" ? { ...item, label: "School & Academic Repository" } : item));
 }
 
 export type AllocationLevel = "HOD" | "DEAN";

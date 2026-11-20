@@ -32,7 +32,7 @@ import {
 import { examStore, QuestionItem, SyllabusUnit, SubjectItem, SyllabusApprovalItem, INSTITUTIONAL_SUBJECTS } from "../lib/examStore";
 import { getQuestionBankDocument, saveQuestionBankDocument, syncLocalQuestionBankDocuments, uploadQuestionBankDocumentToCloud } from "../lib/questionBankDocuments";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
-import { showInMenu } from "../lib/auth";
+import { menuForUser } from "../lib/auth";
 import { SCRUTINY_MENU_ITEMS } from "../lib/scrutinyMenu";
 import { detectSubjectFromDocument, extractDocxText, extractFileText, extractSubjectHeader, inferDepartmentFromSubject } from "../lib/aiSyllabusParser";
 import JSZip from "jszip";
@@ -358,9 +358,7 @@ export default function AcademicVaultPage() {
     { id: "settings", label: "Settings", icon: Settings, route: "/settings" },
   ];
 
-  const menuItems = rawMenuItems.filter((item) =>
-    showInMenu(currentUser.role, item.route, currentUser.isSubjectFaculty)
-  );
+  const menuItems = menuForUser(rawMenuItems, currentUser);
 
   // Store data
   const [questions, setQuestions] = useState<QuestionItem[]>(() => {
