@@ -79,6 +79,11 @@ export interface QuestionItem {
   sourceFile?: string;
   /** Set when a HOD uploads the question on behalf of the faculty in `uploadedBy`. */
   uploadedOnBehalfBy?: string;
+  /** Scrutinizer's review of the question (set from the Scrutiny dashboard). */
+  scrutinyStatus?: "Cleared" | "Flagged";
+  scrutinyRemarks?: string;
+  scrutinizedBy?: string;
+  scrutinizedAt?: string;
 }
 
 /** Resolve placeholder upload subjects into the canonical institutional subject. */

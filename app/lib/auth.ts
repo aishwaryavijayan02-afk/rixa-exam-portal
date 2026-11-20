@@ -1,6 +1,6 @@
 "use client";
 
-export type UserRole = "STAFF" | "HOD" | "DEAN" | "COE";
+export type UserRole = "STAFF" | "HOD" | "DEAN" | "COE" | "SCRUTINIZER";
 
 export interface AuthUser {
   id: string;
@@ -50,6 +50,15 @@ export const PRESET_USERS: Record<UserRole, AuthUser> = {
     roleTitle: "Controller of Examinations",
     department: "Exam Cell Office",
     avatarBg: "#10b981",
+  },
+  SCRUTINIZER: {
+    id: "usr-scrutinizer",
+    name: "Question Paper Scrutinizer",
+    email: "scrutinizer@rathinam.in",
+    role: "SCRUTINIZER",
+    roleTitle: "Question Paper Scrutinizer",
+    department: "Exam Cell Office",
+    avatarBg: "#0e7490",
   },
 };
 
@@ -234,6 +243,11 @@ export function authenticateUser(
   const handleRaw = cleanEmail.split("@")[0].toLowerCase();
   const handleNormalized = handleRaw.replace(/[\._\-]/g, "");
 
+  // 0. Scrutinizer (e.g. scrutinizer@rathinam.in, scrutiny@rathinam.in)
+  if (handleNormalized.includes("scrutin") || selectedRole === "SCRUTINIZER") {
+    return { user: PRESET_USERS.SCRUTINIZER, error: null };
+  }
+
   // 1. Direct HOD matches (e.g. hod@rathinam.in, raju.tj@rathinam.in, raju@rathinam.in, tjraju@rathinam.in)
   if (
     handleNormalized === "hod" ||
@@ -311,7 +325,11 @@ export function authenticateUser(
   let department = "Department of Visual Communication";
 
   if (!selectedRole) {
-    if (handle.includes("coe") || handle.includes("controller")) {
+    if (handle.includes("scrutin")) {
+      role = "SCRUTINIZER";
+      roleTitle = "Question Paper Scrutinizer";
+      department = "Exam Cell Office";
+    } else if (handle.includes("coe") || handle.includes("controller")) {
       role = "COE";
       roleTitle = "Controller of Examinations";
       department = "Exam Cell Office";
@@ -356,7 +374,15 @@ export function authenticateUser(
 export function hasPermission(role: UserRole, route: string, isSubjectFaculty: boolean = true): boolean {
   const normalizedRoute = route.replace(/\/$/, "").split("?")[0];
 
+  // The Scrutinizer works only in the Scrutiny dashboard (plus notifications & settings).
+  if (role === "SCRUTINIZER") {
+    return ["", "/dashboard", "/scrutinizer", "/notifications", "/settings"].includes(normalizedRoute);
+  }
+
   switch (normalizedRoute) {
+    case "/scrutinizer":
+      return role === "COE"; // COE can also follow the scrutiny progress
+
     case "/dashboard":
     case "":
       return true; // All roles

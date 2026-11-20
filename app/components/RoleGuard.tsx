@@ -188,8 +188,8 @@ export default function RoleGuard({ route, children }: RoleGuardProps) {
             <span style={{ fontSize: "11.5px", fontWeight: 600, color: "#64748b", display: "block", marginBottom: "8px" }}>
               Switch Role to Test Access:
             </span>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
-              {(["STAFF", "HOD", "DEAN", "COE"] as UserRole[]).map((r) => (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "8px" }}>
+              {(["STAFF", "HOD", "DEAN", "COE", "SCRUTINIZER"] as UserRole[]).map((r) => (
                 <button
                   key={r}
                   type="button"

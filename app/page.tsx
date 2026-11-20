@@ -271,7 +271,7 @@ export default function LoginPage() {
 
     setTimeout(() => {
       authStore.setCurrentUser(user);
-      router.push("/dashboard");
+      router.push(user.role === "SCRUTINIZER" ? "/scrutinizer" : "/dashboard");
     }, 600);
   };
 
@@ -764,14 +764,15 @@ export default function LoginPage() {
             <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1 mb-2">
               <User size={12} className="text-blue-600" /> Select Role:
             </span>
-            <div className="grid grid-cols-4 gap-1.5">
-              {(["STAFF", "HOD", "DEAN", "COE"] as UserRole[]).map((role) => {
+            <div className="grid grid-cols-5 gap-1.5">
+              {(["STAFF", "HOD", "DEAN", "COE", "SCRUTINIZER"] as UserRole[]).map((role) => {
                 const isSelected = selectedPreset === role;
                 const labels: Record<UserRole, { title: string; icon: string }> = {
                   STAFF: { title: "Staff", icon: "👨‍🏫" },
                   HOD: { title: "HOD", icon: "👨‍💼" },
                   DEAN: { title: "Dean", icon: "🎓" },
                   COE: { title: "COE", icon: "🏛️" },
+                  SCRUTINIZER: { title: "Scrutinizer", icon: "🔍" },
                 };
 
                 return (

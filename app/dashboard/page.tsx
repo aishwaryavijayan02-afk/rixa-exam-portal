@@ -103,6 +103,11 @@ export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<AuthUser>(() => authStore.getCurrentUser());
   const [syllabusApprovals, setSyllabusApprovals] = useState<SyllabusApprovalItem[]>([]);
 
+  // The Scrutinizer has its own dashboard.
+  useEffect(() => {
+    if (currentUser.role === "SCRUTINIZER") router.replace("/scrutinizer");
+  }, [currentUser.role, router]);
+
   useEffect(() => {
     const handleAuth = () => {
       const u = authStore.getCurrentUser();
@@ -563,6 +568,7 @@ export default function DashboardPage() {
     { id: "staff-work-status", label: "Staff Work Status", icon: Briefcase, route: "/staff-work-status" },
     { id: "academic-vault", label: "Academic Vault", icon: Archive, route: "/academic-vault" },
     { id: "verify-approval", label: "Verify & Approval", icon: CheckSquare, route: "/approval" },
+    { id: "scrutinizer", label: "Scrutinizer", icon: ShieldCheck, route: "/scrutinizer" },
     { id: "reports", label: "Reports", icon: BarChart2, route: "/reports" },
     { id: "notifications", label: "Notifications", icon: Bell, route: "/notifications" },
     { id: "manual-questions", label: "Manual Questions", icon: Edit3, badge: "New", route: "/manual-questions" },
