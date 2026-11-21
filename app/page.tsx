@@ -37,6 +37,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showEmail, setShowEmail] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -233,16 +234,25 @@ export default function LoginPage() {
   const selectPresetUser = (role: UserRole) => {
     const isDeselect = selectedPreset === role;
     setSelectedPreset(isDeselect ? null : role);
+    if (isDeselect) {
+      // No role selected: the email & password boxes are locked, so clear them.
+      setEmail("");
+      setPassword("");
+    }
     setIsFieldReadOnly(false);
     setLoginError(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
+    if (!selectedPreset) {
+      setLoginError("Please select your role first.");
+      return;
+    }
     setIsSubmitting(true);
 
-    const { user, error } = authenticateUser(email, password, selectedPreset);
+    const { user, error } = await authenticateUser(email, password, selectedPreset);
 
     if (error || !user) {
       setTimeout(() => {
@@ -867,8 +877,11 @@ export default function LoginPage() {
                   type="text"
                   name="rathinam_portal_username_field"
                   className="light-input-field"
-                  placeholder="Enter your email"
+                  placeholder={selectedPreset ? "Enter your email" : "Select a role first"}
                   value={email}
+                  disabled={!selectedPreset}
+                  // Hidden as dots until the eye button is used (like the password).
+                  style={{ ...(showEmail ? {} : ({ WebkitTextSecurity: "disc" } as React.CSSProperties)), cursor: selectedPreset ? undefined : "not-allowed" }}
                   readOnly={isFieldReadOnly}
                   onChange={(e) => setEmail(e.target.value)}
                   onFocus={(e) => {
@@ -884,10 +897,21 @@ export default function LoginPage() {
                   required
                 />
                 {email && (
-                  <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="mr-3 text-emerald-500">
+                  <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-emerald-500" style={{ marginRight: "44px", display: "flex" }}>
                     <CheckCircle2 size={16} />
                   </motion.span>
                 )}
+                <motion.button
+                  type="button"
+                  className="light-eye-btn"
+                  onClick={() => setShowEmail(!showEmail)}
+                  disabled={!selectedPreset}
+                  aria-label={showEmail ? "Hide email" : "Show email"}
+                  whileHover={{ scale: 1.2 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  {showEmail ? <EyeOff size={18} className="text-blue-600" /> : <Eye size={18} />}
+                </motion.button>
               </motion.div>
             </div>
 
@@ -910,8 +934,10 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   name="rathinam_portal_password_field"
                   className="light-input-field"
-                  placeholder="Enter your password"
+                  placeholder={selectedPreset ? "Enter your password" : "Select a role first"}
                   value={password}
+                  disabled={!selectedPreset}
+                  style={{ cursor: selectedPreset ? undefined : "not-allowed" }}
                   readOnly={isFieldReadOnly}
                   onChange={(e) => setPassword(e.target.value)}
                   onFocus={(e) => {
