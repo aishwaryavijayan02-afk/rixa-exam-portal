@@ -81,8 +81,8 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
   // Auth user state
   const [currentUser, setCurrentUser] = useState<AuthUser>(() => authStore.getCurrentUser());
 
-  // Header shows the common role name ("Staff", "HOD", ...) instead of a person's name.
-  const cleanUserName = roleDisplayName(currentUser?.role);
+  // Header shows the signed-in person's own name (from their login email).
+  const cleanUserName = (currentUser?.name || "").replace(/^Mr\.\/Ms\.\s*/i, "") || roleDisplayName(currentUser?.role);
   const getAvatarInitial = (name: string) => {
     const stripped = name.replace(/^(Mr\.\/Ms\.|Mr\.|Mrs\.|Ms\.|Dr\.|Prof\.|Mr|Mrs|Ms|Dr|Prof)\s*/gi, "").trim();
     return (stripped || name || "U").charAt(0).toUpperCase();
@@ -677,7 +677,10 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span style={{ fontSize: "13px", fontWeight: 700, color: "#0f172a" }}>{cleanUserName}</span>
               </div>
-              <span style={{ fontSize: "10.5px", color: "#64748b" }}>{currentUser.department}</span>
+              <span style={{ fontSize: "10.5px", color: "#64748b" }}>
+                {roleDisplayName(currentUser.role)}
+                {currentUser.department ? ` • ${currentUser.department}` : ""}
+              </span>
             </div>
           </div>
 
