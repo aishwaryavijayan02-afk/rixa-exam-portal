@@ -6226,6 +6226,19 @@ html.dark-theme input:-webkit-autofill:active {
   box-shadow: 0 0 0 1000px #2a1b11 inset !important;
 }
 
+/* Typing cursor: dark on the light portal theme. The caret follows the text
+   colour, which some inputs (and autofilled ones) set light, so it showed white. */
+input,
+textarea,
+[contenteditable="true"] {
+  caret-color: #281a11 !important;
+}
+html.dark-theme input,
+html.dark-theme textarea,
+html.dark-theme [contenteditable="true"] {
+  caret-color: #f5e6cc !important;
+}
+
 /* ===== Verify Questions: clickable 3-tier pipeline stage cards ===== */
 .pipeline-stage-card {
   cursor: pointer;

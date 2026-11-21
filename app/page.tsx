@@ -37,7 +37,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showEmail, setShowEmail] = useState(false);
+  // Email is shown as typed; the eye button can hide it.
+  const [showEmail, setShowEmail] = useState(true);
   const [rememberMe, setRememberMe] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -880,7 +881,7 @@ export default function LoginPage() {
                   placeholder={selectedPreset ? "Enter your email" : "Select a role first"}
                   value={email}
                   disabled={!selectedPreset}
-                  // Hidden as dots until the eye button is used (like the password).
+                  // Shown as typed; hidden as dots only when the eye button is used.
                   style={{ ...(showEmail ? {} : ({ WebkitTextSecurity: "disc" } as React.CSSProperties)), cursor: selectedPreset ? undefined : "not-allowed" }}
                   readOnly={isFieldReadOnly}
                   onChange={(e) => setEmail(e.target.value)}
