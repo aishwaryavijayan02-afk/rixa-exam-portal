@@ -205,169 +205,57 @@ export function parseStaffNameFromEmail(rawEmail: string): string {
   return baseName || "Mr. Vignesh M";
 }
 
-export function authenticateUser(
+/**
+ * Sign-in rule: any official name@rathinam.in address, with the password
+ * "<name>@123" (e.g. vignesh@rathinam.in / vignesh@123). The user signs in
+ * with the role selected on the login page; uploads and approvals are recorded
+ * under the person's own name taken from the email.
+ */
+export async function authenticateUser(
   emailInput: string,
   passwordInput: string,
   selectedRole?: UserRole | null
-): { user: AuthUser | null; error: string | null } {
-  // Sanitize: trim, lowercase, remove any spaces (e.g. "Raju T.J@rathinam.in" -> "raju.t.j@rathinam.in")
+): Promise<{ user: AuthUser | null; error: string | null }> {
   let cleanEmail = emailInput.trim().toLowerCase().replace(/\s+/g, "");
   const cleanPassword = passwordInput.trim();
 
-  if (!cleanEmail) {
-    return { user: null, error: "Please enter your email." };
-  }
+  if (!cleanEmail) return { user: null, error: "Please enter your email." };
+  if (!cleanPassword) return { user: null, error: "Please enter your password." };
+  if (!selectedRole) return { user: null, error: "Please select your role first." };
 
-  if (!cleanPassword) {
-    return { user: null, error: "Please enter your password." };
+  // "vignesh" is accepted as "vignesh@rathinam.in".
+  if (!cleanEmail.includes("@")) cleanEmail = `${cleanEmail}@rathinam.in`;
+  const [handle, domain] = cleanEmail.split("@");
+  if (!handle || domain !== "rathinam.in") {
+    return { user: null, error: "Please use your official name@rathinam.in email." };
   }
-
-  // Password must be '12345' (from 1 to 5)
-  if (cleanPassword !== "12345") {
+  if (cleanPassword.toLowerCase() !== `${handle}@123`) {
     return { user: null, error: "Invalid email or password." };
   }
 
-  // If user only typed the username/name part, automatically append @rathinam.in
-  if (!cleanEmail.includes("@")) {
-    cleanEmail = `${cleanEmail}@rathinam.in`;
-  }
+  const preset = PRESET_USERS[selectedRole];
+  // The role's own common address (staff@, hod@, dean@, coe@, scrutinizer@).
+  if (cleanEmail === preset.email) return { user: { ...preset }, error: null };
 
-  // Ensure domain is @rathinam.in
-  if (!cleanEmail.endsWith("@rathinam.in")) {
-    return {
-      user: null,
-      error: "Invalid email. Please use an official 'name@rathinam.in' email address.",
-    };
-  }
+  // A registered faculty account keeps its saved name and department.
+  const known = STAFF_FACULTY_ACCOUNTS.find(
+    (s) => s.email.toLowerCase() === cleanEmail || s.email.toLowerCase().split("@")[0] === handle,
+  );
+  if (known && selectedRole === "STAFF") return { user: { ...known }, error: null };
 
-  const handleRaw = cleanEmail.split("@")[0].toLowerCase();
-  const handleNormalized = handleRaw.replace(/[\._\-]/g, "");
-
-  // 0. Scrutinizer (e.g. scrutinizer@rathinam.in, scrutiny@rathinam.in)
-  if (handleNormalized.includes("scrutin") || selectedRole === "SCRUTINIZER") {
-    return { user: PRESET_USERS.SCRUTINIZER, error: null };
-  }
-
-  // 1. Direct HOD matches (e.g. hod@rathinam.in, raju.tj@rathinam.in, raju@rathinam.in, tjraju@rathinam.in)
-  if (
-    handleNormalized === "hod" ||
-    (handleNormalized.includes("raju") && !handleNormalized.includes("balaji")) ||
-    handleNormalized === "tjraju" ||
-    selectedRole === "HOD"
-  ) {
-    return { user: PRESET_USERS.HOD, error: null };
-  }
-
-  // 2. Direct COE matches (e.g. coe@rathinam.in, rajubalaji@rathinam.in, controller@rathinam.in)
-  if (
-    handleNormalized === "coe" ||
-    handleNormalized.includes("rajubalaji") ||
-    handleNormalized.includes("controller") ||
-    selectedRole === "COE"
-  ) {
-    return { user: PRESET_USERS.COE, error: null };
-  }
-
-  // 3. Direct DEAN matches (e.g. dean@rathinam.in, rajlakshmi@rathinam.in, director@rathinam.in)
-  if (
-    handleNormalized === "dean" ||
-    handleNormalized.includes("rajlakshmi") ||
-    handleNormalized.includes("director") ||
-    selectedRole === "DEAN"
-  ) {
-    return { user: PRESET_USERS.DEAN, error: null };
-  }
-
-  // 4. Direct STAFF matches (e.g. staff@rathinam.in, vignesh@rathinam.in)
-  if (
-    handleNormalized === "staff" ||
-    handleNormalized.includes("vignesh")
-  ) {
-    return { user: PRESET_USERS.STAFF, error: null };
-  }
-
-  // 5. Check other registered Authority Presets
-  const matchedRole = (Object.keys(PRESET_USERS) as UserRole[]).find((r) => {
-    const preset = PRESET_USERS[r];
-    const presetEmail = preset.email.toLowerCase();
-    const presetHandle = presetEmail.split("@")[0].toLowerCase();
-    return (
-      presetEmail === cleanEmail ||
-      presetHandle === cleanEmail.split("@")[0] ||
-      (selectedRole === r && (cleanEmail.startsWith(r.toLowerCase()) || cleanEmail === presetEmail))
-    );
-  });
-  if (matchedRole) {
-    return { user: PRESET_USERS[matchedRole], error: null };
-  }
-
-  // 6. Check All Registered Staff Faculty Accounts
-  const matchedStaff = STAFF_FACULTY_ACCOUNTS.find((s) => {
-    const staffEmail = s.email.toLowerCase();
-    const staffHandle = staffEmail.split("@")[0].toLowerCase();
-    return (
-      staffEmail === cleanEmail ||
-      cleanEmail === `${staffHandle}@rathinam.in` ||
-      cleanEmail.split("@")[0] === staffHandle
-    );
-  });
-  if (matchedStaff) {
-    return { user: matchedStaff, error: null };
-  }
-
-  // 7. Dynamic match for any valid name@rathinam.in address
-  const handle = cleanEmail.split("@")[0].toLowerCase();
-  const parsedName = parseStaffNameFromEmail(emailInput || cleanEmail);
-
-  // Determine role based on selectedRole or email handle
-  let role: UserRole = selectedRole || "STAFF";
-  let roleTitle = "Assistant Professor";
-  let department = "Department of Visual Communication";
-
-  if (!selectedRole) {
-    if (handle.includes("scrutin")) {
-      role = "SCRUTINIZER";
-      roleTitle = "Question Paper Scrutinizer";
-      department = "Exam Cell Office";
-    } else if (handle.includes("coe") || handle.includes("controller")) {
-      role = "COE";
-      roleTitle = "Controller of Examinations";
-      department = "Exam Cell Office";
-    } else if (handle.includes("dean") || handle.includes("director")) {
-      role = "DEAN";
-      roleTitle = "Dean Academic Affairs";
-      department = "School of Media & Arts";
-    } else if (handle.includes("hod")) {
-      role = "HOD";
-      roleTitle = "HOD / Associate Dean";
-      department = "Visual Arts & VFX";
-    }
-  } else {
-    const sRole = selectedRole as string;
-    if (sRole === "COE") {
-      roleTitle = "Controller of Examinations";
-      department = "Exam Cell Office";
-    } else if (sRole === "DEAN") {
-      roleTitle = "Dean Academic Affairs";
-      department = "School of Media & Arts";
-    } else if (sRole === "HOD") {
-      roleTitle = "HOD / Associate Dean";
-      department = "Visual Arts & VFX";
-    }
-  }
-
-  const dynamicUser: AuthUser = {
-    id: `usr-${cleanEmail.replace(/[^a-z0-9]/g, "-")}`,
-    name: parsedName,
-    email: cleanEmail,
-    role: role,
-    roleTitle: roleTitle,
-    department: department,
-    avatarBg: cleanEmail.includes("gayathiri") || cleanEmail.includes("mrs") ? "#db2777" : "#ca9261",
-    isSubjectFaculty: role === "HOD" ? true : undefined,
+  return {
+    user: {
+      id: `usr-${cleanEmail.replace(/[^a-z0-9]/g, "-")}`,
+      name: known?.name || parseStaffNameFromEmail(cleanEmail),
+      email: cleanEmail,
+      role: selectedRole,
+      roleTitle: preset.roleTitle,
+      department: known?.department || preset.department,
+      avatarBg: preset.avatarBg,
+      isSubjectFaculty: selectedRole === "HOD" ? true : undefined,
+    },
+    error: null,
   };
-
-  return { user: dynamicUser, error: null };
 }
 
 // Check permissions strictly matching the matrix table
