@@ -752,7 +752,9 @@ export default function DashboardPage() {
                 {(() => {
                   const hr = new Date().getHours();
                   const greeting = hr < 12 ? "Good Morning" : hr < 17 ? "Good Afternoon" : "Good Evening";
-                  return `${greeting}, ${roleDisplayName(currentUser.role)} 👋`;
+                  // The signed-in person's own name (from their login email).
+                  const name = (currentUser.name || "").replace(/^Mr\.\/Ms\.\s*/i, "") || roleDisplayName(currentUser.role);
+                  return `${greeting}, ${name} 👋`;
                 })()}
               </h1>
               <p style={{ fontSize: "13.5px", color: "#64748b", margin: 0 }}>

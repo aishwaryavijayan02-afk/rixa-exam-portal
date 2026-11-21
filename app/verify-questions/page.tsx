@@ -1139,7 +1139,7 @@ export default function VerifyQuestionsPage() {
                           color: "#334155",
                         }}
                       >
-                        Active Role: <strong style={{ color: "#c3844d" }}>{roleDisplayName(currentUser.role)}</strong>
+                        Active Role: <strong style={{ color: "#c3844d" }}>{currentUser.name} ({roleDisplayName(currentUser.role)})</strong>
                       </span>
                     </div>
                   </div>

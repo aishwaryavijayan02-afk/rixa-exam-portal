@@ -1798,7 +1798,7 @@ export default function DepartmentManagementPage() {
                               borderRadius: "10px",
                             }}
                           >
-                            Logged in as: {roleDisplayName(currentUser.role)}
+                            Logged in as: {currentUser.name || roleDisplayName(currentUser.role)}
                           </span>
                         )}
                       </div>
