@@ -50,7 +50,7 @@ import {
 } from "lucide-react";
 import { examStore, QuestionItem, SubjectItem, SyllabusUnit } from "../lib/examStore";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
-import { menuForUser } from "../lib/auth";
+import { menuForUser, roleDisplayName } from "../lib/auth";
 import { SCRUTINY_MENU_ITEMS } from "../lib/scrutinyMenu";
 import RoleGuard from "../components/RoleGuard";
 import {
@@ -1139,7 +1139,7 @@ export default function VerifyQuestionsPage() {
                           color: "#334155",
                         }}
                       >
-                        Active Role: <strong style={{ color: "#c3844d" }}>{currentUser.name} ({currentUser.role})</strong>
+                        Active Role: <strong style={{ color: "#c3844d" }}>{roleDisplayName(currentUser.role)}</strong>
                       </span>
                     </div>
                   </div>

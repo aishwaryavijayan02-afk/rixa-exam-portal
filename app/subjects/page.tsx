@@ -50,7 +50,7 @@ import {
 } from "lucide-react";
 import { examStore, StaffFacultyItem, defaultStaffFaculty } from "../lib/examStore";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
-import { menuForUser } from "../lib/auth";
+import { menuForUser, roleDisplayName } from "../lib/auth";
 import { SCRUTINY_MENU_ITEMS } from "../lib/scrutinyMenu";
 import RoleGuard from "../components/RoleGuard";
 import AcademicSubmissions from "../components/AcademicSubmissions";
@@ -1798,7 +1798,7 @@ export default function DepartmentManagementPage() {
                               borderRadius: "10px",
                             }}
                           >
-                            Logged in as: {currentUser.name}
+                            Logged in as: {roleDisplayName(currentUser.role)}
                           </span>
                         )}
                       </div>

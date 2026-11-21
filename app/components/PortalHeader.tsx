@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 import { examStore, SubjectItem, QuestionItem, NotificationItem, MessageItem } from "../lib/examStore";
 import { authStore, AuthUser, UserRole, hasPermission } from "../lib/auth";
-import { menuForUser } from "../lib/auth";
+import { menuForUser, roleDisplayName } from "../lib/auth";
 
 interface PortalHeaderProps {
   activeRoute?: string;
@@ -81,7 +81,8 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
   // Auth user state
   const [currentUser, setCurrentUser] = useState<AuthUser>(() => authStore.getCurrentUser());
 
-  const cleanUserName = (currentUser?.name || "").replace(/^Mr\.\/Ms\.\s*/i, "");
+  // Header shows the common role name ("Staff", "HOD", ...) instead of a person's name.
+  const cleanUserName = roleDisplayName(currentUser?.role);
   const getAvatarInitial = (name: string) => {
     const stripped = name.replace(/^(Mr\.\/Ms\.|Mr\.|Mrs\.|Ms\.|Dr\.|Prof\.|Mr|Mrs|Ms|Dr|Prof)\s*/gi, "").trim();
     return (stripped || name || "U").charAt(0).toUpperCase();
@@ -675,32 +676,6 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
             <div className="portal-header-user-text" style={{ display: "flex", flexDirection: "column" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span style={{ fontSize: "13px", fontWeight: 700, color: "#0f172a" }}>{cleanUserName}</span>
-                <span
-                  style={{
-                    fontSize: "10px",
-                    fontWeight: 800,
-                    padding: "1px 6px",
-                    borderRadius: "6px",
-                    background:
-                      currentUser.role === "COE"
-                        ? "#dcfce7"
-                        : currentUser.role === "DEAN"
-                        ? "#f3e8ff"
-                        : currentUser.role === "HOD"
-                        ? "#e0f2fe"
-                        : "#f1f5f9",
-                    color:
-                      currentUser.role === "COE"
-                        ? "#15803d"
-                        : currentUser.role === "DEAN"
-                        ? "#b4743c"
-                        : currentUser.role === "HOD"
-                        ? "#7b4f29"
-                        : "#475569",
-                  }}
-                >
-                  {currentUser.role}
-                </span>
               </div>
               <span style={{ fontSize: "10.5px", color: "#64748b" }}>{currentUser.department}</span>
             </div>

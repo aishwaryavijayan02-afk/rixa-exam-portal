@@ -449,6 +449,28 @@ export function menuForUser<T extends { route: string; label: string }>(items: T
     .map((item) => (user.role === "SCRUTINIZER" && item.route === "/subjects" ? { ...item, label: "School & Academic Repository" } : item));
 }
 
+/**
+ * Common name shown for the signed-in user in greetings and the header
+ * (e.g. "Staff", "HOD"). Display only: uploads and approvals keep the real
+ * staff name so every document is still credited to the right person.
+ */
+export function roleDisplayName(role: UserRole | string | undefined): string {
+  switch (role) {
+    case "STAFF":
+      return "Staff";
+    case "HOD":
+      return "HOD";
+    case "DEAN":
+      return "Dean";
+    case "COE":
+      return "COE";
+    case "SCRUTINIZER":
+      return "Scrutinizer";
+    default:
+      return "User";
+  }
+}
+
 export type AllocationLevel = "HOD" | "DEAN";
 
 // Faculty allocation policy: HOD -> HOD level only, DEAN -> Dean level only,

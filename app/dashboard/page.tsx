@@ -50,7 +50,7 @@ import {
 } from "lucide-react";
 import { examStore, SubjectItem, StaffFacultyItem, SyllabusApprovalItem, INSTITUTIONAL_SUBJECTS } from "../lib/examStore";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
-import { menuForUser } from "../lib/auth";
+import { menuForUser, roleDisplayName } from "../lib/auth";
 import { SCRUTINY_MENU_ITEMS } from "../lib/scrutinyMenu";
 import RoleGuard from "../components/RoleGuard";
 import {
@@ -752,8 +752,7 @@ export default function DashboardPage() {
                 {(() => {
                   const hr = new Date().getHours();
                   const greeting = hr < 12 ? "Good Morning" : hr < 17 ? "Good Afternoon" : "Good Evening";
-                  const cleanName = (currentUser.name || "").replace(/^Mr\.\/Ms\.\s*/i, "");
-                  return `${greeting}, ${cleanName} 👋`;
+                  return `${greeting}, ${roleDisplayName(currentUser.role)} 👋`;
                 })()}
               </h1>
               <p style={{ fontSize: "13.5px", color: "#64748b", margin: 0 }}>
