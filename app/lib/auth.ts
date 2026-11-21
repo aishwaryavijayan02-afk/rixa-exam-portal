@@ -215,16 +215,16 @@ export function authenticateUser(
   const cleanPassword = passwordInput.trim();
 
   if (!cleanEmail) {
-    return { user: null, error: "Please enter your Email (e.g. hod@rathinam.in, staff@rathinam.in)." };
+    return { user: null, error: "Please enter your email." };
   }
 
   if (!cleanPassword) {
-    return { user: null, error: "Please enter your password (12345)." };
+    return { user: null, error: "Please enter your password." };
   }
 
   // Password must be '12345' (from 1 to 5)
   if (cleanPassword !== "12345") {
-    return { user: null, error: "Invalid password. Use '12345' as password." };
+    return { user: null, error: "Invalid email or password." };
   }
 
   // If user only typed the username/name part, automatically append @rathinam.in

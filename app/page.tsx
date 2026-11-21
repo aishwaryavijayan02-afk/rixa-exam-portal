@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
-import { authStore, UserRole, PRESET_USERS, authenticateUser } from "./lib/auth";
+import { authStore, UserRole, authenticateUser } from "./lib/auth";
 import {
   ShieldCheck,
   Zap,
@@ -228,12 +228,11 @@ export default function LoginPage() {
     return () => clearTimeout(animTimer);
   }, []);
 
-  // Handle selecting a role: auto-fill that role's demo email & password (click again to clear)
+  // Selecting a role only chooses the role (click again to clear). The email and
+  // password are never filled in automatically; the user must type them.
   const selectPresetUser = (role: UserRole) => {
     const isDeselect = selectedPreset === role;
     setSelectedPreset(isDeselect ? null : role);
-    setEmail(isDeselect ? "" : PRESET_USERS[role].email);
-    setPassword(isDeselect ? "" : "12345");
     setIsFieldReadOnly(false);
     setLoginError(null);
   };
