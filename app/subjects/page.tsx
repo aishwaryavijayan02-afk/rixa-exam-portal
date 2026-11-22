@@ -54,6 +54,7 @@ import { menuForUser, roleDisplayName } from "../lib/auth";
 import { SCRUTINY_MENU_ITEMS } from "../lib/scrutinyMenu";
 import RoleGuard from "../components/RoleGuard";
 import AcademicSubmissions from "../components/AcademicSubmissions";
+import SchoolEmblem from "../components/SchoolEmblem";
 import { ToastNotification } from "../components/CrudModal";
 import PortalFooter from "../components/PortalFooter";
 import PortalHeader from "../components/PortalHeader";
@@ -1534,11 +1535,11 @@ export default function DepartmentManagementPage() {
                       >
                         {/* Top row: Icon + Programmes Badge */}
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                          <div className="school-card-icon"
+                          <div className="school-card-icon has-emblem"
                             style={{
-                              width: "38px",
-                              height: "38px",
-                              borderRadius: "11px",
+                              width: "46px",
+                              height: "46px",
+                              borderRadius: "13px",
                               background: theme.surface,
                               border: `1px solid ${theme.border}`,
                               display: "flex",
@@ -1547,7 +1548,9 @@ export default function DepartmentManagementPage() {
                               color: theme.accent,
                             }}
                           >
-                            <Icon size={19} />
+                            <span className="school-emblem-ring" aria-hidden="true" />
+                            <span className="school-emblem-face" aria-hidden="true" />
+                            <SchoolEmblem schoolId={school.id} fallback={Icon} size={32} />
                           </div>
 
                           <span className="school-card-badge"
@@ -3211,7 +3214,7 @@ export default function DepartmentManagementPage() {
                         flexShrink: 0,
                       }}
                     >
-                      <selectedSchoolData.icon size={20} />
+                      <SchoolEmblem schoolId={selectedSchoolData.id} fallback={selectedSchoolData.icon} size={30} />
                     </div>
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>

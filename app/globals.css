@@ -9619,6 +9619,110 @@ html.pen-cursor-on :is(input:not([type="checkbox"]):not([type="radio"]):not([typ
 .school-card-icon > svg { position: relative; z-index: 1; }
 .school-card:hover .school-card-icon > svg { animation: schoolSpin .9s cubic-bezier(.3,.7,.2,1) 1; }
 
+/* ===== Animated school emblems (components/SchoolEmblem.tsx) ===== */
+.school-card-icon.has-emblem {
+  overflow: visible;
+  isolation: isolate;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+/* the sweep / scan effects move onto the clipped inner face */
+.school-card-icon.has-emblem::before,
+.school-card-icon.has-emblem::after { display: none; }
+.school-card-icon.has-emblem .school-emblem-face::before {
+  content: "";
+  position: absolute;
+  inset: -50% -70%;
+  z-index: 1;
+  background: linear-gradient(115deg, transparent 38%, rgba(255, 252, 245, .85) 50%, transparent 62%);
+  transform: translateX(-75%);
+  animation: schoolSweep 4.2s ease-in-out infinite;
+  pointer-events: none;
+}
+/* rotating digital glow ring behind the tile */
+.school-card-icon.has-emblem .school-emblem-ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: 16px;
+  z-index: -1;
+  background: conic-gradient(from 0deg, transparent 0deg, var(--sc-accent) 70deg, transparent 140deg, transparent 220deg, var(--sc-accent) 290deg, transparent 360deg);
+  opacity: .55;
+  filter: blur(3px);
+  animation: seRingSpin 5s linear infinite;
+}
+.school-card:hover .school-card-icon.has-emblem .school-emblem-ring { opacity: .9; animation-duration: 2.2s; }
+.school-card-icon.has-emblem .school-emblem-face {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, .95), transparent 60%),
+    linear-gradient(160deg, var(--sc-surface), var(--sc-soft));
+  border: 1px solid var(--sc-border);
+}
+/* faint digital grid on the tile face */
+.school-card-icon.has-emblem .school-emblem-face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--sc-accent) 10%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--sc-accent) 10%, transparent) 1px, transparent 1px);
+  background-size: 8px 8px;
+  mask-image: radial-gradient(circle at center, #000 30%, transparent 75%);
+}
+.school-emblem {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  color: var(--sc-accent);
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--sc-accent) 45%, transparent));
+  transition: transform .35s cubic-bezier(.3, .7, .2, 1);
+}
+.school-card:hover .school-emblem { transform: scale(1.12); }
+
+.school-emblem svg * { transform-box: fill-box; transform-origin: center; }
+.school-emblem .se-spin { transform-box: view-box; transform-origin: 24px 24px; animation: seSpin 9s linear infinite; }
+.school-emblem .se-spin-slow { transform-box: view-box; transform-origin: 24px 24px; animation: seSpin 4.5s linear infinite; }
+.school-emblem .se-pulse { animation: sePulse 1.8s ease-in-out infinite; }
+.school-emblem .se-ring { animation: seRipple 2.4s ease-out infinite; }
+.school-emblem .se-grow { transform-origin: bottom; animation: seGrow 2.8s cubic-bezier(.3, .7, .2, 1) infinite; }
+.school-emblem .se-draw { stroke-dasharray: 100; animation: seDraw 2.8s ease-in-out infinite; }
+.school-emblem .se-draw-head { animation: seHead 2.8s ease-in-out infinite; }
+.school-emblem .se-ecg { stroke-dasharray: 34 66; animation: seEcg 1.9s linear infinite; }
+.school-emblem .se-twinkle { animation: seTwinkle 2.2s ease-in-out infinite; }
+.school-emblem .se-rise { animation: seRise 2.6s ease-out infinite; }
+.school-emblem .se-blink { animation: seBlink 2s ease-in-out infinite; }
+.school-emblem .se-sway { transform-box: view-box; transform-origin: 24px 24px; animation: seSway 4s ease-in-out infinite; }
+.school-emblem .se-globe { animation: seGlobe 3.2s ease-in-out infinite; }
+.school-emblem .se-leaf { transform-origin: 0% 100%; animation: seLeaf 3s ease-in-out infinite; }
+.school-emblem .se-d1 { animation-delay: 0s; }
+.school-emblem .se-d2 { animation-delay: .35s; }
+.school-emblem .se-d3 { animation-delay: .7s; }
+.school-emblem .se-d4 { animation-delay: 1.05s; }
+
+@keyframes seRingSpin { to { transform: rotate(360deg); } }
+@keyframes seSpin { to { transform: rotate(360deg); } }
+@keyframes sePulse { 0%, 100% { opacity: .7; transform: scale(.85); } 50% { opacity: 1; transform: scale(1.12); } }
+@keyframes seRipple { 0% { opacity: .55; transform: scale(.7); } 100% { opacity: 0; transform: scale(1.35); } }
+@keyframes seGrow { 0% { transform: scaleY(.15); } 35%, 85% { transform: scaleY(1); } 100% { transform: scaleY(.15); } }
+@keyframes seDraw { 0% { stroke-dashoffset: 100; } 45%, 85% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -100; } }
+@keyframes seHead { 0%, 35% { opacity: 0; } 45%, 85% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes seEcg { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+@keyframes seTwinkle { 0%, 100% { opacity: .25; transform: scale(.6) rotate(0deg); } 50% { opacity: 1; transform: scale(1.15) rotate(45deg); } }
+@keyframes seRise { 0% { opacity: 0; transform: translateY(6px) scale(.6); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(-7px) scale(1); } }
+@keyframes seBlink { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+@keyframes seSway { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+@keyframes seGlobe { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(.12); } }
+@keyframes seLeaf { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(8deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .school-card-icon.has-emblem .school-emblem-ring,
+  .school-emblem,
+  .school-emblem * { animation: none !important; }
+}
+
 /* programmes badge shimmer */
 .school-card-badge { position: relative; overflow: hidden; }
 .school-card-badge::after {
