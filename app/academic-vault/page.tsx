@@ -221,6 +221,26 @@ function parseTextQuestionBank(text: string, sourceFile: string): ParsedBulkQues
   let activeQuestionType: QuestionItem["type"] = "Descriptive";
   // Marks per question for the current section ("Part B (5 × 16 = 80)", "1 mark each").
   let sectionMarks: number | undefined;
+  // Marks stated per section in the instructions, e.g. "Section A contains 20
+  // multiple-choice questions carrying 1 mark each" -> { A: 1 }.
+  const marksBySection: Record<string, number> = {};
+  let paperWideMarks: number | undefined;
+  const noteInstructionMarks = (line: string) => {
+    const perQuestion = sectionMarksFrom(line);
+    if (perQuestion === undefined) return;
+    const section = line.match(/\b(?:section|part)\s*[-–—]?\s*([a-e]|[ivx]+)\b/i);
+    if (section) marksBySection[section[1].toUpperCase()] = perQuestion;
+    else paperWideMarks = perQuestion;
+  };
+  // The instructions above the first section heading are not questions, but
+  // they often state the marks for each section.
+  allLines.slice(0, Math.max(0, bodyStart)).forEach(noteInstructionMarks);
+  sectionMarks = paperWideMarks;
+  /** Marks for a section heading: from the heading itself, else from the instructions. */
+  const marksForHeading = (line: string) => {
+    const section = line.match(/^(?:section|part)\s*[-–—]?\s*([a-e]|[ivx]+)\b/i);
+    return sectionMarksFrom(line) ?? (section ? marksBySection[section[1].toUpperCase()] : undefined) ?? paperWideMarks;
+  };
 
   const finish = () => {
     const q = current as ParsedBulkQuestion | null;
@@ -248,8 +268,8 @@ function parseTextQuestionBank(text: string, sourceFile: string): ParsedBulkQues
     if (/^(?:general\s+)?instructions?\b[^?]{0,60}$/i.test(line)) {
       finish();
       inInstructions = true;
-      const perQuestion = sectionMarksFrom(line);
-      if (perQuestion !== undefined) sectionMarks = perQuestion;
+      noteInstructionMarks(line);
+      if (paperWideMarks !== undefined) sectionMarks = paperWideMarks;
       continue;
     }
     const unitHeading = line.match(UNIT_HEADING);
@@ -265,13 +285,13 @@ function parseTextQuestionBank(text: string, sourceFile: string): ParsedBulkQues
     if (/\b(?:mcq|multiple[\s-]*choice)\b/i.test(line) && (/\bsection\b/i.test(line) || /\banswer\s+key\b/i.test(line))) {
       finish();
       activeQuestionType = "MCQ";
-      sectionMarks = sectionMarksFrom(line);
+      sectionMarks = marksForHeading(line);
       continue;
     }
     if (/\bdescriptive\b/i.test(line) && /\bsection\b/i.test(line)) {
       finish();
       activeQuestionType = "Descriptive";
-      sectionMarks = sectionMarksFrom(line);
+      sectionMarks = marksForHeading(line);
       continue;
     }
     if (SECTION_HEADING.test(line)) {
@@ -279,13 +299,13 @@ function parseTextQuestionBank(text: string, sourceFile: string): ParsedBulkQues
       finish();
       if (/\b(?:mcq|multiple[\s-]*choice|objective)\b/i.test(line)) activeQuestionType = "MCQ";
       else if (/\b(?:descriptive|short|long|essay)\b/i.test(line)) activeQuestionType = "Descriptive";
-      sectionMarks = sectionMarksFrom(line);
+      sectionMarks = marksForHeading(line);
       continue;
     }
     if (inInstructions) {
       // "Each question carries 2 marks" inside the instructions applies to the questions below.
-      const perQuestion = sectionMarksFrom(line);
-      if (perQuestion !== undefined) sectionMarks = perQuestion;
+      noteInstructionMarks(line);
+      if (paperWideMarks !== undefined) sectionMarks = paperWideMarks;
       continue;
     }
 

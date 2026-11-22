@@ -5,6 +5,7 @@ import { ArrowLeft, BookOpen, Download, Eye, FileText, Layers, Loader2, Search, 
 import { examStore, INSTITUTIONAL_SUBJECTS, QuestionItem, StaffFacultyItem, SyllabusApprovalItem } from "../lib/examStore";
 import { fetchQuestionBankDocument } from "../lib/questionBankDocuments";
 import { unitNumber } from "../lib/bloomTaxonomy";
+import BloomPatternView, { type BloomViewQuestion } from "./BloomPatternView";
 
 /** The parts of a School-page school card this view needs. */
 export interface SubmissionSchool {
@@ -33,7 +34,8 @@ interface SubmissionRow {
 type ViewerState =
   | { status: "loading" }
   | { status: "file"; blob: Blob; url: string; kind: "pdf" | "docx" | "image" | "other" }
-  | { status: "fallback"; reason: string };
+  | { status: "fallback"; reason: string }
+  | { status: "bloom" };
 
 const UNASSIGNED_SCHOOL = "Other / Unmapped";
 
@@ -320,6 +322,11 @@ export default function AcademicSubmissions({ schools, initialSchool, onClose }:
   const view = async (row: SubmissionRow) => {
     releaseUrl();
     setSelected(row);
+    // Question banks are reviewed in the Bloom's Taxonomy pattern only.
+    if (row.kind === "questionBank") {
+      setViewer({ status: "bloom" });
+      return;
+    }
     setViewer({ status: "loading" });
     const blob = await loadOriginal(row);
     if (!blob) {
@@ -459,6 +466,11 @@ export default function AcademicSubmissions({ schools, initialSchool, onClose }:
                     <FileText size={32} style={{ marginBottom: "8px" }} />
                     <div>{extensionOf(selected.documentName).toUpperCase() || "This"} files cannot be previewed in the browser. Use <strong>Download</strong> to open the original file.</div>
                   </div>
+                </div>
+              )}
+              {viewer.status === "bloom" && (
+                <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
+                  <BloomPatternView questions={(selected.questions || []) as BloomViewQuestion[]} />
                 </div>
               )}
               {viewer.status === "fallback" && (

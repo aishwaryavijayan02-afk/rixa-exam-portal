@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { X, Trash2, Edit3, Eye, CheckCircle2, AlertTriangle, Save, Info, Sparkles, Check, FileText, Printer, Layers, School, FileCheck } from "lucide-react";
 import { getQuestionBankDocument } from "../lib/questionBankDocuments";
+import BloomPatternView, { type BloomViewQuestion } from "./BloomPatternView";
 
 // ======================== VIEW MODAL ========================
 export interface ViewField {
@@ -422,7 +423,7 @@ export function ViewModal({
               >
                 {groupQuestionsByUnit && (
                   <button type="button" role="tab" aria-selected={viewMode === "original"} onClick={() => setViewMode("original")} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "6px 12px", borderRadius: "8px", border: "none", background: viewMode === "original" ? "#ffffff" : "transparent", color: viewMode === "original" ? "#0f172a" : "#64748b", fontWeight: viewMode === "original" ? 800 : 650, fontSize: "12px", cursor: "pointer", boxShadow: viewMode === "original" ? "0 2px 6px rgba(0,0,0,0.06)" : "none" }}>
-                    Original document
+                    Bloom&apos;s Taxonomy Pattern
                   </button>
                 )}
                 <button
@@ -537,7 +538,7 @@ export function ViewModal({
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
               {groupQuestionsByUnit && (
                 <div style={{ marginBottom: "-4px", padding: "12px 15px", borderRadius: "10px", border: "1px solid #dbeafe", background: "linear-gradient(100deg,#eff6ff,#f0fdfa)", color: "#475569", fontSize: "12px" }}>
-                  <strong style={{ color: "#0f172a" }}>Review the question bank.</strong> The original uploaded Word document is shown below.
+                  <strong style={{ color: "#0f172a" }}>Review the question bank.</strong> Questions are shown in the Bloom&apos;s Taxonomy pattern — Section A (MCQ) and Section B (Descriptive), each unit-wise from L1 to L6.
                 </div>
               )}
               {normalizedFields.length > 0 && (
@@ -624,20 +625,7 @@ export function ViewModal({
 
               {/* ================= WORD DOCUMENT PAPER PREVIEW (Internal Format) ================= */}
               {questionsList && questionsList.length > 0 && groupQuestionsByUnit && viewMode === "original" && (
-                originalDocument || originalDocumentUrl ? (
-                  <OriginalQuestionBankPreview
-                    name={originalDocument?.name || questionsList.find((question) => question.sourceFile)?.sourceFile || "Question bank upload"}
-                    url={originalDocument?.url || originalDocumentUrl || ""}
-                    fileAvailable={!!originalDocument || !!originalDocumentUrl}
-                  />
-                ) : (
-                  <>
-                  <div style={{ minHeight: "100px", display: "grid", gap: "14px", padding: "18px", border: "1px dashed #cbd9e8", borderRadius: "12px", background: "#f8fafc", color: "#64748b", textAlign: "center", fontSize: "13px" }}>
-                    {documentLookupComplete ? "The original Word file is not stored for this earlier upload. Re-upload the .docx question bank in Academic Vault to view its original Word layout here." : "Loading the original uploaded document…"}
-                  </div>
-                  {documentLookupComplete && <UnitWiseQuestionPreview questions={questionsList} />}
-                  </>
-                )
+                <BloomPatternView questions={questionsList as BloomViewQuestion[]} />
               )}
 
               {questionsList && questionsList.length > 0 && viewMode === "word" && (
