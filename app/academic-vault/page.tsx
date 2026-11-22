@@ -45,6 +45,7 @@ import { convertToBloomPattern, groupByUnitAndType } from "../lib/bloomTaxonomy"
 import PortalFooter from "../components/PortalFooter";
 import PortalHeader from "../components/PortalHeader";
 import SyllabusDocumentPreview from "../components/SyllabusDocumentPreview";
+import BloomPatternView from "../components/BloomPatternView";
 
 type ParsedBulkQuestion = Partial<QuestionItem> & { question: string; bloomCell?: string };
 type SyllabusUploadFormat = "excel" | "word" | "pdf" | "diagram";
@@ -2104,7 +2105,7 @@ export default function AcademicVaultPage() {
               </button>
             </div>
             <div style={{ overflow: "auto", padding: "20px 22px 24px" }}>
-              <div style={{ marginBottom: "16px", padding: "12px 15px", borderRadius: "10px", border: "1px solid #dbeafe", background: "linear-gradient(100deg, #eff6ff, #f0fdfa)", color: "#475569", fontSize: "12px" }}><strong style={{ color: "#0f172a" }}>Check before importing.</strong> Questions are converted to the Bloom&apos;s Taxonomy pattern — unit-wise, with MCQ and Descriptive questions separated. You can also view the original file.</div>
+              <div style={{ marginBottom: "16px", padding: "12px 15px", borderRadius: "10px", border: "1px solid #dbeafe", background: "linear-gradient(100deg, #eff6ff, #f0fdfa)", color: "#475569", fontSize: "12px" }}><strong style={{ color: "#0f172a" }}>Check before importing.</strong> Questions are arranged in the Bloom&apos;s Taxonomy pattern like the original paper — Section A (MCQ) and Section B (Descriptive), each unit-wise from L1 to L6. You can also view the original file.</div>
               <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
                 {([["bloom", "Bloom's Taxonomy Pattern"], ["original", "Original File"]] as const).map(([key, label]) => (
                   <button key={key} type="button" onClick={() => setBulkPreviewTab(key)} style={{ padding: "8px 14px", borderRadius: "8px", border: "1px solid #deba9b", background: bulkPreviewTab === key ? "#774c28" : "#ffffff", color: bulkPreviewTab === key ? "#ffffff" : "#774c28", fontSize: "12px", fontWeight: 800, cursor: "pointer" }}>
@@ -2113,61 +2114,7 @@ export default function AcademicVaultPage() {
                 ))}
               </div>
               {bulkPreviewTab === "bloom" ? (
-                bloomGroups.length === 0 ? (
-                  <div style={{ padding: "18px", color: "#64748b", fontSize: "13px" }}>No questions were found in this file.</div>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-                    {bloomGroups.map((group) => (
-                      <section key={group.unit} style={{ border: "1px solid #e2e8f0", borderRadius: "12px", background: "#ffffff", overflow: "hidden" }}>
-                        <div style={{ padding: "11px 16px", background: "linear-gradient(90deg, #ecfeff, #f8fafc)", borderLeft: "4px solid #754b27", color: "#4c311f", fontSize: "15px", fontWeight: 800 }}>
-                          {group.unit}
-                          <span style={{ marginLeft: "10px", fontSize: "11.5px", fontWeight: 700, color: "#64748b" }}>{group.mcq.length} MCQ · {group.descriptive.length} Descriptive</span>
-                        </div>
-                        {([["Part A — Multiple Choice Questions (MCQ)", group.mcq], ["Part B — Descriptive Questions", group.descriptive]] as const).map(([title, items]) =>
-                          items.length === 0 ? null : (
-                            <div key={title} style={{ padding: "12px 16px 14px" }}>
-                              <div style={{ fontSize: "12.5px", fontWeight: 800, color: "#774c28", marginBottom: "8px", letterSpacing: "0.02em" }}>{title}</div>
-                              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12.5px" }}>
-                                <thead>
-                                  <tr style={{ background: "#f8fafc", color: "#475569", textAlign: "left" }}>
-                                    <th style={{ padding: "6px 8px", width: "40px" }}>#</th>
-                                    <th style={{ padding: "6px 8px" }}>Question</th>
-                                    <th style={{ padding: "6px 8px", width: "140px" }}>Bloom&apos;s Level</th>
-                                    <th style={{ padding: "6px 8px", width: "60px" }}>Marks</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {items.map((q, i) => {
-                                    const levelIndex = ["Remember", "Understand", "Apply", "Analyze", "Evaluate", "Create"].indexOf(q.bloomLevel || "") + 1;
-                                    return (
-                                      <tr key={`${title}-${i}`} style={{ borderTop: "1px solid #edf1f5", verticalAlign: "top" }}>
-                                        <td style={{ padding: "7px 8px", color: "#64748b", fontWeight: 700 }}>{i + 1}</td>
-                                        <td style={{ padding: "7px 8px", color: "#1e293b", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
-                                          {q.question}
-                                          {q.options && q.options.length > 0 && (
-                                            <div style={{ marginTop: "4px", color: "#746252", display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
-                                              {q.options.map((option, oi) => <span key={oi}>({String.fromCharCode(97 + oi)}) {option}</span>)}
-                                            </div>
-                                          )}
-                                        </td>
-                                        <td style={{ padding: "7px 8px" }}>
-                                          <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: "999px", background: "#fdf4ec", border: "1px solid #deba9b", color: "#774c28", fontSize: "11px", fontWeight: 800, whiteSpace: "nowrap" }}>
-                                            {levelIndex ? `L${levelIndex} · ` : ""}{q.bloomLevel}
-                                          </span>
-                                        </td>
-                                        <td style={{ padding: "7px 8px", color: "#475569" }}>{q.marks ?? "—"}</td>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
-                            </div>
-                          ),
-                        )}
-                      </section>
-                    ))}
-                  </div>
-                )
+                <BloomPatternView questions={parsedBulkQuestions} />
               ) : /* Word question banks: show the original document exactly as uploaded */
               bulkFileUrl && /\.docx$/i.test(bulkFileName) ? (
                 <OriginalQuestionBankPreview name={bulkFileName} url={bulkFileUrl} fileAvailable />

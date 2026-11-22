@@ -6,8 +6,9 @@
  *   - its Bloom's level comes from an explicit tag when the file has one
  *     ("L1", "K2", "BTL4", "Level 5", "(Remember)", a Bloom column in Excel),
  *     otherwise it is inferred from the question's action verb;
- *   - questions are arranged unit-wise, MCQs first and Descriptive after,
- *     each ordered from L1 Remember up to L6 Create.
+ *   - questions are arranged like the original paper: all MCQs (Section A),
+ *     then all Descriptive (Section B), each unit-wise from L1 Remember to
+ *     L6 Create.
  */
 
 export const BLOOM_LEVELS = ["Remember", "Understand", "Apply", "Analyze", "Evaluate", "Create"] as const;
@@ -130,7 +131,7 @@ interface BloomConvertible {
 /**
  * Converts any parsed question bank to the Bloom's Taxonomy pattern: assigns a
  * Bloom's level to every question, splits questions into MCQ and Descriptive,
- * and orders them unit-wise (MCQ before Descriptive, L1 → L6 within each).
+ * and orders them MCQ section first, then Descriptive, each unit-wise L1 → L6.
  */
 export function convertToBloomPattern<T extends BloomConvertible>(questions: T[]): (T & { type: "MCQ" | "Descriptive"; bloomLevel: BloomLevelName })[] {
   const converted = questions.map((q, index) => {
@@ -158,10 +159,12 @@ export function convertToBloomPattern<T extends BloomConvertible>(questions: T[]
     };
   });
 
+  // Like the original paper: all MCQs (Section A) first, then all Descriptive
+  // questions (Section B); each section unit-wise, L1 Remember → L6 Create.
   converted.sort(
     (a, b) =>
-      a.unit - b.unit ||
       (a.item.type === b.item.type ? 0 : a.item.type === "MCQ" ? -1 : 1) ||
+      a.unit - b.unit ||
       a.level - b.level ||
       a.index - b.index,
   );
