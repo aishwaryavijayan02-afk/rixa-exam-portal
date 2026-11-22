@@ -452,7 +452,7 @@ export default function AcademicVaultPage() {
   // ---------------- PARTITION 1: SYLLABUS HUB STATE ----------------
   const [syllabusSubject, setSyllabusSubject] = useState("");
   const [syllabusCode, setSyllabusCode] = useState("");
-  const [syllabusSemester, setSyllabusSemester] = useState("Semester 1");
+  const [syllabusSemester, setSyllabusSemester] = useState("");
   const [syllabusDepartment, setSyllabusDepartment] = useState("");
   // Subject of the uploaded syllabus (catalogue match or the document's own
   // name/code). While a file is uploaded, the Subject Name / Code dropdowns
@@ -463,15 +463,8 @@ export default function AcademicVaultPage() {
     return [{ ...customSyllabusSubject, credits: 0, semester: customSyllabusSubject.semester || "" }];
   }, [availableSubjects, customSyllabusSubject]);
 
-  // A staff member with exactly one allocated subject gets it pre-selected.
-  useEffect(() => {
-    if (currentUser.role !== "STAFF" || availableSubjects.length !== 1 || syllabusSubject) return;
-    const only = availableSubjects[0];
-    setSyllabusSubject(only.name);
-    setSyllabusCode(only.code);
-    setSyllabusDepartment(only.department.replace("Department of ", ""));
-    if (only.semester) setSyllabusSemester(only.semester);
-  }, [currentUser.role, availableSubjects, syllabusSubject]);
+  // Nothing is pre-selected: Subject, Code, Semester and Department stay empty
+  // until a syllabus is uploaded (filled from the file) or chosen by hand.
   const [syllabusFileName, setSyllabusFileName] = useState<string | null>(null);
   const [syllabusFile, setSyllabusFile] = useState<File | null>(null);
   const [syllabusFileUrl, setSyllabusFileUrl] = useState<string | null>(null);
@@ -581,6 +574,7 @@ export default function AcademicVaultPage() {
     setSyllabusSubject("");
     setSyllabusCode("");
     setSyllabusDepartment("");
+    setSyllabusSemester("");
     setCustomSyllabusSubject(null);
     if (syllabusFileRef.current) syllabusFileRef.current.value = "";
   };
@@ -607,7 +601,7 @@ export default function AcademicVaultPage() {
       id: newId,
       name: resolvedSubject,
       code: resolvedCode,
-      semester: syllabusSemester,
+      semester: syllabusSemester || existingSub?.semester || "Semester 1",
       department: resolvedDepartment,
       totalQuestions: existingSub?.totalQuestions || 20,
       approved: existingSub?.approved || 15,
@@ -710,6 +704,7 @@ export default function AcademicVaultPage() {
     setSyllabusSubject("");
     setSyllabusCode("");
     setSyllabusDepartment("");
+    setSyllabusSemester("");
     setCustomSyllabusSubject(null);
     setSyllabusFile(null);
     showToast(`Syllabus "${subItem.name}" saved & ingested into Vault!`);
@@ -741,9 +736,10 @@ export default function AcademicVaultPage() {
   );
   useEffect(() => {
     if (bulkSubject && bulkSubjectOptions.some((subject) => subject.name === bulkSubject)) return;
-    const next = bulkSubjectOptions.length === 1 ? bulkSubjectOptions[0].name : "";
+    // Filled automatically only from an uploaded file; otherwise left empty.
+    const next = bulkUploadedSubject ? bulkUploadedSubject.name : "";
     if (next !== bulkSubject) setBulkSubject(next);
-  }, [bulkSubjectOptions, bulkSubject]);
+  }, [bulkSubjectOptions, bulkSubject, bulkUploadedSubject]);
   const bulkSubjectInfo = bulkSubjectOptions.find((subject) => subject.name === bulkSubject) || null;
 
   // Manual Question state
@@ -1536,6 +1532,7 @@ export default function AcademicVaultPage() {
                               fontWeight: 600,
                             }}
                           >
+                            <option value="">-- Select Semester --</option>
                             <option value="Semester 1">Semester 1</option>
                             <option value="Semester 2">Semester 2</option>
                             <option value="Semester 3">Semester 3</option>
@@ -2237,7 +2234,7 @@ export default function AcademicVaultPage() {
                     <div style={{ fontSize: "24px", fontWeight: 850, lineHeight: 1.25, color: "#4c311f" }}>Syllabus Document</div>
                     <div style={{ marginTop: "8px", fontSize: "12px", color: "#64748b" }}>{syllabusFileName}</div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", marginTop: "22px" }}>
-                      {[["SUBJECT", syllabusSubject || "Academic syllabus"], ["SEMESTER", syllabusSemester], ["FORMAT", syllabusFormat.toUpperCase()]].map(([label, value]) => <div key={label} style={{ padding: "9px 10px", borderRadius: "9px", background: "rgba(255,255,255,0.72)", border: "1px solid #dbe3ee" }}><div style={{ fontSize: "9px", color: "#94a3b8", fontWeight: 800, letterSpacing: "0.08em" }}>{label}</div><div style={{ marginTop: "3px", color: "#334155", fontSize: "11px", fontWeight: 750, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</div></div>)}
+                      {[["SUBJECT", syllabusSubject || "Academic syllabus"], ["SEMESTER", syllabusSemester || "—"], ["FORMAT", syllabusFormat.toUpperCase()]].map(([label, value]) => <div key={label} style={{ padding: "9px 10px", borderRadius: "9px", background: "rgba(255,255,255,0.72)", border: "1px solid #dbe3ee" }}><div style={{ fontSize: "9px", color: "#94a3b8", fontWeight: 800, letterSpacing: "0.08em" }}>{label}</div><div style={{ marginTop: "3px", color: "#334155", fontSize: "11px", fontWeight: 750, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</div></div>)}
                     </div>
                   </div>
                   <div style={{ padding: "34px 46px 52px", fontFamily: "Arial, sans-serif" }}>
