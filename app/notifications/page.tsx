@@ -797,6 +797,26 @@ export default function NotificationsApprovalPage() {
                   }}
                 >
                   {/* Staff's step is done once the syllabus is uploaded: show only "Completed". */}
+                  {stats.staff.completed === 0 && (
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      background: selectedRole === "staff" ? "rgba(255, 255, 255, 0.18)" : "#fef3c7",
+                      color: selectedRole === "staff" ? "#ffffff" : "#b45309",
+                      padding: "4px 8px",
+                      borderRadius: "6px",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      border: selectedRole === "staff" ? "1px solid rgba(255,255,255,0.25)" : "1px solid #fde68a",
+                    }}
+                  >
+                    <Clock size={12} style={{ flexShrink: 0 }} />
+                    <span>Processing: {stats.staff.processing}</span>
+                  </div>
+                  )}
+                  {stats.staff.completed > 0 && (
                   <div
                     style={{
                       display: "inline-flex",
@@ -814,6 +834,7 @@ export default function NotificationsApprovalPage() {
                     <CheckCircle2 size={12} style={{ flexShrink: 0 }} />
                     <span>Completed: {stats.staff.completed}</span>
                   </div>
+                  )}
                 </div>
               </div>
 
@@ -880,6 +901,8 @@ export default function NotificationsApprovalPage() {
                     marginTop: "2px",
                   }}
                 >
+                  {/* Only one status: Processing until verified & forwarded, then Approved. */}
+                  {(stats.hod.processing > 0 || stats.hod.approved === 0) && (
                   <div
                     style={{
                       display: "inline-flex",
@@ -897,7 +920,9 @@ export default function NotificationsApprovalPage() {
                     <Clock size={12} style={{ flexShrink: 0 }} />
                     <span>Processing: {stats.hod.processing}</span>
                   </div>
+                  )}
 
+                  {!(stats.hod.processing > 0 || stats.hod.approved === 0) && (
                   <div
                     style={{
                       display: "inline-flex",
@@ -915,6 +940,7 @@ export default function NotificationsApprovalPage() {
                     <CheckCircle2 size={12} style={{ flexShrink: 0 }} />
                     <span>Approved: {stats.hod.approved}</span>
                   </div>
+                  )}
                 </div>
               </div>
 
@@ -981,6 +1007,8 @@ export default function NotificationsApprovalPage() {
                     marginTop: "2px",
                   }}
                 >
+                  {/* Only one status: Processing until verified & forwarded, then Approved. */}
+                  {(stats.dean.processing > 0 || stats.dean.approved === 0) && (
                   <div
                     style={{
                       display: "inline-flex",
@@ -998,7 +1026,9 @@ export default function NotificationsApprovalPage() {
                     <Clock size={12} style={{ flexShrink: 0 }} />
                     <span>Processing: {stats.dean.processing}</span>
                   </div>
+                  )}
 
+                  {!(stats.dean.processing > 0 || stats.dean.approved === 0) && (
                   <div
                     style={{
                       display: "inline-flex",
@@ -1016,6 +1046,7 @@ export default function NotificationsApprovalPage() {
                     <CheckCircle2 size={12} style={{ flexShrink: 0 }} />
                     <span>Approved: {stats.dean.approved}</span>
                   </div>
+                  )}
                 </div>
               </div>
 
@@ -1082,6 +1113,8 @@ export default function NotificationsApprovalPage() {
                     marginTop: "2px",
                   }}
                 >
+                  {/* Only one status: Processing until verified & forwarded, then Approved. */}
+                  {(stats.coe.processing > 0 || stats.coe.approved === 0) && (
                   <div
                     style={{
                       display: "inline-flex",
@@ -1099,7 +1132,9 @@ export default function NotificationsApprovalPage() {
                     <Clock size={12} style={{ flexShrink: 0 }} />
                     <span>Processing: {stats.coe.processing}</span>
                   </div>
+                  )}
 
+                  {!(stats.coe.processing > 0 || stats.coe.approved === 0) && (
                   <div
                     style={{
                       display: "inline-flex",
@@ -1117,6 +1152,7 @@ export default function NotificationsApprovalPage() {
                     <CheckCircle2 size={12} style={{ flexShrink: 0 }} />
                     <span>Approved: {stats.coe.approved}</span>
                   </div>
+                  )}
                 </div>
               </div>
             </div>
