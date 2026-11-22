@@ -1546,7 +1546,7 @@ export default function NotificationsApprovalPage() {
           return sameUploader(q.uploadedBy, q.email) && Boolean(courseKey) && (qKey === courseKey || qKey.includes(courseKey) || courseKey.includes(qKey));
         });
         const questionBankFiles = Array.from(new Set(questionBank.map((q) => q.sourceFile).filter(Boolean)));
-        const staffText = questionBank.length > 0 ? "Syllabus & question bank uploaded" : "Syllabus uploaded · question bank pending";
+        const staffText = questionBank.length > 0 ? "Completed" : "Question bank pending";
         const trail = [
           { title: "Staff submission", state: (questionBank.length > 0 ? "done" : "current") as TrailState, text: staffText, meta: [item.submittedBy, item.submittedAt].filter(Boolean).join(" · ") },
           { title: "HOD verification", ...tier(item.hodStatus, item.hodName, item.hodDate, { done: "Verified & forwarded", current: "Awaiting HOD verification", waiting: "Not started" }) },
@@ -1559,7 +1559,6 @@ export default function NotificationsApprovalPage() {
           ["Submitted by", item.submittedBy || "—"],
           ["Email", item.submitterEmail || "—"],
           ["Submitted on", item.submittedAt || "—"],
-          ["Syllabus", item.documentName ? `${item.documentName}` : `${item.totalUnits || 5} units · ${item.totalTopics || 20} topics`],
           ["Question bank", questionBank.length > 0 ? `${questionBank.length} question${questionBank.length === 1 ? "" : "s"}${questionBankFiles.length ? ` · ${questionBankFiles.join(", ")}` : ""}` : "Not uploaded yet"],
           ["Syllabus scope", `${item.totalUnits || 5} units · ${item.totalTopics || 20} topics`],
         ];
