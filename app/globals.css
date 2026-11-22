@@ -9619,6 +9619,45 @@ html.pen-cursor-on :is(input:not([type="checkbox"]):not([type="radio"]):not([typ
 .school-card-icon > svg { position: relative; z-index: 1; }
 .school-card:hover .school-card-icon > svg { animation: schoolSpin .9s cubic-bezier(.3,.7,.2,1) 1; }
 
+/* ===== Animated sidebar icons (components/NavIcon.tsx) ===== */
+.nav-anim-icon { display: inline-flex; color: currentColor; }
+.nav-anim-icon svg { width: 100%; height: 100%; overflow: visible; }
+.nav-anim-icon svg * { transform-box: fill-box; transform-origin: center; }
+.nav-anim-icon .ni-spin { animation: niSpin 10s linear infinite; }
+.nav-anim-icon .ni-pulse { animation: niPulse 1.9s ease-in-out infinite; }
+.nav-anim-icon .ni-blink { animation: niBlink 2.6s ease-in-out infinite; }
+.nav-anim-icon .ni-grow { transform-origin: bottom; animation: niGrow 2.8s cubic-bezier(.3, .7, .2, 1) infinite; }
+.nav-anim-icon .ni-draw { stroke-dasharray: 100; animation: niDraw 3s ease-in-out infinite; }
+.nav-anim-icon .ni-fill { transform-origin: left; animation: niFill 3s ease-in-out infinite; }
+.nav-anim-icon .ni-flag { transform-origin: left; animation: niFlag 1.6s ease-in-out infinite; }
+.nav-anim-icon .ni-scan { animation: niScan 3s ease-in-out infinite; }
+.nav-anim-icon .ni-write { animation: niWrite 3s ease-in-out infinite; }
+.nav-anim-icon .ni-ring { transform-origin: 50% 0%; animation: niRing 3.2s ease-in-out infinite; }
+.nav-anim-icon .ni-feed { animation: niFeed 3s ease-in-out infinite; }
+.nav-anim-icon .ni-d1 { animation-delay: 0s; }
+.nav-anim-icon .ni-d2 { animation-delay: .4s; }
+.nav-anim-icon .ni-d3 { animation-delay: .8s; }
+.nav-anim-icon .ni-d4 { animation-delay: 1.2s; }
+/* livelier on hover and for the open page */
+:is(.sidebar-btn-3d:hover, .sidebar-btn-active) .nav-anim-icon .ni-spin { animation-duration: 3s; }
+:is(.sidebar-btn-3d:hover, .sidebar-btn-active) .nav-anim-icon { filter: drop-shadow(0 0 4px color-mix(in srgb, currentColor 55%, transparent)); }
+
+@keyframes niSpin { to { transform: rotate(360deg); } }
+@keyframes niPulse { 0%, 100% { opacity: .6; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.15); } }
+@keyframes niBlink { 0%, 100% { opacity: .15; } 50% { opacity: .95; } }
+@keyframes niGrow { 0% { transform: scaleY(.2); } 35%, 85% { transform: scaleY(1); } 100% { transform: scaleY(.2); } }
+@keyframes niDraw { 0% { stroke-dashoffset: 100; } 40%, 85% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -100; } }
+@keyframes niFill { 0% { transform: scaleX(.05); } 60%, 85% { transform: scaleX(1); } 100% { transform: scaleX(.05); } }
+@keyframes niFlag { 0%, 100% { transform: scaleX(1) skewY(0deg); } 50% { transform: scaleX(.8) skewY(8deg); } }
+@keyframes niScan { 0%, 100% { transform: translate(0, 0); } 35% { transform: translate(-6px, -5px); } 70% { transform: translate(-2px, -8px); } }
+@keyframes niWrite { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(2px, -1px) rotate(-6deg); } }
+@keyframes niRing { 0%, 60%, 100% { transform: rotate(0deg); } 66% { transform: rotate(14deg); } 72% { transform: rotate(-12deg); } 78% { transform: rotate(8deg); } 84% { transform: rotate(-4deg); } }
+@keyframes niFeed { 0% { transform: translateY(-3px); opacity: 0; } 25% { opacity: 1; } 70% { transform: translateY(1px); opacity: 1; } 100% { transform: translateY(1px); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-anim-icon, .nav-anim-icon * { animation: none !important; }
+}
+
 /* ===== Animated school emblems (components/SchoolEmblem.tsx) ===== */
 .school-card-icon.has-emblem {
   overflow: visible;

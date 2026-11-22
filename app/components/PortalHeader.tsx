@@ -32,6 +32,7 @@ import {
   BookCheck,
 } from "lucide-react";
 import { examStore, SubjectItem, QuestionItem, NotificationItem, MessageItem } from "../lib/examStore";
+import NavIcon from "./NavIcon";
 import { authStore, AuthUser, UserRole, hasPermission } from "../lib/auth";
 import { menuForUser, roleDisplayName } from "../lib/auth";
 
@@ -880,7 +881,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
                     }}
                   >
                     <span className="nav-icon-3d" style={{ display: "flex", alignItems: "center" }}>
-                      <IconComp size={18} />
+                      <NavIcon route={item.route} fallback={IconComp} />
                     </span>
                     <span style={{ flex: 1, textAlign: "left", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {item.label}

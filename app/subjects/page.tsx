@@ -49,6 +49,7 @@ import {
   Archive,
 } from "lucide-react";
 import { examStore, StaffFacultyItem, defaultStaffFaculty } from "../lib/examStore";
+import NavIcon from "../components/NavIcon";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
 import { menuForUser, roleDisplayName } from "../lib/auth";
 import { SCRUTINY_MENU_ITEMS } from "../lib/scrutinyMenu";
@@ -1197,7 +1198,7 @@ export default function DepartmentManagementPage() {
                       className="nav-icon-3d"
                       style={{ display: "flex", alignItems: "center" }}
                     >
-                      <IconComp size={18} />
+                      <NavIcon route={item.route} fallback={IconComp} />
                     </span>
                     <span style={{ flex: 1 }}>{item.label}</span>
                     {item.badge && (

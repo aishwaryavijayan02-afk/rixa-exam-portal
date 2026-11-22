@@ -30,6 +30,7 @@ import {
   X,
 } from "lucide-react";
 import { examStore, QuestionItem, SyllabusUnit, SubjectItem, SyllabusApprovalItem, INSTITUTIONAL_SUBJECTS } from "../lib/examStore";
+import NavIcon from "../components/NavIcon";
 import { getQuestionBankDocument, saveQuestionBankDocument, syncLocalQuestionBankDocuments, uploadQuestionBankDocumentToCloud } from "../lib/questionBankDocuments";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
 import { menuForUser } from "../lib/auth";
@@ -1151,7 +1152,7 @@ export default function AcademicVaultPage() {
                     data-route={item.route} className={`sidebar-btn-3d ${isActive ? "sidebar-btn-active" : "sidebar-btn-inactive"}`}
                   >
                     <span className="nav-icon-3d" style={{ display: "flex", alignItems: "center" }}>
-                      <IconComp size={18} />
+                      <NavIcon route={item.route} fallback={IconComp} />
                     </span>
                     <span style={{ flex: 1 }}>{item.label}</span>
 

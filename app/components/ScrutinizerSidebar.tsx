@@ -4,6 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { Bell, ClipboardCheck, Edit3, Home, School, Settings } from "lucide-react";
 import { AuthUser, menuForUser } from "../lib/auth";
+import NavIcon from "./NavIcon";
 
 const MENU = [
   { id: "scrutinizer", label: "Scrutiny Dashboard", icon: ClipboardCheck, route: "/scrutinizer" },
@@ -33,7 +34,7 @@ export default function ScrutinizerSidebar({ currentUser, active }: { currentUse
           return (
             <button key={item.id} type="button" onClick={() => !isActive && router.push(item.route)} data-route={item.route} className={`sidebar-btn-3d ${isActive ? "sidebar-btn-active" : "sidebar-btn-inactive"}`}>
               <span className="nav-icon-3d" style={{ display: "flex", alignItems: "center" }}>
-                <Icon size={18} />
+                <NavIcon route={item.route} fallback={Icon} />
               </span>
               <span style={{ flex: 1 }}>{item.label}</span>
             </button>

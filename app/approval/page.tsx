@@ -42,6 +42,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { examStore, QuestionItem, SyllabusUnit, SyllabusApprovalItem } from "../lib/examStore";
+import NavIcon from "../components/NavIcon";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
 import { menuForUser } from "../lib/auth";
 import { SCRUTINY_MENU_ITEMS } from "../lib/scrutinyMenu";
@@ -705,16 +706,9 @@ export default function ApprovalPage() {
                   }}
                   data-route={item.route} className={`sidebar-btn-3d ${isActive ? "sidebar-btn-active" : "sidebar-btn-inactive"}`}
                 >
-                  <IconComp
-                    size={18}
-                    className="nav-icon-3d"
-                    style={{
-                      filter: isActive
-                        ? "drop-shadow(0 0 6px rgba(255,255,255,0.8))"
-                        : "none",
-                      transition: "filter 0.2s ease",
-                    }}
-                  />
+                  <span className="nav-icon-3d" style={{ display: "flex", alignItems: "center" }}>
+                    <NavIcon route={item.route} fallback={IconComp} />
+                  </span>
                   <span style={{ flex: 1, letterSpacing: "0.2px" }}>{item.label}</span>
 
                   {item.badge && (

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { examStore, ActivityItem, UserItem } from "../lib/examStore";
+import NavIcon from "../components/NavIcon";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
 import { menuForUser } from "../lib/auth";
 import { SCRUTINY_MENU_ITEMS } from "../lib/scrutinyMenu";
@@ -755,9 +756,9 @@ export default function SettingsPage() {
                     position: "relative",
                   }}
                 >
-                  <div className={isActive ? "nav-icon-3d" : ""}>
-                    <IconComp size={18} />
-                  </div>
+                  <span className="nav-icon-3d" style={{ display: "flex", alignItems: "center" }}>
+                    <NavIcon route={item.route} fallback={IconComp} />
+                  </span>
                   <span style={{ flex: 1 }}>{item.label}</span>
 
                   {item.badge && (
