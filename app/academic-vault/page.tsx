@@ -152,7 +152,7 @@ function rowsToBulkQuestions(rows: string[][], sourceFile: string): ParsedBulkQu
         subject: get(row, ["subject", "coursename", "course"], 1),
         unit: get(row, ["unit", "unitno", "module"], 2) || "1",
         topic: get(row, ["topic", "chapter"], 3) || "General",
-        marks: Number(get(row, ["marks", "mark"], 4)) || 2,
+        marks: Number(get(row, ["marks", "mark", "maxmarks", "marksallotted", "markallotted", "totalmarks"], 4)) || 2,
         type: parsedType as QuestionItem["type"],
         difficulty: parsedDifficulty as QuestionItem["difficulty"],
         options: options.length ? options : undefined,
@@ -173,6 +173,32 @@ const UNIT_HEADING = /^unit\s+([ivxlcdm]+|\d+)\s*(?:[-–—:]\s*(.*))?$/i;
 const SECTION_HEADING = /^(?:section|part)\s*[-–—]?\s*(?:[a-e]|[ivx]+)\s*(?:$|[-–—:(.)])[^?]{0,90}$/i;
 const MARKS_SUMMARY = /^\(?\s*(?:\d+\s*[×xX*]\s*\d+\s*=\s*)?\d+\s*marks?\s*\)?$/i;
 const END_OF_PAPER = /^\*{3}|^end\s+of\s+(?:the\s+)?question\s+paper/i;
+const DEFAULT_QUESTION_MARKS = 2;
+
+/** Marks per question stated by a section heading or instruction line, e.g. "(10 × 8 = 80)", "1 mark each". */
+function sectionMarksFrom(line: string): number | undefined {
+  const product = line.match(/(\d+)\s*[×xX*]\s*(\d+)\s*=\s*\d+/);
+  if (product) return Number(product[2]);
+  const each = line.match(/(\d+(?:\.\d+)?)\s*marks?\s*(?:each|per\s+question)/i) || line.match(/each\s+(?:question\s+)?carries\s+(\d+(?:\.\d+)?)\s*marks?/i);
+  return each ? Number(each[1]) : undefined;
+}
+
+/** Marks written on the question itself ("… (8 Marks)", "[10M]", "… CO1 K2 8"); returns the text without them. */
+function questionMarksFrom(text: string): { marks?: number; text: string } {
+  const patterns: RegExp[] = [
+    /\s*[(\[]\s*(\d{1,3}(?:\.\d+)?)\s*(?:marks?|mks?|m)\s*[)\]]\s*$/i,
+    /\s*[-–—,:]?\s*(\d{1,3}(?:\.\d+)?)\s*marks?\s*$/i,
+    /^\s*[(\[]\s*(\d{1,3}(?:\.\d+)?)\s*(?:marks?|mks?|m)\s*[)\]]\s*/i,
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) return { marks: Number(match[1]), text: text.replace(pattern, "").trim() };
+  }
+  // A trailing number after CO / Bloom tags ("Explain … CO1 K2 8") is the marks.
+  const tagged = text.match(/(\b(?:CO\s*\d+|BTL\s*\d|K\s*\d|L\s*\d)\b)\s+(\d{1,2})\s*$/i);
+  if (tagged) return { marks: Number(tagged[2]), text: text.slice(0, tagged.index! + tagged[1].length).trim() };
+  return { text };
+}
 
 function parseTextQuestionBank(text: string, sourceFile: string): ParsedBulkQuestion[] {
   if (/\uFFFD|[\uE000-\uF8FF]/.test(text)) {
@@ -193,9 +219,18 @@ function parseTextQuestionBank(text: string, sourceFile: string): ParsedBulkQues
   let foundNumberedQuestions = false;
   let activeUnit = "1";
   let activeQuestionType: QuestionItem["type"] = "Descriptive";
+  // Marks per question for the current section ("Part B (5 × 16 = 80)", "1 mark each").
+  let sectionMarks: number | undefined;
 
   const finish = () => {
-    if (current?.question.trim()) questions.push(current);
+    const q = current as ParsedBulkQuestion | null;
+    if (q?.question.trim()) {
+      // Marks written on the question win; otherwise the section's marks; otherwise the default.
+      const found = questionMarksFrom(q.question);
+      q.question = found.text || q.question;
+      q.marks = q.marks ?? found.marks ?? sectionMarks ?? DEFAULT_QUESTION_MARKS;
+      questions.push(q);
+    }
     current = null;
   };
 
@@ -204,10 +239,17 @@ function parseTextQuestionBank(text: string, sourceFile: string): ParsedBulkQues
       finish();
       continue;
     }
-    if (MARKS_SUMMARY.test(line)) continue;
+    if (MARKS_SUMMARY.test(line)) {
+      const perQuestion = sectionMarksFrom(line);
+      if (perQuestion !== undefined) sectionMarks = perQuestion; // "(10 × 8 = 80 Marks)"
+      else if (current) (current as ParsedBulkQuestion).marks = Number(line.match(/\d+(?:\.\d+)?/)![0]); // "(16 Marks)" under a question
+      continue;
+    }
     if (/^(?:general\s+)?instructions?\b[^?]{0,60}$/i.test(line)) {
       finish();
       inInstructions = true;
+      const perQuestion = sectionMarksFrom(line);
+      if (perQuestion !== undefined) sectionMarks = perQuestion;
       continue;
     }
     const unitHeading = line.match(UNIT_HEADING);
@@ -223,11 +265,13 @@ function parseTextQuestionBank(text: string, sourceFile: string): ParsedBulkQues
     if (/\b(?:mcq|multiple[\s-]*choice)\b/i.test(line) && (/\bsection\b/i.test(line) || /\banswer\s+key\b/i.test(line))) {
       finish();
       activeQuestionType = "MCQ";
+      sectionMarks = sectionMarksFrom(line);
       continue;
     }
     if (/\bdescriptive\b/i.test(line) && /\bsection\b/i.test(line)) {
       finish();
       activeQuestionType = "Descriptive";
+      sectionMarks = sectionMarksFrom(line);
       continue;
     }
     if (SECTION_HEADING.test(line)) {
@@ -235,15 +279,21 @@ function parseTextQuestionBank(text: string, sourceFile: string): ParsedBulkQues
       finish();
       if (/\b(?:mcq|multiple[\s-]*choice|objective)\b/i.test(line)) activeQuestionType = "MCQ";
       else if (/\b(?:descriptive|short|long|essay)\b/i.test(line)) activeQuestionType = "Descriptive";
+      sectionMarks = sectionMarksFrom(line);
       continue;
     }
-    if (inInstructions) continue;
+    if (inInstructions) {
+      // "Each question carries 2 marks" inside the instructions applies to the questions below.
+      const perQuestion = sectionMarksFrom(line);
+      if (perQuestion !== undefined) sectionMarks = perQuestion;
+      continue;
+    }
 
     const questionMatch = line.match(numberedQuestion);
     if (questionMatch) {
       foundNumberedQuestions = true;
       finish();
-      current = { question: questionMatch[1].trim(), options: [], sourceFile, unit: activeUnit, topic: "General", type: activeQuestionType, difficulty: "Medium", marks: 2 };
+      current = { question: questionMatch[1].trim(), options: [], sourceFile, unit: activeUnit, topic: "General", type: activeQuestionType, difficulty: "Medium" };
       continue;
     }
 
@@ -260,7 +310,7 @@ function parseTextQuestionBank(text: string, sourceFile: string): ParsedBulkQues
     } else if (current) {
       current.question = `${current.question}\n${line}`;
     } else if (!foundNumberedQuestions && !optionMatch && !answerMatch && line.length >= 5 && !METADATA_LINE.test(line)) {
-      current = { question: line, sourceFile, unit: activeUnit, topic: "General", type: activeQuestionType, difficulty: "Medium", marks: 2 };
+      current = { question: line, sourceFile, unit: activeUnit, topic: "General", type: activeQuestionType, difficulty: "Medium" };
       finish();
     }
   }
