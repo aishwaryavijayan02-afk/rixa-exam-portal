@@ -220,7 +220,8 @@ export default function NotificationsApprovalPage() {
     const coeApproved = userSyllabi.filter((a) => a.coeStatus === "Approved").length;
 
     return {
-      staff: { processing: staffProcessing, approved: staffApproved },
+      // Staff's step is complete as soon as the syllabus is uploaded (submitted).
+      staff: { processing: staffProcessing, approved: staffApproved, completed: userSyllabi.filter((a) => a.staffStatus !== "Draft").length },
       hod: { processing: hodProcessing, approved: hodApproved },
       dean: { processing: deanProcessing, approved: deanApproved },
       coe: { processing: coeProcessing, approved: coeApproved },
@@ -795,24 +796,7 @@ export default function NotificationsApprovalPage() {
                     marginTop: "2px",
                   }}
                 >
-                  <div
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "4px",
-                      background: selectedRole === "staff" ? "rgba(255, 255, 255, 0.18)" : "#fef3c7",
-                      color: selectedRole === "staff" ? "#ffffff" : "#b45309",
-                      padding: "4px 8px",
-                      borderRadius: "6px",
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      border: selectedRole === "staff" ? "1px solid rgba(255,255,255,0.25)" : "1px solid #fde68a",
-                    }}
-                  >
-                    <Clock size={12} style={{ flexShrink: 0 }} />
-                    <span>Processing: {stats.staff.processing}</span>
-                  </div>
-
+                  {/* Staff's step is done once the syllabus is uploaded: show only "Completed". */}
                   <div
                     style={{
                       display: "inline-flex",
@@ -828,7 +812,7 @@ export default function NotificationsApprovalPage() {
                     }}
                   >
                     <CheckCircle2 size={12} style={{ flexShrink: 0 }} />
-                    <span>Approved: {stats.staff.approved}</span>
+                    <span>Completed: {stats.staff.completed}</span>
                   </div>
                 </div>
               </div>
