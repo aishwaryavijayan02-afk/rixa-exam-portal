@@ -295,23 +295,44 @@ export function extractSubjectHeader(fileName: string, text: string): SubjectHea
   let semester = "";
   let department = "";
   const departmentLabel = /^(?:department|dept\.?|programme|program|branch|discipline)(?:\s*name)?$/i;
-  for (const line of lines) {
+  // Column headings of a table such as "Semester | Subject | Lecture | Credits".
+  const columnHeading = /^(?:s\.?\s?no\.?|semester|sem|subject|course|paper|title|subject\s*(?:name|title|code)|course\s*(?:name|title|code)|paper\s*(?:name|code)|code|lecture|lectures|tutorial|practical|hours?|credits?|marks?|total|type|category|part|l|t|p|c)$/i;
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+    const line = lines[lineIndex];
     if (!department) {
       // Heading such as "DEPARTMENT OF MATHEMATICS" anywhere in the header lines.
       const heading = line.replace(/\t/g, " ").match(/\b(?:department|dept\.?)\s+of\s+([A-Za-z&.\s]{3,60})/i);
       if (heading) department = cleanDepartmentName(heading[1]);
     }
     const cells = cellsOf(line);
+    // A header row: its values are in the same columns of the next row, not in
+    // the next cell ("Subject" is followed by the "Lecture" heading, not a value).
+    const headingCount = cells.filter((cell) => columnHeading.test(cell)).length;
+    const isHeaderRow = cells.length >= 3 && headingCount >= Math.max(2, cells.length - 1);
+    const belowCells = isHeaderRow && lines[lineIndex + 1] ? cellsOf(lines[lineIndex + 1]) : [];
     cells.forEach((cell, index) => {
       const inline = cell.match(/^([A-Za-z ]{3,24}?)\s*[:\-–—]\s*(.+)$/);
       const label = inline ? inline[1].trim() : cell.replace(/[:\-–—]+$/, "").trim();
-      const value = cleanValue(inline ? inline[2] : cells.slice(index + 1).find(Boolean) || "");
+      const nextCell = cells.slice(index + 1).find(Boolean) || "";
+      const value = cleanValue(
+        inline
+          ? inline[2]
+          : isHeaderRow
+            ? belowCells[index] || ""
+            : columnHeading.test(nextCell)
+              ? "" // the next cell is another heading, not this label's value
+              : nextCell,
+      );
       if (!value) return;
       if (!code && codeLabel.test(label)) {
         const token = value.toUpperCase().match(labelledCodeToken);
         if (token) code = (token[1] || token[2]).replace(/\s+/g, "-");
       } else if (!name && nameLabel.test(label) && /[a-z]{3,}/i.test(value)) {
-        name = cleanSubjectName(value).replace(/\s*\([^)]*\)\s*$/, "").trim();
+        name = cleanSubjectName(value)
+          .replace(/\s*\([^)]*\)\s*$/, "")
+          // "Core IV – Advertising and PR" / "Elective II: Data Mining" -> the subject itself
+          .replace(/^(?:core|elective|allied|major|minor|generic|open|skill\s*enhancement|ability\s*enhancement|discipline\s*specific|non[\s-]*major|aecc|sec|dse|ge)(?:\s*(?:course|paper|elective))?\s*(?:[ivx]+|\d+)?\s*[-–—:]\s*/i, "")
+          .trim();
       } else if (!department && departmentLabel.test(label)) {
         department = cleanDepartmentName(value);
       } else if (!semester && /^semester$|^sem$/i.test(label)) {
