@@ -2920,7 +2920,6 @@ export default function VerifyQuestionsPage() {
         itemName={verifyModalItem.name}
         verifiedCount={verifyModalItem.totalQuestions}
         qualityScore={verifyModalItem.score}
-        bloomLevel="Apply & Analyze"
         remarks="Question phrasing, Bloom's Taxonomy evaluation, and CO curriculum mapping successfully verified."
       />
 

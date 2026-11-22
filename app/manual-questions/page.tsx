@@ -2300,7 +2300,6 @@ export default function ManualQuestionsPage() {
         itemName={verifyModalItem.name}
         verifiedCount={verifyModalItem.totalQuestions}
         qualityScore={verifyModalItem.score}
-        bloomLevel="Apply & Analyze"
         remarks={verifyModalItem.remarks}
       />
 

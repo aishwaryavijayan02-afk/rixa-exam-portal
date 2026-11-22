@@ -1672,71 +1672,157 @@ export function ToastNotification({
 }
 
 // ======================== VERIFICATION POP-UP MODAL ========================
+type VerificationStage = "HOD" | "DEAN" | "COE";
+
+/** Real details of what was just verified (all optional). */
+export interface VerificationDetails {
+  stage?: VerificationStage;
+  subject?: string;
+  facultyName?: string;
+  syllabusName?: string;
+  verifierName?: string;
+  forwardedTo?: string;
+}
+
+const VR_LEVELS = ["Remember", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
+const VR_LEVEL_COLORS = ["#64748b", "#0e7490", "#15803d", "#b45309", "#7e22ce", "#be123c"];
+
 export function VerificationResultModal({
   isOpen,
   onClose,
-  title = "AI Verification Complete!",
+  title = "Verification Complete",
   itemName,
-  qualityScore = 98,
-  bloomLevel = "Apply & Analyze",
+  qualityScore,
+  bloomLevel,
   verifiedCount = 1,
   remarks,
+  details,
+  questions,
 }: {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
   itemName?: string;
+  /** Shown only when a real AI score is available. */
   qualityScore?: number;
   bloomLevel?: string;
   verifiedCount?: number;
   remarks?: string;
+  details?: VerificationDetails;
+  /** The verified questions, used for the real Bloom's level distribution. */
+  questions?: { bloomLevel?: string }[];
 }) {
   if (!isOpen) return null;
-  const countLabel = verifiedCount > 0 ? `${verifiedCount} Question(s)` : "Syllabus";
 
-  // Brown & cream success pop-up with professional 3D motion (styles in
-  // globals.css under "Verification result pop-up"). All text is black.
+  const cleanTitle = title.replace(/^[^\p{L}\p{N}]+/u, "").replace(/!+$/, "");
+  const stage = details?.stage;
+  const steps: { key: string; label: string }[] = [
+    { key: "STAFF", label: "Staff upload" },
+    { key: "HOD", label: "HOD verification" },
+    { key: "DEAN", label: "Dean approval" },
+    { key: "COE", label: "COE final" },
+  ];
+  const doneUpTo = stage ? steps.findIndex((s) => s.key === stage) : -1;
+
+  const levelCounts = VR_LEVELS.map((name) => (questions || []).filter((q) => (q.bloomLevel || "").toLowerCase() === name.toLowerCase()).length);
+  const levelTotal = levelCounts.reduce((a, b) => a + b, 0);
+
+  const rows: [string, string | undefined][] = [
+    ["Subject", details?.subject],
+    ["Faculty", details?.facultyName],
+    ["Questions", verifiedCount > 0 ? `${verifiedCount} question${verifiedCount === 1 ? "" : "s"}` : undefined],
+    ["Syllabus", details?.syllabusName],
+    ["Verified by", details?.verifierName],
+    ["Forwarded to", details?.forwardedTo],
+    ["Date & time", new Date().toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })],
+  ];
+  const visibleRows = rows.filter(([, value]) => value);
+  const hasDetails = Boolean(details);
+
   return (
     <div className="vr-overlay" onClick={onClose}>
-      <div className="vr-card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="vr-title">
+      <div className="vr-card vr2-card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="vr-title">
         <button type="button" onClick={onClose} className="vr-close" aria-label="Close">
           <X size={16} />
         </button>
 
-        <div className="vr-icon-wrap" aria-hidden="true">
-          <span className="vr-icon-ring" />
-          <span className="vr-icon">
-            <CheckCircle2 size={38} />
-          </span>
-        </div>
-
-        <h3 id="vr-title" className="vr-title">{title}</h3>
-        <p className="vr-subtitle">
-          {itemName ? `Audit verification passed for "${itemName}"` : "Question repository passed AI quality audit."}
-        </p>
-
-        <div className="vr-panel">
-          <div className="vr-panel-head">
-            <span className="vr-panel-label">AI Verification Status</span>
-            <span className="vr-badge">AI VERIFIED ({qualityScore}%)</span>
+        <div className="vr2-head">
+          <div className="vr-icon-wrap vr2-icon-wrap" aria-hidden="true">
+            <span className="vr-icon-ring" />
+            <span className="vr-icon">
+              <CheckCircle2 size={30} />
+            </span>
           </div>
-          <div className="vr-stats">
-            <div>
-              <span className="vr-stat-label">Verified Items:</span>
-              <strong>{countLabel}</strong>
-            </div>
-            <div>
-              <span className="vr-stat-label">Bloom&apos;s Level:</span>
-              <strong>{bloomLevel}</strong>
-            </div>
-          </div>
-          <div className="vr-remarks">
-            {remarks || "Questions phrasing syntax, distractor balance, and CO curriculum mapping successfully verified."}
+          <div className="vr2-head-text">
+            <h3 id="vr-title" className="vr2-title">{cleanTitle}</h3>
+            <p className="vr2-subtitle">{details?.subject || itemName || "The submission passed review."}</p>
           </div>
         </div>
 
-        <button type="button" onClick={onClose} className="vr-ok">
-          OK, Great!
+        {/* Approval workflow */}
+        {stage && (
+          <ol className="vr2-steps" aria-label="Approval workflow">
+            {steps.map((step, index) => {
+              const state = index <= doneUpTo ? "done" : index === doneUpTo + 1 ? "next" : "todo";
+              return (
+                <li key={step.key} className={`vr2-step is-${state}`}>
+                  <span className="vr2-step-dot">{state === "done" ? <Check size={12} /> : index + 1}</span>
+                  <span className="vr2-step-label">{step.label}</span>
+                  {state === "next" && <span className="vr2-step-tag">Next</span>}
+                </li>
+              );
+            })}
+          </ol>
+        )}
+
+        {/* Details */}
+        <div className="vr2-panel">
+          {(hasDetails ? visibleRows : visibleRows.filter(([label]) => label === "Questions" || label === "Date & time")).map(([label, value]) => (
+            <div key={label} className="vr2-row">
+              <span className="vr2-row-label">{label}</span>
+              <span className="vr2-row-value">{value}</span>
+            </div>
+          ))}
+          {!hasDetails && itemName && (
+            <div className="vr2-row">
+              <span className="vr2-row-label">Item</span>
+              <span className="vr2-row-value">{itemName}</span>
+            </div>
+          )}
+          {typeof qualityScore === "number" && (
+            <div className="vr2-row">
+              <span className="vr2-row-label">AI quality check</span>
+              <span className="vr2-row-value"><span className="vr2-pill">{qualityScore}%</span></span>
+            </div>
+          )}
+          {levelTotal > 0 ? (
+            <div className="vr2-bloom">
+              <div className="vr2-row-label">Bloom&apos;s level distribution</div>
+              <div className="vr2-bloom-bar">
+                {levelCounts.map((count, i) => (count ? <span key={i} style={{ flex: count, background: VR_LEVEL_COLORS[i], animationDelay: `${200 + i * 90}ms` }} title={`L${i + 1} ${VR_LEVELS[i]}: ${count}`} /> : null))}
+              </div>
+              <div className="vr2-bloom-legend">
+                {levelCounts.map((count, i) =>
+                  count ? (
+                    <span key={i}>
+                      <i style={{ background: VR_LEVEL_COLORS[i] }} />L{i + 1} <b>{count}</b>
+                    </span>
+                  ) : null,
+                )}
+              </div>
+            </div>
+          ) : bloomLevel ? (
+            <div className="vr2-row">
+              <span className="vr2-row-label">Bloom&apos;s level</span>
+              <span className="vr2-row-value">{bloomLevel}</span>
+            </div>
+          ) : null}
+        </div>
+
+        {remarks && <p className="vr2-remarks">{remarks}</p>}
+
+        <button type="button" onClick={onClose} className="vr-ok vr2-ok">
+          Done
         </button>
       </div>
     </div>
