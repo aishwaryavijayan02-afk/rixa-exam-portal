@@ -1,8 +1,42 @@
 "use client";
 
-import React from "react";
-import { CheckCircle2, ListChecks, PenLine } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Award, CheckCircle2, FileQuestion, Layers, ListChecks, PenLine } from "lucide-react";
 import { BLOOM_LEVELS, unitNumber } from "../lib/bloomTaxonomy";
+
+/** Counts up from 0 to `value` once (eased); shows the final value right away for reduced motion. */
+function useCountUp(value: number, duration = 900) {
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    if (typeof window === "undefined" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setShown(value);
+      return;
+    }
+    let frame = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      setShown(Math.round(value * (1 - Math.pow(1 - t, 3))));
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [value, duration]);
+  return shown;
+}
+
+function StatTile({ label, value, icon: Icon, accent, index }: { label: string; value: number; icon: React.ElementType; accent: string; index: number }) {
+  const shown = useCountUp(value);
+  return (
+    <div className="bpv-tile" style={{ "--tile-accent": accent, animationDelay: `${index * 70}ms` } as React.CSSProperties}>
+      <span className="bpv-tile-icon">
+        <Icon size={16} />
+      </span>
+      <div className="bpv-tile-value">{shown}</div>
+      <div className="bpv-tile-label">{label}</div>
+    </div>
+  );
+}
 
 /** The fields of a parsed question this view shows. */
 export interface BloomViewQuestion {
@@ -81,31 +115,42 @@ export default function BloomPatternView({ questions }: { questions: BloomViewQu
       {/* ---------- Summary ---------- */}
       <div className="bpv-summary">
         <div className="bpv-stats">
-          {[
-            ["Questions", questions.length],
-            ["MCQ", mcq.length],
-            ["Descriptive", descriptive.length],
-            ["Units", unitCount],
-            ["Total marks", totalMarks],
-          ].map(([label, value]) => (
-            <div key={label as string} className="bpv-stat">
-              <div className="bpv-stat-value">{value}</div>
-              <div className="bpv-stat-label">{label}</div>
-            </div>
+          {([
+            ["Questions", questions.length, FileQuestion, "#774c28"],
+            ["MCQ", mcq.length, ListChecks, "#0e7490"],
+            ["Descriptive", descriptive.length, PenLine, "#15803d"],
+            ["Units", unitCount, Layers, "#b45309"],
+            ["Total marks", totalMarks, Award, "#7e22ce"],
+          ] as const).map(([label, value, icon, accent], index) => (
+            <StatTile key={label} label={label} value={value} icon={icon} accent={accent} index={index} />
           ))}
         </div>
         <div className="bpv-dist">
-          <div className="bpv-dist-title">Bloom&apos;s level distribution</div>
+          <div className="bpv-dist-head">
+            <span className="bpv-dist-title">Bloom&apos;s level distribution</span>
+            <span className="bpv-dist-hint">
+              Higher-order (L4–L6): <b>{Math.round(((levelCounts[3] + levelCounts[4] + levelCounts[5]) / questions.length) * 100)}%</b>
+            </span>
+          </div>
           <div className="bpv-dist-bar" role="img" aria-label="Bloom's level distribution">
             {levelCounts.map((count, i) =>
-              count ? <span key={i} style={{ flex: count, background: LEVEL_COLORS[i] }} title={`L${i + 1} ${BLOOM_LEVELS[i]}: ${count}`} /> : null,
+              count ? (
+                <span
+                  key={i}
+                  className="bpv-dist-seg"
+                  style={{ flex: count, background: LEVEL_COLORS[i], animationDelay: `${150 + i * 110}ms` }}
+                  title={`L${i + 1} ${BLOOM_LEVELS[i]}: ${count} (${Math.round((count / questions.length) * 100)}%)`}
+                />
+              ) : null,
             )}
           </div>
           <div className="bpv-dist-legend">
             {BLOOM_LEVELS.map((name, i) => (
-              <span key={name} className={levelCounts[i] ? "" : "is-zero"}>
-                <i style={{ background: LEVEL_COLORS[i] }} />
-                L{i + 1} {name} <b>{levelCounts[i]}</b>
+              <span key={name} className={`bpv-chip${levelCounts[i] ? "" : " is-zero"}`} style={{ "--chip": LEVEL_COLORS[i], animationDelay: `${250 + i * 60}ms` } as React.CSSProperties}>
+                <i />
+                <span className="bpv-chip-name">L{i + 1} {name}</span>
+                <b>{levelCounts[i]}</b>
+                <em>{Math.round((levelCounts[i] / questions.length) * 100)}%</em>
               </span>
             ))}
           </div>
