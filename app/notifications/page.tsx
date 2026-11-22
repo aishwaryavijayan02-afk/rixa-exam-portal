@@ -1535,8 +1535,20 @@ export default function NotificationsApprovalPage() {
           if (value === "pending") return { state: "current", text: labels.current };
           return { state: "waiting", text: labels.waiting };
         };
+        // The question bank the same staff member uploaded for this subject
+        // (subject names may differ slightly, e.g. "… Relations Normal").
+        const subjectKey = (value: string) => (value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+        const courseKey = subjectKey(item.courseName);
+        const sameUploader = (name?: string, email?: string) =>
+          Boolean((email && item.submitterEmail && email.toLowerCase() === item.submitterEmail.toLowerCase()) || (name && item.submittedBy && subjectKey(name) === subjectKey(item.submittedBy)));
+        const questionBank = examStore.getQuestions().filter((q) => {
+          const qKey = subjectKey(q.subject);
+          return sameUploader(q.uploadedBy, q.email) && Boolean(courseKey) && (qKey === courseKey || qKey.includes(courseKey) || courseKey.includes(qKey));
+        });
+        const questionBankFiles = Array.from(new Set(questionBank.map((q) => q.sourceFile).filter(Boolean)));
+        const staffText = questionBank.length > 0 ? "Syllabus & question bank uploaded" : "Syllabus uploaded · question bank pending";
         const trail = [
-          { title: "Staff submission", state: "done" as TrailState, text: "Syllabus uploaded", meta: [item.submittedBy, item.submittedAt].filter(Boolean).join(" · ") },
+          { title: "Staff submission", state: (questionBank.length > 0 ? "done" : "current") as TrailState, text: staffText, meta: [item.submittedBy, item.submittedAt].filter(Boolean).join(" · ") },
           { title: "HOD verification", ...tier(item.hodStatus, item.hodName, item.hodDate, { done: "Verified & forwarded", current: "Awaiting HOD verification", waiting: "Not started" }) },
           { title: "Dean approval", ...tier(item.deanStatus, item.deanName, item.deanDate, { done: "Approved & forwarded", current: "Awaiting Dean approval", waiting: "Waiting for HOD" }) },
           { title: "COE final approval", ...tier(item.coeStatus, item.coeName, item.coeDate, { done: "Final approval complete", current: "Awaiting COE approval", waiting: "Waiting for Dean" }) },
@@ -1547,6 +1559,8 @@ export default function NotificationsApprovalPage() {
           ["Submitted by", item.submittedBy || "—"],
           ["Email", item.submitterEmail || "—"],
           ["Submitted on", item.submittedAt || "—"],
+          ["Syllabus", item.documentName ? `${item.documentName}` : `${item.totalUnits || 5} units · ${item.totalTopics || 20} topics`],
+          ["Question bank", questionBank.length > 0 ? `${questionBank.length} question${questionBank.length === 1 ? "" : "s"}${questionBankFiles.length ? ` · ${questionBankFiles.join(", ")}` : ""}` : "Not uploaded yet"],
           ["Syllabus scope", `${item.totalUnits || 5} units · ${item.totalTopics || 20} topics`],
         ];
         return (
