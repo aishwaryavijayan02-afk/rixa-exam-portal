@@ -1524,97 +1524,96 @@ export default function NotificationsApprovalPage() {
       {/* ========================================================================= */}
       {/* INSPECTION MODAL                                                          */}
       {/* ========================================================================= */}
-      {inspectedItem && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(40, 26, 17, 0.6)",
-            backdropFilter: "blur(4px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-            padding: "20px",
-          }}
-        >
-          <div
-            style={{
-              background: "#ffffff",
-              borderRadius: "16px",
-              maxWidth: "600px",
-              width: "100%",
-              padding: "24px",
-              boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
-              display: "flex",
-              flexDirection: "column",
-              gap: "16px",
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "12px", fontWeight: 800, color: "#c3844d", background: "#eff6ff", padding: "2px 8px", borderRadius: "5px" }}>
-                  {inspectedItem.courseCode}
-                </span>
-                <h3 style={{ fontSize: "16px", fontWeight: 800, margin: 0, color: "#0f172a" }}>
-                  {inspectedItem.courseName}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setInspectedItem(null)}
-                style={{ background: "transparent", border: "none", fontSize: "20px", cursor: "pointer", color: "#64748b" }}
-              >
-                &times;
-              </button>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "12.5px" }}>
-              <div><strong>Department:</strong> {inspectedItem.department} ({inspectedItem.semester})</div>
-              <div><strong>Submitted By:</strong> {inspectedItem.submittedBy} &bull; {inspectedItem.submitterEmail}</div>
-              <div><strong>Submission Timestamp:</strong> {inspectedItem.submittedAt}</div>
-              <div><strong>Syllabus Scope:</strong> {inspectedItem.totalUnits || 5} Units • {inspectedItem.totalTopics || 20} Topics (OBE Curriculum Mapping)</div>
-
-              <div style={{ background: "#f8fafc", padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
-                <div style={{ fontWeight: 800, marginBottom: "6px", color: "#1e293b" }}>4-Tier Verification Trail:</div>
-                <ul style={{ margin: 0, paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <li><strong>Staff Submission:</strong> {inspectedItem.submittedBy} &mdash; ✓ Completed</li>
-                  <li><strong>HOD Status:</strong> {inspectedItem.hodName || "Pending"} &mdash; {inspectedItem.hodStatus} ({inspectedItem.hodDate || "Awaiting"})</li>
-                  <li><strong>Dean Status:</strong> {inspectedItem.deanName || "Pending"} &mdash; {inspectedItem.deanStatus} ({inspectedItem.deanDate || "Awaiting"})</li>
-                  <li><strong>COE Status:</strong> {inspectedItem.coeName || "Pending"} &mdash; {inspectedItem.coeStatus} ({inspectedItem.coeDate || "Awaiting"})</li>
-                </ul>
-              </div>
-
-              {inspectedItem.remarks && (
-                <div>
-                  <strong>Audit Notes:</strong>
-                  <p style={{ margin: "4px 0 0 0", background: "#f1f5f9", padding: "8px 10px", borderRadius: "6px" }}>
-                    {inspectedItem.remarks}
-                  </p>
+      {inspectedItem && (() => {
+        const item = inspectedItem;
+        // One entry per approval tier, in plain words.
+        type TrailState = "done" | "current" | "waiting" | "revision";
+        const tier = (status: string | undefined, who: string | undefined, when: string | undefined, labels: { done: string; current: string; waiting: string }): { state: TrailState; text: string; meta?: string } => {
+          const value = (status || "").toLowerCase();
+          if (value === "approved" || value === "locked") return { state: "done", text: labels.done, meta: [who, when].filter(Boolean).join(" · ") };
+          if (value.includes("revision")) return { state: "revision", text: "Revision requested", meta: [who, when].filter(Boolean).join(" · ") };
+          if (value === "pending") return { state: "current", text: labels.current };
+          return { state: "waiting", text: labels.waiting };
+        };
+        const trail = [
+          { title: "Staff submission", state: "done" as TrailState, text: "Syllabus uploaded", meta: [item.submittedBy, item.submittedAt].filter(Boolean).join(" · ") },
+          { title: "HOD verification", ...tier(item.hodStatus, item.hodName, item.hodDate, { done: "Verified & forwarded", current: "Awaiting HOD verification", waiting: "Not started" }) },
+          { title: "Dean approval", ...tier(item.deanStatus, item.deanName, item.deanDate, { done: "Approved & forwarded", current: "Awaiting Dean approval", waiting: "Waiting for HOD" }) },
+          { title: "COE final approval", ...tier(item.coeStatus, item.coeName, item.coeDate, { done: "Final approval complete", current: "Awaiting COE approval", waiting: "Waiting for Dean" }) },
+        ];
+        // "Verified by HOD HOD" (common role login) -> "Verified by HOD"
+        const notes = (item.remarks || "").replace(/\b(HOD|Dean|COE|Scrutinizer|Staff)\s+\1\b/gi, "$1");
+        const facts: [string, string][] = [
+          ["Submitted by", item.submittedBy || "—"],
+          ["Email", item.submitterEmail || "—"],
+          ["Submitted on", item.submittedAt || "—"],
+          ["Syllabus scope", `${item.totalUnits || 5} units · ${item.totalTopics || 20} topics`],
+        ];
+        return (
+          <div className="sdm-overlay" onClick={() => setInspectedItem(null)}>
+            <div className="sdm-card" role="dialog" aria-modal="true" aria-labelledby="sdm-title" onClick={(e) => e.stopPropagation()}>
+              <header className="sdm-head">
+                <div className="sdm-head-text">
+                  <div className="sdm-kicker">
+                    {item.courseCode && <span className="sdm-code">{item.courseCode}</span>}
+                    <span>Syllabus submission</span>
+                  </div>
+                  <h3 id="sdm-title" className="sdm-title">{item.courseName}</h3>
+                  <div className="sdm-sub">
+                    {item.department}
+                    {item.semester ? ` · ${item.semester}` : ""}
+                  </div>
                 </div>
-              )}
-            </div>
+                <button type="button" className="sdm-x" onClick={() => setInspectedItem(null)} aria-label="Close">
+                  &times;
+                </button>
+              </header>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "8px" }}>
-              <button
-                type="button"
-                onClick={() => setInspectedItem(null)}
-                style={{
-                  padding: "7px 16px",
-                  borderRadius: "7px",
-                  border: "1px solid #cbd5e1",
-                  background: "#ffffff",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                Close
-              </button>
+              <div className="sdm-body">
+                <dl className="sdm-facts">
+                  {facts.map(([label, value]) => (
+                    <div key={label}>
+                      <dt>{label}</dt>
+                      <dd>{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+
+                <section>
+                  <h4 className="sdm-section-title">Verification trail</h4>
+                  <ol className="sdm-trail">
+                    {trail.map((step) => (
+                      <li key={step.title} className={`sdm-step is-${step.state}`}>
+                        <span className="sdm-dot" aria-hidden="true">{step.state === "done" ? "✓" : step.state === "revision" ? "!" : ""}</span>
+                        <div className="sdm-step-body">
+                          <div className="sdm-step-top">
+                            <span className="sdm-step-title">{step.title}</span>
+                            <span className="sdm-pill">{step.text}</span>
+                          </div>
+                          {step.meta && <div className="sdm-step-meta">{step.meta}</div>}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+
+                {notes && (
+                  <section>
+                    <h4 className="sdm-section-title">Audit notes</h4>
+                    <p className="sdm-notes">{notes}</p>
+                  </section>
+                )}
+              </div>
+
+              <footer className="sdm-foot">
+                <button type="button" className="crud-close-btn" onClick={() => setInspectedItem(null)} style={{ padding: "8px 20px", borderRadius: "10px", fontSize: "13px", fontWeight: 700, cursor: "pointer" }}>
+                  Close
+                </button>
+              </footer>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Toast Notification */}
       <ToastNotification
