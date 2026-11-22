@@ -1,7 +1,7 @@
 "use client";
 
 import { supabase, isSupabaseConfigured } from "./supabaseClient";
-import { canAllocateFaculty, AllocationLevel, STAFF_FACULTY_ACCOUNTS } from "./auth";
+import { canAllocateFaculty, AllocationLevel } from "./auth";
 
 // Types
 export interface SubjectItem {
@@ -2176,10 +2176,14 @@ export const examStore = {
 
   // ----------------- STAFF / FACULTY CRUD -----------------
   getAllStaffFaculty(): StaffFacultyItem[] {
-    const stored = getFromStorage<StaffFacultyItem[]>("staff_faculty", defaultStaffFaculty);
-    // Always include the portal's staff accounts and anyone who has uploaded
-    // a syllabus or question bank, so Staff Work Status / allocation screens
-    // are never empty even before HOD adds faculty records manually.
+    // Only staff profiles that were actually added (ids "fac-<timestamp>").
+    // Old built-in sample records ("fac-vis-…") and auto rows ("fac-auto-…")
+    // are not shown.
+    const stored = getFromStorage<StaffFacultyItem[]>("staff_faculty", defaultStaffFaculty).filter(
+      (s) => s && !/^fac-(?:vis|auto)-/i.test(String(s.id || "")),
+    );
+    // Anyone who has uploaded a syllabus or question bank is also listed, so
+    // their uploads show in Staff Work Status even without a profile.
     const key = (value: string) => (value || "").toLowerCase().replace(/^(mr\.|mrs\.|ms\.|dr\.|prof\.)\s*/i, "").replace(/[^a-z0-9]/g, "");
     const known = new Set<string>();
     stored.forEach((s) => {
@@ -2225,20 +2229,27 @@ export const examStore = {
       avatarBg: avatarBg || "#a0673a",
     });
     const extra: StaffFacultyItem[] = [];
-    STAFF_FACULTY_ACCOUNTS.forEach((account) => {
-      if (isKnown(account.name, account.email)) return;
-      // the shared demo login (staff@rathinam.in) is the same person as the first account
-      remember(account.name, account.email);
-      extra.push(makeRecord(account.name, account.email, account.department, account.roleTitle, account.avatarBg));
-    });
-    const uploaders: Array<{ name: string; email: string; department?: string }> = [
-      ...getFromStorage<QuestionItem[]>("questions", []).map((q) => ({ name: q.uploadedBy || "", email: q.email || "", department: q.department })),
-      ...getFromStorage<SyllabusApprovalItem[]>("syllabus_approvals", []).map((s) => ({ name: s.submittedBy || "", email: s.submitterEmail || "", department: s.department })),
+    // Syllabi first so the uploader's subject comes from their syllabus.
+    const uploaders: Array<{ name: string; email: string; department?: string; subject?: string }> = [
+      ...getFromStorage<SyllabusApprovalItem[]>("syllabus_approvals", []).map((s) => ({ name: s.submittedBy || "", email: s.submitterEmail || "", department: s.department, subject: s.courseName })),
+      ...getFromStorage<QuestionItem[]>("questions", []).map((q) => ({ name: q.uploadedBy || "", email: q.email || "", department: q.department, subject: q.subject })),
     ];
+    const byUploader = new Map<string, StaffFacultyItem>();
     uploaders.forEach((u) => {
-      if (!u.name || /^faculty( member)?$/i.test(u.name) || isKnown(u.name, u.email)) return;
+      if (!u.name || /^faculty( member)?$/i.test(u.name)) return;
+      const uploaderKey = u.email ? `e:${u.email.toLowerCase()}` : `n:${key(u.name)}`;
+      const existing = byUploader.get(uploaderKey);
+      if (existing) {
+        // Show every subject this person uploaded.
+        if (u.subject && !existing.assignedSubjects.some((s) => s.toLowerCase() === u.subject!.toLowerCase())) existing.assignedSubjects.push(u.subject);
+        return;
+      }
+      if (isKnown(u.name, u.email)) return;
       remember(u.name, u.email);
-      extra.push(makeRecord(u.name, u.email, (u.department || "").replace(/^Department of /i, ""), "Assistant Professor", "#a0673a"));
+      const record = makeRecord(u.name, u.email, (u.department || "").replace(/^Department of /i, ""), "Assistant Professor", "#a0673a");
+      if (u.subject) record.assignedSubjects = [u.subject];
+      byUploader.set(uploaderKey, record);
+      extra.push(record);
     });
     return extra.length ? [...stored, ...extra] : stored;
   },
