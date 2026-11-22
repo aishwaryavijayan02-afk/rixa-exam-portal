@@ -234,8 +234,9 @@ export async function authenticateUser(
   }
 
   const preset = PRESET_USERS[selectedRole];
-  // The role's own common address (staff@, hod@, dean@, coe@, scrutinizer@).
-  if (cleanEmail === preset.email) return { user: { ...preset }, error: null };
+  // The role's own common address (staff@, hod@, dean@, coe@, scrutinizer@):
+  // the name shown is the login ID itself ("Staff", "HOD", ...), not a person.
+  if (cleanEmail === preset.email) return { user: { ...preset, name: roleDisplayName(selectedRole) }, error: null };
 
   // A registered faculty account keeps its saved name and department.
   const known = STAFF_FACULTY_ACCOUNTS.find(
@@ -387,18 +388,22 @@ export const authStore = {
               localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
             } catch (e) {}
           }
+          // The common role logins (staff@, hod@, dean@, coe@, scrutinizer@) are
+          // named after the login ID itself ("Staff", "HOD", ...), not a person.
+          const rolePreset = PRESET_USERS[parsed.role as UserRole];
+          if (rolePreset && (parsed.email || "").toLowerCase() === rolePreset.email && parsed.name !== roleDisplayName(parsed.role)) {
+            parsed.name = roleDisplayName(parsed.role);
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+            } catch (e) {}
+          }
           // Auto-migrate any outdated generic "Faculty / Staff" or missing names in localStorage
+          const isCommonLogin = Boolean(rolePreset && (parsed.email || "").toLowerCase() === rolePreset.email);
           if (
-            parsed.name === "Faculty / Staff" ||
-            parsed.name === "Staff" ||
-            parsed.roleTitle === "Faculty / Staff" ||
-            !parsed.name
+            !isCommonLogin &&
+            (parsed.name === "Faculty / Staff" || parsed.name === "Staff" || parsed.roleTitle === "Faculty / Staff" || !parsed.name)
           ) {
-            if (parsed.email && parsed.email !== "staff@rathinam.in") {
-              parsed.name = parseStaffNameFromEmail(parsed.email);
-            } else {
-              parsed.name = "Mr. Vignesh M";
-            }
+            parsed.name = parsed.email ? parseStaffNameFromEmail(parsed.email) : roleDisplayName(parsed.role);
             if (parsed.role === "STAFF" && (parsed.roleTitle === "Faculty / Staff" || !parsed.roleTitle)) {
               parsed.roleTitle = "Assistant Professor";
             }
