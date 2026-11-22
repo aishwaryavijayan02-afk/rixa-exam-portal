@@ -911,7 +911,8 @@ export default function LoginPage() {
                   whileHover={{ scale: 1.2 }}
                   whileTap={{ scale: 0.9 }}
                 >
-                  {showEmail ? <EyeOff size={18} className="text-blue-600" /> : <Eye size={18} />}
+                  {/* Same eye icon as the password box; crossed out only while the email is hidden. */}
+                  {showEmail ? <Eye size={18} /> : <EyeOff size={18} className="text-blue-600" />}
                 </motion.button>
               </motion.div>
             </div>
