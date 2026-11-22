@@ -926,14 +926,12 @@ export function ViewModal({
             <button
               type="button"
               onClick={onClose}
+              className="crud-close-btn"
               style={{
                 padding: "8px 18px",
                 borderRadius: "10px",
-                border: "1px solid #e2e8f0",
-                background: "#ffffff",
-                color: "#475569",
                 fontSize: "13px",
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: "pointer",
               }}
             >
