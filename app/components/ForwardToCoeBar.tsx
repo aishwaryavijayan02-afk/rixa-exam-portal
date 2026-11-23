@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Send } from "lucide-react";
 import { examStore, QuestionItem, SyllabusApprovalItem } from "../lib/examStore";
-import { confirmDialog } from "./ConfirmDialog";
+import { alertDialog, confirmDialog } from "./ConfirmDialog";
 
 const subjectKey = (value?: string) => (value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 const sameSubject = (a?: string, b?: string) => {
@@ -56,7 +56,23 @@ export default function ForwardToCoeBar({ subject, onDone }: { subject?: string;
   const forward = async () => {
     const qCount = summary.toForward.length;
     const sCount = summary.syllabiToForward.length;
-    if (!qCount && !sCount) return;
+    if (!qCount && !sCount) {
+      // Explain why nothing can be forwarded yet instead of doing nothing.
+      const waitingSyllabi = syllabi.filter((s) => inSubject(s.courseName) && s.deanStatus !== "Approved" && s.coeStatus !== "Approved").length;
+      const lines = nothingYet
+        ? [
+            "Nothing has reached the Scrutinizer yet.",
+            summary.upcoming ? `${summary.upcoming} question${summary.upcoming === 1 ? " is" : "s are"} still waiting for the HOD / Dean.` : "",
+            waitingSyllabi ? `${waitingSyllabi} syllab${waitingSyllabi === 1 ? "us is" : "i are"} still waiting for the Dean.` : "",
+            "The Dean approves them in Verify & Approval. After that, press Verify & Forward to COE here to send them to the COE.",
+          ]
+        : [
+            summary.forwarded ? `All ${summary.forwarded} question${summary.forwarded === 1 ? " has" : "s have"} already been forwarded to the COE.` : "",
+            summary.flagged ? `${summary.flagged} flagged question${summary.flagged === 1 ? " stays" : "s stay"} with the Scrutinizer until it is cleared or reset.` : "",
+          ];
+      await alertDialog(lines.filter(Boolean).join("\n"), { title: nothingYet ? "Waiting for Dean approval" : "Nothing left to forward", confirmLabel: "OK" });
+      return;
+    }
     const parts = [qCount ? `${qCount} question${qCount === 1 ? "" : "s"}` : "", sCount ? `${sCount} syllab${sCount === 1 ? "us" : "i"}` : ""].filter(Boolean).join(" and ");
     const ok = await confirmDialog(
       `Verify and forward ${parts}${subject ? ` for ${subject}` : ""} to the COE for final approval?${summary.pending ? ` ${summary.pending} unreviewed question${summary.pending === 1 ? " will be" : "s will be"} marked as cleared.` : ""}${summary.flagged ? ` ${summary.flagged} flagged question${summary.flagged === 1 ? " stays" : "s stay"} with the Scrutinizer.` : ""}`,
@@ -89,7 +105,7 @@ export default function ForwardToCoeBar({ subject, onDone }: { subject?: string;
         type="button"
         className="scr-forward-btn"
         onClick={forward}
-        disabled={!canForward}
+        aria-disabled={!canForward}
         title={canForward ? undefined : nothingYet ? "Waiting for Dean approval" : "Nothing left to forward"}
       >
         <Send size={16} /> Verify &amp; Forward to COE
