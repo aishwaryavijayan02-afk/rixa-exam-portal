@@ -11,7 +11,7 @@ import {
   AlertTriangle,
   FileText,
 } from "lucide-react";
-import { examStore, QuestionItem } from "../lib/examStore";
+import { examStore, QuestionItem, SyllabusApprovalItem } from "../lib/examStore";
 import { authStore, AuthUser } from "../lib/auth";
 import { BLOOM_LEVELS, detectExplicitBloomLevel, inferBloomLevel, unitNumber } from "../lib/bloomTaxonomy";
 import RoleGuard from "../components/RoleGuard";
@@ -57,6 +57,8 @@ function questionIssues(q: QuestionItem, duplicates: Set<string>): string[] {
 export default function ScrutinizerPage() {
   const [currentUser, setCurrentUser] = useState<AuthUser>(() => authStore.getCurrentUser());
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
+  const [syllabi, setSyllabi] = useState<SyllabusApprovalItem[]>([]);
+  const [syllabusFlag, setSyllabusFlag] = useState<{ id: string; remark: string } | null>(null);
   const [subject, setSubject] = useState<string>("");
   const [filter, setFilter] = useState<ScrutinyFilter>("Pending");
   const [search, setSearch] = useState("");
@@ -70,7 +72,10 @@ export default function ScrutinizerPage() {
 
   useEffect(() => {
     const handleAuth = () => setCurrentUser(authStore.getCurrentUser());
-    const load = () => setQuestions(examStore.getQuestions());
+    const load = () => {
+      setQuestions(examStore.getQuestions());
+      setSyllabi(examStore.getSyllabusApprovals());
+    };
     handleAuth();
     load();
     window.addEventListener("exam-cell-auth-update", handleAuth);
@@ -81,11 +86,23 @@ export default function ScrutinizerPage() {
     };
   }, []);
 
-  // Questions that are in the review pipeline (drafts, rejected and archived are out of scope).
-  const inScope = useMemo(
-    () => questions.filter((q) => !["Rejected", "Draft", "Archived"].includes(q.status)),
+  // Workflow: Staff -> HOD -> Dean -> Scrutinizer -> COE. The Scrutinizer reviews
+  // questions once the Dean has approved them (and keeps seeing ones the COE finalised).
+  const reachedScrutiny = (q: QuestionItem) => q.status === "Approved" && ["DEAN", "COE"].includes((q.verifiedRole || "").toUpperCase());
+  const inScope = useMemo(() => questions.filter(reachedScrutiny), [questions]);
+  // Still with HOD / Dean: shown only as a count.
+  const upcomingCount = useMemo(
+    () => questions.filter((q) => !reachedScrutiny(q) && !["Rejected", "Draft", "Archived"].includes(q.status)).length,
     [questions],
   );
+  // Syllabi the Dean has forwarded to the Scrutinizer (or already scrutinised).
+  const scrutinySyllabi = useMemo(() => syllabi.filter((s) => s.scrutinyStatus || s.coeStatus === "Waiting_Scrutiny"), [syllabi]);
+  const subjectKey = (value?: string) => (value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const sameSubject = (a?: string, b?: string) => {
+    const x = subjectKey(a);
+    const y = subjectKey(b);
+    return Boolean(x && y) && (x === y || x.includes(y) || y.includes(x));
+  };
 
   const subjects = useMemo(() => {
     const map = new Map<string, { name: string; total: number; pending: number; flagged: number }>();
@@ -97,8 +114,16 @@ export default function ScrutinizerPage() {
       if (q.scrutinyStatus === "Flagged") entry.flagged += 1;
       map.set(name, entry);
     });
+    scrutinySyllabi.forEach((s) => {
+      const existing = [...map.values()].find((e) => sameSubject(e.name, s.courseName));
+      const entry = existing || { name: s.courseName, total: 0, pending: 0, flagged: 0 };
+      if (s.scrutinyStatus !== "Cleared" && s.scrutinyStatus !== "Flagged") entry.pending += 1;
+      if (s.scrutinyStatus === "Flagged") entry.flagged += 1;
+      if (!existing) map.set(s.courseName, entry);
+    });
     return [...map.values()].sort((a, b) => b.pending - a.pending || a.name.localeCompare(b.name));
-  }, [inScope]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inScope, scrutinySyllabi]);
 
   useEffect(() => {
     if (subjects.length && !subjects.some((s) => s.name === subject)) setSubject(subjects[0].name);
@@ -186,6 +211,22 @@ export default function ScrutinizerPage() {
       scrutinizedAt: status ? new Date().toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : undefined,
     });
     setQuestions(examStore.getQuestions());
+  };
+
+  // The syllabus of the selected subject that the Dean forwarded for scrutiny.
+  const subjectSyllabus = scrutinySyllabi.find((s) => sameSubject(s.courseName, subject));
+  const scrutinyStamp = () => new Date().toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  const clearSyllabus = (item: SyllabusApprovalItem) => {
+    // Cleared -> goes to the COE for final approval.
+    examStore.updateSyllabusApproval(item.id, { scrutinyStatus: "Cleared", scrutinyName: currentUser.name, scrutinyDate: scrutinyStamp(), scrutinyRemarks: undefined, coeStatus: "Pending" });
+    setSyllabi(examStore.getSyllabusApprovals());
+    showToast(`Syllabus "${item.courseName}" cleared and sent to the COE.`);
+  };
+  const flagSyllabus = (item: SyllabusApprovalItem, remark: string) => {
+    examStore.updateSyllabusApproval(item.id, { scrutinyStatus: "Flagged", scrutinyName: currentUser.name, scrutinyDate: scrutinyStamp(), scrutinyRemarks: remark, coeStatus: "Waiting_Scrutiny" });
+    setSyllabi(examStore.getSyllabusApprovals());
+    setSyllabusFlag(null);
+    showToast(`Syllabus "${item.courseName}" flagged.`);
   };
 
   const clearAllPending = async () => {
@@ -339,7 +380,7 @@ export default function ScrutinizerPage() {
 
             {subjects.length === 0 ? (
               <div style={{ ...card, textAlign: "center", color: "#64748b", fontSize: "13.5px", padding: "40px" }}>
-                No questions are waiting for scrutiny yet. Questions uploaded in the Academic Vault will appear here.
+                Nothing has been forwarded by the Dean yet.{upcomingCount > 0 ? ` ${upcomingCount} question${upcomingCount === 1 ? " is" : "s are"} still with the HOD / Dean.` : ""} Submissions appear here after Dean approval; once you clear them they go to the COE.
               </div>
             ) : (
               <>
@@ -423,6 +464,50 @@ export default function ScrutinizerPage() {
                     <div style={{ fontSize: "12.5px", color: "#15803d", fontWeight: 600 }}>No subject-level issues found: Bloom&apos;s levels are balanced and every unit has MCQ and Descriptive questions.</div>
                   )}
                 </div>
+
+                {/* Syllabus scrutiny (forwarded by the Dean) */}
+                {subjectSyllabus && (
+                  <div style={{ ...card, marginBottom: "18px", display: "flex", flexDirection: "column", gap: "10px", borderColor: subjectSyllabus.scrutinyStatus === "Cleared" ? "#bbf7d0" : subjectSyllabus.scrutinyStatus === "Flagged" ? "#fed7aa" : "#e2e8f0" }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: "11px", fontWeight: 800, letterSpacing: ".07em", textTransform: "uppercase", color: "#a46937" }}>Syllabus · forwarded by Dean</div>
+                        <div style={{ fontSize: "15px", fontWeight: 800, color: "#0f172a", marginTop: "2px" }}>
+                          {subjectSyllabus.courseName}
+                          {subjectSyllabus.courseCode ? <span style={{ marginLeft: "8px", fontSize: "12px", color: "#94a3b8", fontWeight: 700 }}>{subjectSyllabus.courseCode}</span> : null}
+                        </div>
+                        <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
+                          Uploaded by {subjectSyllabus.submittedBy} · Dean approved {subjectSyllabus.deanDate || ""}
+                        </div>
+                      </div>
+                      <span style={{ padding: "4px 12px", borderRadius: "999px", fontSize: "12px", fontWeight: 800, border: "1px solid", ...(subjectSyllabus.scrutinyStatus === "Cleared" ? { background: "#ecfdf5", color: "#047857", borderColor: "#a7f3d0" } : subjectSyllabus.scrutinyStatus === "Flagged" ? { background: "#fff7ed", color: "#c2410c", borderColor: "#fed7aa" } : { background: "#fffbeb", color: "#b45309", borderColor: "#fde68a" }) }}>
+                        {subjectSyllabus.scrutinyStatus === "Cleared" ? "Cleared · sent to COE" : subjectSyllabus.scrutinyStatus === "Flagged" ? "Flagged" : "Awaiting scrutiny"}
+                      </span>
+                    </div>
+                    {subjectSyllabus.scrutinyStatus === "Flagged" && subjectSyllabus.scrutinyRemarks && (
+                      <div style={{ fontSize: "12.5px", color: "#9a3412" }}><strong>Remark:</strong> {subjectSyllabus.scrutinyRemarks}</div>
+                    )}
+                    {syllabusFlag?.id === subjectSyllabus.id ? (
+                      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                        <input autoFocus value={syllabusFlag.remark} onChange={(e) => setSyllabusFlag({ id: subjectSyllabus.id, remark: e.target.value })} placeholder="What needs to be corrected in the syllabus?" style={{ flex: 1, minWidth: "220px", padding: "7px 10px", borderRadius: "7px", border: "1px solid #fdba74", fontSize: "12.5px" }} />
+                        <button type="button" onClick={() => (syllabusFlag.remark.trim() ? flagSyllabus(subjectSyllabus, syllabusFlag.remark.trim()) : showToast("Please enter a remark.", "danger"))} style={{ padding: "7px 12px", borderRadius: "7px", border: "none", background: "#ea580c", color: "#ffffff", fontSize: "12px", fontWeight: 800, cursor: "pointer" }}>Save flag</button>
+                        <button type="button" onClick={() => setSyllabusFlag(null)} style={{ padding: "7px 12px", borderRadius: "7px", border: "1px solid #cbd5e1", background: "#ffffff", color: "#475569", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>Cancel</button>
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                        {subjectSyllabus.scrutinyStatus !== "Cleared" && (
+                          <button type="button" onClick={() => clearSyllabus(subjectSyllabus)} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "7px 12px", borderRadius: "8px", border: "1px solid #86efac", background: "#15803d", color: "#ffffff", fontSize: "12px", fontWeight: 800, cursor: "pointer" }}>
+                            <CheckCircle2 size={14} /> Clear syllabus &amp; send to COE
+                          </button>
+                        )}
+                        {subjectSyllabus.scrutinyStatus !== "Flagged" && subjectSyllabus.coeStatus !== "Approved" && (
+                          <button type="button" onClick={() => setSyllabusFlag({ id: subjectSyllabus.id, remark: "" })} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "7px 12px", borderRadius: "8px", border: "1px solid #fdba74", background: "#fff7ed", color: "#c2410c", fontSize: "12px", fontWeight: 800, cursor: "pointer" }}>
+                            <Flag size={14} /> Flag syllabus
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Question review */}
                 <div style={card}>

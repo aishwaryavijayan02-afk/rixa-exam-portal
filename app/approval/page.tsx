@@ -144,7 +144,7 @@ export default function ApprovalPage() {
         const verifiedRole = (q.verifiedRole || "").toUpperCase();
         if (currentUser.role === "HOD") return q.status === "Pending";
         if (currentUser.role === "DEAN") return q.status === "Verified" || (q.status === "Approved" && verifiedRole === "HOD");
-        if (currentUser.role === "COE") return q.status === "Approved" && verifiedRole === "DEAN";
+        if (currentUser.role === "COE") return q.status === "Approved" && verifiedRole === "DEAN" && q.scrutinyStatus === "Cleared";
         return q.status === "Verified";
       })
       .map((q) => q.id);
@@ -169,7 +169,7 @@ export default function ApprovalPage() {
         itemName: `${subjectModalData.subjectName} (${ids.length} Questions)`,
         verifiedCount: ids.length,
         title: "Dean Subject Approval Complete!",
-        remarks: `Approved all ${ids.length} question(s) in ${subjectModalData.subjectName} by ${verifierLabel()}. Forwarded to COE Question Bank.`,
+        remarks: `Approved all ${ids.length} question(s) in ${subjectModalData.subjectName} by ${verifierLabel()}. Forwarded to the Scrutinizer before COE final approval.`,
       });
     } else if (currentUser.role === "COE") {
       examStore.coeFinalizeQuestions(ids, currentUser.name);
@@ -290,7 +290,7 @@ export default function ApprovalPage() {
     const verifiedRole = (question.verifiedRole || "").toUpperCase();
     if (currentUser.role === "HOD") return question.status === "Pending";
     if (currentUser.role === "DEAN") return question.status === "Verified" || (question.status === "Approved" && verifiedRole === "HOD");
-    if (currentUser.role === "COE") return question.status === "Approved" && verifiedRole === "DEAN";
+    if (currentUser.role === "COE") return question.status === "Approved" && verifiedRole === "DEAN" && question.scrutinyStatus === "Cleared";
     return question.status === "Verified";
   });
   const normalizeStaffName = (value: string) => value.toLowerCase().replace(/^(mr\.|mrs\.|ms\.|dr\.|prof\.)\s*/i, "").trim();
@@ -381,7 +381,7 @@ export default function ApprovalPage() {
     const now = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) + ", " + new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
     const role = currentUser.role;
     if (role === "HOD") return { stage: "dean", status: "Approved", hodStatus: "Approved", hodName: currentUser.name, hodDate: now, deanStatus: "Pending", remarks: `Verified by ${verifierLabel()}. Forwarded to Dean for academic approval.` };
-    if (role === "DEAN") return { stage: "coe", status: "Approved", deanStatus: "Approved", deanName: currentUser.name, deanDate: now, coeStatus: "Pending", remarks: `Approved by ${verifierLabel()}. Forwarded to COE for final review.` };
+    if (role === "DEAN") return { stage: "coe", status: "Approved", deanStatus: "Approved", deanName: currentUser.name, deanDate: now, coeStatus: "Waiting_Scrutiny", scrutinyStatus: "Pending", remarks: `Approved by ${verifierLabel()}. Forwarded to the Scrutinizer before COE final review.` };
     if (role === "COE") return { stage: "coe", status: "Approved", coeStatus: "Approved", coeName: currentUser.name, coeDate: now, remarks: `Final syllabus approval completed by ${verifierLabel()}.` };
     return {};
   };
@@ -395,7 +395,7 @@ export default function ApprovalPage() {
       return;
     }
     const role = currentUser.role;
-    const target = role === "HOD" ? "Dean" : role === "DEAN" ? "COE" : "the Question Bank";
+    const target = role === "HOD" ? "Dean" : role === "DEAN" ? "the Scrutinizer" : "the Question Bank";
     const items = [
       questionIds.length > 0 ? `${questionIds.length} question(s)` : "",
       syllabus ? `the syllabus "${syllabus.documentName || syllabus.courseName}"` : "",
@@ -434,7 +434,7 @@ export default function ApprovalPage() {
     const verifiedRole = (q.verifiedRole || "").toUpperCase();
     if (currentUser.role === "HOD") return q.status === "Pending";
     if (currentUser.role === "DEAN") return q.status === "Verified" || (q.status === "Approved" && verifiedRole === "HOD");
-    if (currentUser.role === "COE") return q.status === "Approved" && verifiedRole === "DEAN";
+    if (currentUser.role === "COE") return q.status === "Approved" && verifiedRole === "DEAN" && q.scrutinyStatus === "Cleared";
     return q.status === "Verified";
   });
 
@@ -481,7 +481,7 @@ export default function ApprovalPage() {
         isOpen: true,
         itemName: qText,
         title: "Dean Approval Complete!",
-        remarks: `Approved by ${verifierLabel()}. Question has been forwarded to Controller of Examinations (COE Dr. Rajubalaji).`,
+        remarks: `Approved by ${verifierLabel()}. Question has been forwarded to the Scrutinizer before COE final approval.`,
       });
     } else if (currentUser.role === "COE") {
       examStore.coeFinalizeQuestions([id], currentUser.name);
@@ -532,7 +532,7 @@ export default function ApprovalPage() {
         isOpen: true,
         itemName: `${selectedRows.length} Selected Question(s)`,
         title: "Dean Batch Approval Complete!",
-        remarks: `Approved ${selectedRows.length} question(s) by ${verifierLabel()}. Forwarded to COE Question Bank.`,
+        remarks: `Approved ${selectedRows.length} question(s) by ${verifierLabel()}. Forwarded to the Scrutinizer before COE final approval.`,
       });
     } else if (currentUser.role === "COE") {
       examStore.coeFinalizeQuestions(selectedRows, currentUser.name);
@@ -548,7 +548,7 @@ export default function ApprovalPage() {
         isOpen: true,
         itemName: `${selectedRows.length} Selected Question(s)`,
         title: "Dean Batch Approval Complete!",
-        remarks: `Approved ${selectedRows.length} question(s) by ${verifierLabel()}. Forwarded to COE Question Bank.`,
+        remarks: `Approved ${selectedRows.length} question(s) by ${verifierLabel()}. Forwarded to the Scrutinizer before COE final approval.`,
       });
     }
     setSelectedRows([]);

@@ -767,7 +767,7 @@ export default function DashboardPage() {
 
 
           
-{/* ================= 2. Central 4-Tier Verification & Approval Flow ================= */}
+{/* ================= 2. Central 5-Tier Verification & Approval Flow ================= */}
           <div className="digital-vfx-pipeline"
             style={{
               background: "#ffffff",
@@ -790,7 +790,7 @@ export default function DashboardPage() {
             >
               <div>
                 <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span>Autonomous 4-Tier Verification & Approval Flow</span>
+                  <span>Autonomous 5-Tier Verification & Approval Flow</span>
                 </h3>
                 <p style={{ fontSize: "12px", color: "#64748b", margin: "2px 0 0 0" }}>
                   Mandatory institutional progression protocol for syllabus validation and autonomous question paper release.
@@ -828,7 +828,7 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* 4-Tier Flow Nodes (Staff -> HOD -> Dean -> COE) */}
+            {/* 5-Tier Flow Nodes (Staff -> HOD -> Dean -> Scrutinizer -> COE) */}
             <div
               style={{
                 display: "flex",
@@ -867,6 +867,15 @@ export default function DashboardPage() {
                   bg: "linear-gradient(135deg, #c9905e 0%, #d3a37a 100%)",
                   shadow: "rgba(201, 144, 94, 0.35)",
                   isApproved: Boolean(activeApproval?.deanStatus === "Approved"),
+                },
+                {
+                  id: "scrutinizer",
+                  label: "Scrutinizer",
+                  sublabel: "Quality Scrutiny",
+                  icon: ShieldCheck,
+                  bg: "linear-gradient(135deg, #0e7490 0%, #155e75 100%)",
+                  shadow: "rgba(14, 116, 144, 0.32)",
+                  isApproved: Boolean(activeApproval?.scrutinyStatus === "Cleared"),
                 },
                 {
                   id: "coe",
@@ -1515,7 +1524,7 @@ export default function DashboardPage() {
                   <span>Academic Course Registry & Verification Deliverables</span>
                 </h3>
                 <p style={{ fontSize: "12.5px", color: "#64748b", margin: "3px 0 0 0" }}>
-                  Active subjects undergoing autonomous 4-tier validation and question pool certification.
+                  Active subjects undergoing autonomous 5-tier validation (Staff → HOD → Dean → Scrutinizer → COE) and question pool certification.
                 </p>
               </div>
 

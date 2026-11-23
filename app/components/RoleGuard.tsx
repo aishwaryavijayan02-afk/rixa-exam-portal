@@ -189,7 +189,7 @@ export default function RoleGuard({ route, children }: RoleGuardProps) {
               Switch Role to Test Access:
             </span>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "8px" }}>
-              {(["STAFF", "HOD", "DEAN", "COE", "SCRUTINIZER"] as UserRole[]).map((r) => (
+              {(["STAFF", "HOD", "DEAN", "SCRUTINIZER", "COE"] as UserRole[]).map((r) => (
                 <button
                   key={r}
                   type="button"

@@ -775,7 +775,7 @@ export default function LoginPage() {
               <User size={12} className="text-blue-600" /> Select Role:
             </span>
             <div className="grid grid-cols-5 gap-1.5">
-              {(["STAFF", "HOD", "DEAN", "COE", "SCRUTINIZER"] as UserRole[]).map((role) => {
+              {(["STAFF", "HOD", "DEAN", "SCRUTINIZER", "COE"] as UserRole[]).map((role) => {
                 const isSelected = selectedPreset === role;
                 const labels: Record<UserRole, { title: string; icon: string }> = {
                   STAFF: { title: "Staff", icon: "👨‍🏫" },

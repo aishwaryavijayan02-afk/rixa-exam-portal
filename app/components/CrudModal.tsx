@@ -1672,7 +1672,7 @@ export function ToastNotification({
 }
 
 // ======================== VERIFICATION POP-UP MODAL ========================
-type VerificationStage = "HOD" | "DEAN" | "COE";
+type VerificationStage = "HOD" | "DEAN" | "SCRUTINIZER" | "COE";
 
 /** Real details of what was just verified (all optional). */
 export interface VerificationDetails {
@@ -1720,6 +1720,7 @@ export function VerificationResultModal({
     { key: "STAFF", label: "Staff upload" },
     { key: "HOD", label: "HOD verification" },
     { key: "DEAN", label: "Dean approval" },
+    { key: "SCRUTINIZER", label: "Scrutiny" },
     { key: "COE", label: "COE final" },
   ];
   const doneUpTo = stage ? steps.findIndex((s) => s.key === stage) : -1;

@@ -180,7 +180,7 @@ export default function VerifyQuestionsPage() {
       });
     } else if (currentUser.role === "DEAN") {
       examStore.deanApproveQuestions(ids, currentUser.name);
-      triggerToast(`✓ Approved ${ids.length} question(s) by Dean & forwarded to COE (Dr. Rajubalaji)!`, "success");
+      triggerToast(`✓ Approved ${ids.length} question(s) by Dean & forwarded to the Scrutinizer!`, "success");
       setVerifyModalItem({
         isOpen: true,
         name: `${subjectModalData.subjectName} (${ids.length} Questions)`,
@@ -188,7 +188,10 @@ export default function VerifyQuestionsPage() {
         score: 99,
       });
     } else if (currentUser.role === "COE") {
-      examStore.coeFinalizeQuestions(ids, currentUser.name);
+      if (examStore.coeFinalizeQuestions(ids, currentUser.name) === 0) {
+        triggerToast("Waiting for the Scrutinizer: the COE can approve these questions once the Scrutinizer clears them.", "info");
+        return;
+      }
       triggerToast(`✓ Finalized ${ids.length} question(s) by COE! Locked for Question Paper Printing.`, "success");
       setVerifyModalItem({
         isOpen: true,
@@ -403,7 +406,7 @@ export default function VerifyQuestionsPage() {
       });
     } else if (currentUser.role === "DEAN") {
       examStore.deanApproveQuestions(ids, currentUser.name);
-      triggerToast(`✓ Pack "${pack.subject}" approved by Dean & forwarded to COE (Dr. Rajubalaji)!`, "success");
+      triggerToast(`✓ Pack "${pack.subject}" approved by Dean & forwarded to the Scrutinizer!`, "success");
       setVerifyModalItem({
         isOpen: true,
         name: `${pack.subject} (${ids.length} Questions)`,
@@ -411,7 +414,10 @@ export default function VerifyQuestionsPage() {
         score: 99,
       });
     } else if (currentUser.role === "COE") {
-      examStore.coeFinalizeQuestions(ids, currentUser.name);
+      if (examStore.coeFinalizeQuestions(ids, currentUser.name) === 0) {
+        triggerToast("Waiting for the Scrutinizer: the COE can approve these questions once the Scrutinizer clears them.", "info");
+        return;
+      }
       triggerToast(`✓ Pack "${pack.subject}" finalized by COE! Locked for Question Paper Printing.`, "success");
       setVerifyModalItem({
         isOpen: true,
@@ -665,9 +671,12 @@ export default function VerifyQuestionsPage() {
       triggerToast(`Question #${id} verified by HOD & forwarded to Dean (Dr. V Rajlakshmi)!`, "success");
     } else if (currentUser.role === "DEAN") {
       examStore.deanApproveQuestions([id], currentUser.name);
-      triggerToast(`Question #${id} approved by Dean & forwarded to COE (Dr. Rajubalaji)!`, "success");
+      triggerToast(`Question #${id} approved by Dean & forwarded to the Scrutinizer!`, "success");
     } else if (currentUser.role === "COE") {
-      examStore.coeFinalizeQuestions([id], currentUser.name);
+      if (examStore.coeFinalizeQuestions([id], currentUser.name) === 0) {
+        triggerToast("Waiting for the Scrutinizer: the COE can approve these questions once the Scrutinizer clears them.", "info");
+        return;
+      }
       triggerToast(`Question #${id} finalized by COE! Locked for Question Paper Printing.`, "success");
     } else {
       examStore.saveQuestion({ id, status: "Verified" });
@@ -687,9 +696,12 @@ export default function VerifyQuestionsPage() {
       triggerToast(`${selectedRows.length} question(s) verified by HOD & forwarded to Dean (Dr. V Rajlakshmi)!`, "success");
     } else if (currentUser.role === "DEAN") {
       examStore.deanApproveQuestions(selectedRows, currentUser.name);
-      triggerToast(`${selectedRows.length} question(s) approved by Dean & forwarded to COE (Dr. Rajubalaji)!`, "success");
+      triggerToast(`${selectedRows.length} question(s) approved by Dean & forwarded to the Scrutinizer!`, "success");
     } else if (currentUser.role === "COE") {
-      examStore.coeFinalizeQuestions(selectedRows, currentUser.name);
+      if (examStore.coeFinalizeQuestions(selectedRows, currentUser.name) === 0) {
+        triggerToast("Waiting for the Scrutinizer: the COE can approve these questions once the Scrutinizer clears them.", "info");
+        return;
+      }
       triggerToast(`${selectedRows.length} question(s) finalized by COE & locked for Question Bank!`, "success");
     } else {
       examStore.bulkUpdateQuestions(selectedRows.map(Number), "Verified");

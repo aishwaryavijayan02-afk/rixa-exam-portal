@@ -47,7 +47,7 @@ import PortalFooter from "../components/PortalFooter";
 import { confirmDialog } from "../components/ConfirmDialog";
 import PortalHeader from "../components/PortalHeader";
 
-type ApprovalRole = "staff" | "hod" | "dean" | "coe";
+type ApprovalRole = "staff" | "hod" | "dean" | "scrutinizer" | "coe";
 
 export default function NotificationsApprovalPage() {
   const router = useRouter();
@@ -60,6 +60,7 @@ export default function NotificationsApprovalPage() {
     const u = authStore.getCurrentUser();
     if (u.role === "HOD") return "hod";
     if (u.role === "DEAN") return "dean";
+    if (u.role === "SCRUTINIZER") return "scrutinizer";
     if (u.role === "COE") return "coe";
     return "staff";
   });
@@ -71,6 +72,7 @@ export default function NotificationsApprovalPage() {
       if (u.role === "STAFF") setSelectedRole("staff");
       else if (u.role === "HOD") setSelectedRole("hod");
       else if (u.role === "DEAN") setSelectedRole("dean");
+      else if (u.role === "SCRUTINIZER") setSelectedRole("scrutinizer");
       else if (u.role === "COE") setSelectedRole("coe");
     };
     window.addEventListener("exam-cell-auth-update", handleAuth);
@@ -215,7 +217,11 @@ export default function NotificationsApprovalPage() {
     const deanProcessing = userSyllabi.filter((a) => a.deanStatus === "Pending").length;
     const deanApproved = userSyllabi.filter((a) => a.deanStatus === "Approved").length;
 
-    // 4. COE: Processing = awaiting final COE seal, Approved = locked in Vault
+    // 4. Scrutinizer: Processing = forwarded by Dean, Approved = cleared to COE
+    const scrutinyProcessing = userSyllabi.filter((a) => a.coeStatus === "Waiting_Scrutiny").length;
+    const scrutinyApproved = userSyllabi.filter((a) => a.scrutinyStatus === "Cleared").length;
+
+    // 5. COE: Processing = awaiting final COE seal, Approved = locked in Vault
     const coeProcessing = userSyllabi.filter((a) => a.coeStatus === "Pending").length;
     const coeApproved = userSyllabi.filter((a) => a.coeStatus === "Approved").length;
 
@@ -224,6 +230,7 @@ export default function NotificationsApprovalPage() {
       staff: { processing: staffProcessing, approved: staffApproved, completed: userSyllabi.filter((a) => a.staffStatus !== "Draft").length },
       hod: { processing: hodProcessing, approved: hodApproved },
       dean: { processing: deanProcessing, approved: deanApproved },
+      scrutinizer: { processing: scrutinyProcessing, approved: scrutinyApproved },
       coe: { processing: coeProcessing, approved: coeApproved },
     };
   }, [userSyllabi]);
@@ -265,6 +272,9 @@ export default function NotificationsApprovalPage() {
         } else if (selectedRole === "dean") {
           if (statusFilter === "pending" && item.deanStatus !== "Pending") return false;
           if (statusFilter === "approved" && item.deanStatus !== "Approved") return false;
+        } else if (selectedRole === "scrutinizer") {
+          if (statusFilter === "pending" && item.coeStatus !== "Waiting_Scrutiny") return false;
+          if (statusFilter === "approved" && item.scrutinyStatus !== "Cleared") return false;
         } else if (selectedRole === "coe") {
           if (statusFilter === "pending" && item.coeStatus !== "Pending") return false;
           if (statusFilter === "approved" && item.coeStatus !== "Approved") return false;
@@ -292,6 +302,16 @@ export default function NotificationsApprovalPage() {
         deanName: currentUser.name || "Dean Academics",
         deanDate: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
         stage: "coe",
+        // Next: the Scrutinizer; the COE gets it once it is cleared.
+        coeStatus: "Waiting_Scrutiny",
+        scrutinyStatus: "Pending",
+      };
+    } else if (selectedRole === "scrutinizer") {
+      updates = {
+        scrutinyStatus: "Cleared",
+        scrutinyName: currentUser.name || "Scrutinizer",
+        scrutinyDate: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+        // Cleared -> the COE can give final approval.
         coeStatus: "Pending",
       };
     } else if (selectedRole === "coe") {
@@ -342,6 +362,17 @@ export default function NotificationsApprovalPage() {
           lightBg: "#fffbeb",
           borderColor: "#fde68a",
           textColor: "#92400e",
+        };
+      case "scrutinizer":
+        return {
+          title: "Scrutinizer Review",
+          label: "Question & Syllabus Scrutiny before COE",
+          icon: Shield,
+          gradient: "linear-gradient(135deg, #0e7490 0%, #155e75 100%)",
+          accentColor: "#0891b2",
+          lightBg: "#ecfeff",
+          borderColor: "#a5f3fc",
+          textColor: "#155e75",
         };
       case "coe":
         return {
@@ -729,7 +760,7 @@ export default function NotificationsApprovalPage() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(4, 1fr)",
+                gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
                 gap: "14px",
               }}
             >
@@ -1050,7 +1081,113 @@ export default function NotificationsApprovalPage() {
                 </div>
               </div>
 
-              {/* 4. COE Option */}
+              {/* 4. Scrutinizer Option */}
+              <div className={`vfx-tier-card${selectedRole === "scrutinizer" ? " is-active" : ""}`}
+                onClick={() => setSelectedRole("scrutinizer")}
+                style={{
+                  background: selectedRole === "scrutinizer" ? "linear-gradient(135deg, #0e7490 0%, #155e75 100%)" : "#ffffff",
+                  color: selectedRole === "scrutinizer" ? "#ffffff" : "#1e293b",
+                  borderRadius: "14px",
+                  padding: "16px",
+                  border: selectedRole === "scrutinizer" ? "2px solid #67e8f9" : "1px solid #e2e8f0",
+                  boxShadow: selectedRole === "scrutinizer" ? "0 8px 20px rgba(14, 116, 144, 0.25)" : "0 1px 3px rgba(0,0,0,0.02)",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  transform: selectedRole === "scrutinizer" ? "translateY(-2px)" : "none",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div className="vfx-icon-tile"
+                    style={{
+                      width: "36px",
+                      height: "36px",
+                      borderRadius: "10px",
+                      background: selectedRole === "scrutinizer" ? "rgba(255,255,255,0.2)" : "#ecfeff",
+                      color: selectedRole === "scrutinizer" ? "#ffffff" : "#0e7490",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Shield size={18} />
+                  </div>
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 800,
+                      padding: "2px 8px",
+                      borderRadius: "6px",
+                      background: selectedRole === "scrutinizer" ? "rgba(255,255,255,0.25)" : "#ecfeff",
+                      color: selectedRole === "scrutinizer" ? "#ffffff" : "#0e7490",
+                    }}
+                  >
+                    Tier 4
+                  </span>
+                </div>
+                <div>
+                  <div style={{ fontSize: "15px", fontWeight: 800 }}>4. Scrutinizer Review</div>
+                  <div style={{ fontSize: "11px", opacity: 0.8, marginTop: "2px" }}>
+                    Question & Syllabus Scrutiny
+                  </div>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "6px",
+                    borderTop: selectedRole === "scrutinizer" ? "1px solid rgba(255,255,255,0.2)" : "1px solid #f1f5f9",
+                    paddingTop: "10px",
+                    marginTop: "2px",
+                  }}
+                >
+                  {/* Only one status: Processing until verified & forwarded, then Approved. */}
+                  {(stats.scrutinizer.processing > 0 || stats.scrutinizer.approved === 0) && (
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      background: selectedRole === "scrutinizer" ? "rgba(255, 255, 255, 0.18)" : "#fef3c7",
+                      color: selectedRole === "scrutinizer" ? "#ffffff" : "#b45309",
+                      padding: "4px 8px",
+                      borderRadius: "6px",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      border: selectedRole === "scrutinizer" ? "1px solid rgba(255,255,255,0.25)" : "1px solid #fde68a",
+                    }}
+                  >
+                    <Clock size={12} style={{ flexShrink: 0 }} />
+                    <span>Processing: {stats.scrutinizer.processing}</span>
+                  </div>
+                  )}
+
+                  {!(stats.scrutinizer.processing > 0 || stats.scrutinizer.approved === 0) && (
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      background: selectedRole === "scrutinizer" ? "rgba(255, 255, 255, 0.22)" : "#dcfce7",
+                      color: selectedRole === "scrutinizer" ? "#ffffff" : "#15803d",
+                      padding: "4px 8px",
+                      borderRadius: "6px",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      border: selectedRole === "scrutinizer" ? "1px solid rgba(255,255,255,0.35)" : "1px solid #bbf7d0",
+                    }}
+                  >
+                    <CheckCircle2 size={12} style={{ flexShrink: 0 }} />
+                    <span>Approved: {stats.scrutinizer.approved}</span>
+                  </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 5. COE Option */}
               <div className={`vfx-tier-card${selectedRole === "coe" ? " is-active" : ""}`}
                 onClick={() => setSelectedRole("coe")}
                 style={{
@@ -1093,11 +1230,11 @@ export default function NotificationsApprovalPage() {
                       color: selectedRole === "coe" ? "#ffffff" : "#7b4f29",
                     }}
                   >
-                    Tier 4
+                    Tier 5
                   </span>
                 </div>
                 <div>
-                  <div style={{ fontSize: "15px", fontWeight: 800 }}>4. COE Final Approval</div>
+                  <div style={{ fontSize: "15px", fontWeight: 800 }}>5. COE Final Approval</div>
                   <div style={{ fontSize: "11px", opacity: 0.8, marginTop: "2px" }}>
                     Exam Seal & Vault Locking
                   </div>
@@ -1458,6 +1595,16 @@ export default function NotificationsApprovalPage() {
                             </button>
                           )}
 
+                          {currentUser.role === "SCRUTINIZER" && selectedRole === "scrutinizer" && item.coeStatus === "Waiting_Scrutiny" && (
+                            <button
+                              type="button"
+                              onClick={() => handleQuickApprove(item)}
+                              style={{ display: "flex", alignItems: "center", gap: "5px", padding: "6px 14px", borderRadius: "7px", border: "none", background: "linear-gradient(135deg, #0e7490, #155e75)", color: "#ffffff", fontSize: "11.5px", fontWeight: 700, cursor: "pointer" }}
+                            >
+                              <Shield size={13} />
+                              <span>Clear for COE</span>
+                            </button>
+                          )}
                           {currentUser.role === "COE" && selectedRole === "coe" && item.coeStatus === "Pending" && (
                             <button
                               type="button"
@@ -1550,7 +1697,17 @@ export default function NotificationsApprovalPage() {
           { title: "Staff submission", state: (questionBank.length > 0 ? "done" : "current") as TrailState, text: staffText, meta: [item.submittedBy, item.submittedAt].filter(Boolean).join(" · ") },
           { title: "HOD verification", ...tier(item.hodStatus, item.hodName, item.hodDate, { done: "Verified & forwarded", current: "Awaiting HOD verification", waiting: "Not started" }) },
           { title: "Dean approval", ...tier(item.deanStatus, item.deanName, item.deanDate, { done: "Approved & forwarded", current: "Awaiting Dean approval", waiting: "Waiting for HOD" }) },
-          { title: "COE final approval", ...tier(item.coeStatus, item.coeName, item.coeDate, { done: "Final approval complete", current: "Awaiting COE approval", waiting: "Waiting for Dean" }) },
+          {
+            title: "Scrutinizer review",
+            ...(item.scrutinyStatus === "Cleared"
+              ? { state: "done" as TrailState, text: "Cleared & forwarded", meta: [item.scrutinyName, item.scrutinyDate].filter(Boolean).join(" · ") }
+              : item.scrutinyStatus === "Flagged"
+                ? { state: "revision" as TrailState, text: "Flagged by Scrutinizer", meta: [item.scrutinyName, item.scrutinyDate].filter(Boolean).join(" · ") }
+                : item.coeStatus === "Waiting_Scrutiny"
+                  ? { state: "current" as TrailState, text: "Awaiting scrutiny" }
+                  : { state: "waiting" as TrailState, text: "Waiting for Dean" }),
+          },
+          { title: "COE final approval", ...tier(item.coeStatus, item.coeName, item.coeDate, { done: "Final approval complete", current: "Awaiting COE approval", waiting: item.scrutinyStatus ? "Waiting for Scrutinizer" : "Waiting for Dean" }) },
         ];
         // "Verified by HOD HOD" (common role login) -> "Verified by HOD"
         const notes = (item.remarks || "").replace(/\b(HOD|Dean|COE|Scrutinizer|Staff)\s+\1\b/gi, "$1");

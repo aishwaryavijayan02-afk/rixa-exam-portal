@@ -7429,7 +7429,7 @@ html.dark-theme .approval-model-main::after { border-color:rgba(223, 188, 158,.0
 .vr2-title { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.01em; color: #1f140c !important; line-height: 1.25; }
 .vr2-subtitle { margin: 4px 0 0; font-size: 13px; line-height: 1.45; color: #6b5442 !important; overflow-wrap: anywhere; }
 
-.vr2-steps { list-style: none; margin: 0 0 16px; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; position: relative; }
+.vr2-steps { list-style: none; margin: 0 0 16px; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; position: relative; }
 .vr2-step { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; animation: vr2Rise .45s cubic-bezier(.2, .8, .2, 1) both; }
 .vr2-step:nth-child(2) { animation-delay: .08s; } .vr2-step:nth-child(3) { animation-delay: .16s; } .vr2-step:nth-child(4) { animation-delay: .24s; }
 .vr2-step:not(:last-child)::after { content: ""; position: absolute; top: 13px; left: calc(50% + 16px); right: calc(-50% + 16px); height: 2px; background: #e6d6c2; border-radius: 2px; }

@@ -523,7 +523,12 @@ export interface SyllabusApprovalItem {
   deanStatus: "Pending" | "Approved" | "Revision_Requested" | "Waiting_HOD";
   deanName?: string;
   deanDate?: string;
-  coeStatus: "Pending" | "Approved" | "Locked" | "Waiting_Dean";
+  coeStatus: "Pending" | "Approved" | "Locked" | "Waiting_Dean" | "Waiting_Scrutiny";
+  /** Scrutinizer step between Dean approval and COE final approval. */
+  scrutinyStatus?: "Pending" | "Cleared" | "Flagged";
+  scrutinyName?: string;
+  scrutinyDate?: string;
+  scrutinyRemarks?: string;
   coeName?: string;
   coeDate?: string;
   remarks?: string;
@@ -3036,6 +3041,9 @@ export const examStore = {
         q.status = "Approved";
         q.verifiedBy = `${verifierName} (Dean)`;
         q.verifiedRole = "DEAN";
+        // Next step is the Scrutinizer; the COE sees it once it is cleared.
+        q.scrutinyStatus = undefined;
+        q.scrutinyRemarks = undefined;
         lastSubject = q.subject || lastSubject;
         count++;
       }
@@ -3043,13 +3051,13 @@ export const examStore = {
     if (count > 0) {
       saveToStorage("questions", list);
       this.logActivity(
-        `Dean (${verifierName}) approved ${count} question(s) & forwarded to COE`,
+        `Dean (${verifierName}) approved ${count} question(s) & forwarded to the Scrutinizer`,
         "Approval Pipeline",
         `Question IDs: ${ids.slice(0, 5).join(", ")}`
       );
       this.saveNotification({
-        title: `Dean Approval Complete - Ready for COE Question Bank`,
-        description: `${verifierName} (Dean) approved ${count} question(s) for ${lastSubject}. Available now in COE Question Bank for exam paper generation.`,
+        title: `Dean Approval Complete - Sent to Scrutinizer`,
+        description: `${verifierName} (Dean) approved ${count} question(s) for ${lastSubject}. They are now with the Scrutinizer; the COE receives them once cleared.`,
         type: "Approval",
         priority: "High",
         relatedTo: lastSubject,
@@ -3067,7 +3075,9 @@ export const examStore = {
     const idSet = new Set(ids.map(String));
     let lastSubject = "Viscom & VFX";
     list.forEach((q) => {
-      if (idSet.has(String(q.id))) {
+      // Workflow: Dean -> Scrutinizer -> COE. Only questions the Scrutinizer has
+      // cleared can receive the COE's final approval.
+      if (idSet.has(String(q.id)) && q.scrutinyStatus === "Cleared") {
         q.status = "Approved";
         q.verifiedBy = `${verifierName} (COE)`;
         q.verifiedRole = "COE";
