@@ -167,7 +167,7 @@ export default function ManualQuestionForm({
           <span className="mqf-head-icon"><PenLine size={18} /></span>
           <div className="mqf-head-text">
             <h3 id="mqf-title">{isEdit ? "Edit question" : "Add a question manually"}</h3>
-            <p>Fill in the question details. The Bloom&apos;s level is suggested automatically from the question&apos;s action verb.</p>
+            <p>Fill in the question details. Choose the Bloom&apos;s level in the live preview (it is suggested from the question&apos;s action verb).</p>
           </div>
           <button type="button" className="mqf-x" onClick={onClose} aria-label="Close"><X size={18} /></button>
         </header>
@@ -247,25 +247,6 @@ export default function ManualQuestionForm({
             {/* 3. Classification */}
             <section className="mqf-section">
               <div className="mqf-section-title"><span>3</span> Classification</div>
-              <div className="mqf-field">
-                <span>
-                  Bloom&apos;s level
-                  {!draft.bloomTouched && draft.question.trim() && <em className="mqf-suggest"><Sparkles size={12} /> suggested from the question</em>}
-                </span>
-                <div className="mqf-levels">
-                  {BLOOM_LEVELS.map((name, i) => (
-                    <button
-                      key={name}
-                      type="button"
-                      className={levelName === name ? "is-on" : ""}
-                      style={{ "--lv": LEVEL_COLORS[i] } as React.CSSProperties}
-                      onClick={() => setDraft((d) => ({ ...d, bloomLevel: name, bloomTouched: true }))}
-                    >
-                      L{i + 1} · {name}
-                    </button>
-                  ))}
-                </div>
-              </div>
               <div className="mqf-grid">
                 <label className="mqf-field">
                   <span>Marks *</span>
@@ -326,10 +307,24 @@ export default function ManualQuestionForm({
                 <img className="mqf-preview-img" src={draft.imageUrl} alt="" />
               )}
               <div className="mqf-preview-foot">
-                <span className="mqf-level" style={{ color: LEVEL_COLORS[levelIndex - 1], borderColor: `${LEVEL_COLORS[levelIndex - 1]}55`, background: `${LEVEL_COLORS[levelIndex - 1]}12` }}>
-                  L{levelIndex} · {levelName}
-                </span>
+                <label className="mqf-level mqf-level-select" style={{ color: LEVEL_COLORS[levelIndex - 1], borderColor: `${LEVEL_COLORS[levelIndex - 1]}66`, background: `${LEVEL_COLORS[levelIndex - 1]}12` }} title="Choose the Bloom's level">
+                  <select
+                    value={levelName}
+                    onChange={(e) => setDraft((d) => ({ ...d, bloomLevel: e.target.value, bloomTouched: true }))}
+                    aria-label="Bloom's level"
+                    style={{ color: LEVEL_COLORS[levelIndex - 1] }}
+                  >
+                    {BLOOM_LEVELS.map((name, i) => (
+                      <option key={name} value={name}>
+                        L{i + 1} · {name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <span className="mqf-preview-subject">{draft.subject || "No subject selected"}</span>
+              </div>
+              <div className="mqf-preview-hint">
+                {!draft.bloomTouched && draft.question.trim() ? <><Sparkles size={12} /> Bloom&apos;s level suggested from the question — change it above if needed.</> : "Choose the Bloom's level from the dropdown above."}
               </div>
             </div>
           </aside>

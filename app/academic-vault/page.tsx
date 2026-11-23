@@ -2168,18 +2168,13 @@ export default function AcademicVaultPage() {
               </div>
               <p className="qbp-note">
                 {bulkPreviewTab === "bloom"
-                  ? "Section A (MCQ) and Section B (Descriptive), unit-wise from L1 to L6. Use the level dropdown on a question to choose its Bloom's level."
+                  ? "Section A (MCQ) and Section B (Descriptive), unit-wise from L1 to L6."
                   : "The file exactly as it was uploaded."}
               </p>
             </div>
             <div className="qbp-body">
               {bulkPreviewTab === "bloom" ? (
-                <BloomPatternView
-                  questions={parsedBulkQuestions}
-                  onLevelChange={(question, level) =>
-                    setParsedBulkQuestions((list) => list.map((item) => (item === question ? { ...item, bloomLevel: level } : item)))
-                  }
-                />
+                <BloomPatternView questions={parsedBulkQuestions} />
               ) : /* Word question banks: show the original document exactly as uploaded */
               bulkFileUrl && /\.docx$/i.test(bulkFileName) ? (
                 <OriginalQuestionBankPreview name={bulkFileName} url={bulkFileUrl} fileAvailable />

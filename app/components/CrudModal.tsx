@@ -626,13 +626,7 @@ export function ViewModal({
 
               {/* ================= WORD DOCUMENT PAPER PREVIEW (Internal Format) ================= */}
               {questionsList && questionsList.length > 0 && groupQuestionsByUnit && viewMode === "original" && (
-                <BloomPatternView
-                  questions={questionsList as BloomViewQuestion[]}
-                  onLevelChange={(question, level) => {
-                    const stored = question as unknown as QuestionItem;
-                    if (stored && stored.id !== undefined) examStore.updateQuestion(stored.id, { ...stored, bloomLevel: level });
-                  }}
-                />
+                <BloomPatternView questions={questionsList as BloomViewQuestion[]} />
               )}
 
               {questionsList && questionsList.length > 0 && viewMode === "word" && (

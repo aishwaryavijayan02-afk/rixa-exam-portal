@@ -470,13 +470,7 @@ export default function AcademicSubmissions({ schools, initialSchool, onClose }:
               )}
               {viewer.status === "bloom" && (
                 <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
-                  <BloomPatternView
-                    questions={(selected.questions || []) as BloomViewQuestion[]}
-                    onLevelChange={(question, level) => {
-                      const stored = question as unknown as QuestionItem;
-                      if (stored && stored.id !== undefined) examStore.updateQuestion(stored.id, { ...stored, bloomLevel: level });
-                    }}
-                  />
+                  <BloomPatternView questions={(selected.questions || []) as BloomViewQuestion[]} />
                 </div>
               )}
               {viewer.status === "fallback" && (
