@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, Flag, RotateCcw, Search, Send } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Edit3, Flag, RotateCcw, Search, Send } from "lucide-react";
 import { examStore, QuestionItem } from "../lib/examStore";
 import { authStore } from "../lib/auth";
 import { BLOOM_LEVELS, detectExplicitBloomLevel, inferBloomLevel, unitNumber } from "../lib/bloomTaxonomy";
 import { confirmDialog } from "./ConfirmDialog";
+import ManualQuestionForm from "./ManualQuestionForm";
 
 type ScrutinyFilter = "Pending" | "Cleared" | "Flagged" | "All";
 const LEVEL_COLORS = ["#64748b", "#0e7490", "#15803d", "#b45309", "#9333ea", "#be123c"];
@@ -49,7 +50,8 @@ function questionIssues(q: QuestionItem, duplicates: Set<string>): string[] {
  */
 export default function ScrutinyQuestionReview({ subject, onToast }: { subject?: string; onToast?: (message: string, type?: "success" | "danger") => void }) {
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
-  const [filter, setFilter] = useState<ScrutinyFilter>("Pending");
+  const [filter, setFilter] = useState<ScrutinyFilter>("All");
+  const [editing, setEditing] = useState<QuestionItem | null>(null);
   const [search, setSearch] = useState("");
   const [flagDraft, setFlagDraft] = useState<{ id: string; remark: string } | null>(null);
   const toast = (message: string, type: "success" | "danger" = "success") => onToast?.(message, type);
@@ -202,7 +204,12 @@ export default function ScrutinyQuestionReview({ subject, onToast }: { subject?:
           <span style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 10px", borderRadius: "999px", border: "1px solid #a5f3fc", background: "#ecfeff", color: "#0e7490", fontSize: "11.5px", fontWeight: 800, whiteSpace: "nowrap" }}>
             <Send size={12} /> Forwarded to COE
           </span>
-        ) : (
+        ) : null}
+        {q.scrutinyForwarded && (q.verifiedRole || "").toUpperCase() !== "COE" ? (
+          <button type="button" onClick={() => setEditing(q)} style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", gap: "5px", padding: "6px 10px", borderRadius: "7px", border: "1px solid #deba9b", background: "#ffffff", color: "#774c28", fontSize: "11.5px", fontWeight: 800, cursor: "pointer" }}>
+            <Edit3 size={13} /> Edit
+          </button>
+        ) : q.scrutinyForwarded ? null : (
           <div style={{ display: "flex", flexDirection: "column", gap: "6px", flexShrink: 0 }}>
             {status !== "Cleared" && (
               <button type="button" onClick={() => saveScrutiny(q, "Cleared")} style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "6px 10px", borderRadius: "7px", border: "1px solid #86efac", background: "#f0fdf4", color: "#15803d", fontSize: "11.5px", fontWeight: 800, cursor: "pointer" }}>
@@ -219,6 +226,11 @@ export default function ScrutinyQuestionReview({ subject, onToast }: { subject?:
                 <RotateCcw size={13} /> Reset
               </button>
             )}
+            {(q.verifiedRole || "").toUpperCase() !== "COE" && (
+              <button type="button" onClick={() => setEditing(q)} style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "6px 10px", borderRadius: "7px", border: "1px solid #deba9b", background: "#ffffff", color: "#774c28", fontSize: "11.5px", fontWeight: 800, cursor: "pointer" }}>
+                <Edit3 size={13} /> Edit
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -230,7 +242,10 @@ export default function ScrutinyQuestionReview({ subject, onToast }: { subject?:
   return (
     <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "20px 22px", boxShadow: "0 4px 16px rgba(0,0,0,0.02)", marginBottom: "4px" }}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
-        <h3 style={{ fontSize: "15px", fontWeight: 800, margin: 0, color: "#0f172a" }}>Question review — unit-wise</h3>
+        <div>
+          <h3 style={{ fontSize: "15px", fontWeight: 800, margin: 0, color: "#0f172a" }}>Question review — unit-wise</h3>
+          <div style={{ fontSize: "12px", color: "#64748b", marginTop: "3px" }}>Every question approved by the Dean. Edits made here are what the COE receives.</div>
+        </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
           <div style={{ position: "relative" }}>
             <Search size={14} style={{ position: "absolute", left: "9px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
@@ -281,6 +296,20 @@ export default function ScrutinyQuestionReview({ subject, onToast }: { subject?:
           ))}
         </div>
       )}
+      <ManualQuestionForm
+        isOpen={Boolean(editing)}
+        initial={editing}
+        subjects={Array.from(new Set(questions.filter((x) => x.sourceFile && x.subject).map((x) => x.subject))).sort()}
+        onClose={() => setEditing(null)}
+        onSave={(data) => {
+          if (!editing) return;
+          // Same record: the workflow stage stays, so the COE gets the edited question.
+          examStore.updateQuestion(editing.id, { ...editing, ...data });
+          setQuestions(examStore.getQuestions());
+          setEditing(null);
+          toast("Question updated. The COE will receive this version.");
+        }}
+      />
     </div>
   );
 }
