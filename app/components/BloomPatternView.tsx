@@ -25,7 +25,7 @@ function useCountUp(value: number, duration = 900) {
   return shown;
 }
 
-function StatTile({ label, value, icon: Icon, accent, index }: { label: string; value: number; icon: React.ElementType; accent: string; index: number }) {
+export function StatTile({ label, value, icon: Icon, accent, index }: { label: string; value: number; icon: React.ElementType; accent: string; index: number }) {
   const shown = useCountUp(value);
   return (
     <div className="bpv-tile" style={{ "--tile-accent": accent, animationDelay: `${index * 70}ms` } as React.CSSProperties}>

@@ -11,6 +11,8 @@ import RoleGuard from "../components/RoleGuard";
 import ManualQuestionForm from "../components/ManualQuestionForm";
 import ForwardToCoeBar from "../components/ForwardToCoeBar";
 import ScrutinyQuestionReview from "../components/ScrutinyQuestionReview";
+import { StatTile } from "../components/BloomPatternView";
+import { ListChecks, PenLine } from "lucide-react";
 import {
   ViewModal,
   FormModal,
@@ -868,24 +870,18 @@ export default function ManualQuestionsPage() {
             </button>
           </div>
 
-          {/* Summary */}
+          {/* Summary: animated tiles (same design as the Bloom's summary) */}
           {(() => {
-            const role = (q: QuestionItem) => (q.verifiedRole || "").toUpperCase();
             const live = storeQuestions.filter((q) => !["Rejected", "Archived"].includes(q.status));
-            const items = [
-              { label: "Total questions", value: live.length, accent: "#774c28" },
-              { label: "MCQ", value: live.filter((q) => q.type === "MCQ").length, accent: "#0e7490" },
-              { label: "Descriptive", value: live.filter((q) => q.type !== "MCQ").length, accent: "#15803d" },
-              { label: "With HOD / Dean", value: live.filter((q) => !(q.status === "Approved" && ["DEAN", "COE"].includes(role(q)))).length, accent: "#b45309" },
-              { label: "Forwarded to COE", value: live.filter((q) => q.scrutinyForwarded || role(q) === "COE").length, accent: "#7e22ce" },
+            const tiles = [
+              { label: "Total questions", value: live.length, icon: FileText, accent: "#774c28" },
+              { label: "MCQ", value: live.filter((q) => q.type === "MCQ").length, icon: ListChecks, accent: "#0e7490" },
+              { label: "Descriptive", value: live.filter((q) => q.type !== "MCQ").length, icon: PenLine, accent: "#15803d" },
             ];
             return (
-              <div className="mq-stats">
-                {items.map((item) => (
-                  <div key={item.label} className="mq-stat" style={{ "--mq-accent": item.accent } as React.CSSProperties}>
-                    <div className="mq-stat-value">{item.value}</div>
-                    <div className="mq-stat-label">{item.label}</div>
-                  </div>
+              <div className="mq-stats bpv-stats">
+                {tiles.map((tile, index) => (
+                  <StatTile key={tile.label} label={tile.label} value={tile.value} icon={tile.icon} accent={tile.accent} index={index} />
                 ))}
               </div>
             );
