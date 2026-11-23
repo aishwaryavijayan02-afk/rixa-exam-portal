@@ -48,9 +48,21 @@ function questionIssues(q: QuestionItem, duplicates: Set<string>): string[] {
  * Clear all pending) for Dean-approved questions. Limited to `subject` when
  * given; otherwise grouped by subject, then unit.
  */
-export default function ScrutinyQuestionReview({ subject, onToast }: { subject?: string; onToast?: (message: string, type?: "success" | "danger") => void }) {
+export default function ScrutinyQuestionReview({
+  subject,
+  onToast,
+  mode = "scrutinizer",
+}: {
+  subject?: string;
+  onToast?: (message: string, type?: "success" | "danger") => void;
+  /** "coe": questions the Scrutinizer forwarded, for the COE's final approval. */
+  mode?: "scrutinizer" | "coe";
+}) {
+  const isCoe = mode === "coe";
+  const filterOptions = isCoe ? ["Awaiting final approval", "Final approved", "All"] : ["Pending", "Cleared", "Flagged", "All"];
+  const roleOf = (q: QuestionItem) => (q.verifiedRole || "").toUpperCase();
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
-  const [filter, setFilter] = useState<ScrutinyFilter>("All");
+  const [filter, setFilter] = useState<string>("All");
   const [editing, setEditing] = useState<QuestionItem | null>(null);
   const [search, setSearch] = useState("");
   const [flagDraft, setFlagDraft] = useState<{ id: string; remark: string } | null>(null);
@@ -67,9 +79,15 @@ export default function ScrutinyQuestionReview({ subject, onToast }: { subject?:
   const inScope = useMemo(
     () =>
       questions.filter(
-        (q) => q.status === "Approved" && ["DEAN", "COE"].includes((q.verifiedRole || "").toUpperCase()) && (!subject || sameSubject(q.subject, subject)),
+        (q) =>
+          q.status === "Approved" &&
+          (isCoe
+            ? roleOf(q) === "COE" || (roleOf(q) === "DEAN" && Boolean(q.scrutinyForwarded)) // forwarded by the Scrutinizer, or finalised
+            : ["DEAN", "COE"].includes(roleOf(q))) &&
+          (!subject || sameSubject(q.subject, subject)),
       ),
-    [questions, subject],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [questions, subject, isCoe],
   );
   const upcoming = useMemo(
     () => questions.filter((q) => !inScope.includes(q) && !["Rejected", "Draft", "Archived"].includes(q.status) && (!subject || sameSubject(q.subject, subject))).length,
@@ -90,7 +108,7 @@ export default function ScrutinyQuestionReview({ subject, onToast }: { subject?:
   const grouped = useMemo(() => {
     const term = search.trim().toLowerCase();
     const visible = inScope
-      .filter((q) => (filter === "All" ? true : filter === "Pending" ? !q.scrutinyStatus : q.scrutinyStatus === filter))
+      .filter((q) => (filter === "All" ? true : isCoe ? (filter === "Final approved" ? roleOf(q) === "COE" : roleOf(q) !== "COE") : filter === "Pending" ? !q.scrutinyStatus : q.scrutinyStatus === filter))
       .filter((q) => !term || (q.question || "").toLowerCase().includes(term) || (q.code || "").toLowerCase().includes(term));
     const bySubject = new Map<string, Map<string, { unit: string; order: number; mcq: QuestionItem[]; descriptive: QuestionItem[] }>>();
     visible.forEach((q) => {
@@ -109,7 +127,8 @@ export default function ScrutinyQuestionReview({ subject, onToast }: { subject?:
         subject: name,
         units: [...units.values()].sort((a, b) => a.order - b.order).map((u) => ({ ...u, mcq: u.mcq.sort(byLevel), descriptive: u.descriptive.sort(byLevel) })),
       }));
-  }, [inScope, filter, search]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inScope, filter, search, isCoe]);
 
   const saveScrutiny = (q: QuestionItem, status: "Cleared" | "Flagged" | null, remarks = "") => {
     examStore.updateQuestion(q.id, {
@@ -200,6 +219,25 @@ export default function ScrutinyQuestionReview({ subject, onToast }: { subject?:
             </div>
           )}
         </div>
+        {isCoe ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px", flexShrink: 0 }}>
+            {roleOf(q) === "COE" ? (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 10px", borderRadius: "999px", border: "1px solid #a7f3d0", background: "#ecfdf5", color: "#047857", fontSize: "11.5px", fontWeight: 800, whiteSpace: "nowrap" }}>
+                <CheckCircle2 size={12} /> Final approved
+              </span>
+            ) : (
+              <>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 10px", borderRadius: "999px", border: "1px solid #fde68a", background: "#fffbeb", color: "#b45309", fontSize: "11.5px", fontWeight: 800, whiteSpace: "nowrap" }}>
+                  Awaiting final approval
+                </span>
+                <button type="button" onClick={() => setEditing(q)} style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "6px 10px", borderRadius: "7px", border: "1px solid #deba9b", background: "#ffffff", color: "#774c28", fontSize: "11.5px", fontWeight: 800, cursor: "pointer" }}>
+                  <Edit3 size={13} /> Edit
+                </button>
+              </>
+            )}
+          </div>
+        ) : (
+          <>
         {q.scrutinyForwarded ? (
           <span style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 10px", borderRadius: "999px", border: "1px solid #a5f3fc", background: "#ecfeff", color: "#0e7490", fontSize: "11.5px", fontWeight: 800, whiteSpace: "nowrap" }}>
             <Send size={12} /> Forwarded to COE
@@ -233,6 +271,8 @@ export default function ScrutinyQuestionReview({ subject, onToast }: { subject?:
             )}
           </div>
         )}
+          </>
+        )}
       </div>
     );
   };
@@ -244,28 +284,28 @@ export default function ScrutinyQuestionReview({ subject, onToast }: { subject?:
       <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
         <div>
           <h3 style={{ fontSize: "15px", fontWeight: 800, margin: 0, color: "#0f172a" }}>Question review — unit-wise</h3>
-          <div style={{ fontSize: "12px", color: "#64748b", marginTop: "3px" }}>Every question approved by the Dean. Edits made here are what the COE receives.</div>
+          <div style={{ fontSize: "12px", color: "#64748b", marginTop: "3px" }}>{isCoe ? "Questions forwarded by the Scrutinizer. Give final approval to lock them for question paper printing." : "Every question approved by the Dean. Edits made here are what the COE receives."}</div>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
           <div style={{ position: "relative" }}>
             <Search size={14} style={{ position: "absolute", left: "9px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search questions" style={{ padding: "7px 10px 7px 28px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "12.5px", width: "190px" }} />
           </div>
-          {(["Pending", "Cleared", "Flagged", "All"] as ScrutinyFilter[]).map((f) => (
+          {filterOptions.map((f) => (
             <button key={f} type="button" onClick={() => setFilter(f)} style={{ padding: "7px 12px", borderRadius: "8px", border: "1px solid #deba9b", background: filter === f ? "#774c28" : "#ffffff", color: filter === f ? "#ffffff" : "#774c28", fontSize: "12px", fontWeight: 800, cursor: "pointer" }}>
               {f}
             </button>
           ))}
-          <button type="button" onClick={clearAllPending} disabled={!pendingCount} style={{ padding: "7px 12px", borderRadius: "8px", border: "1px solid #86efac", background: pendingCount ? "#15803d" : "#f1f5f9", color: pendingCount ? "#ffffff" : "#94a3b8", fontSize: "12px", fontWeight: 800, cursor: pendingCount ? "pointer" : "not-allowed" }}>
+          {!isCoe && <button type="button" onClick={clearAllPending} disabled={!pendingCount} style={{ padding: "7px 12px", borderRadius: "8px", border: "1px solid #86efac", background: pendingCount ? "#15803d" : "#f1f5f9", color: pendingCount ? "#ffffff" : "#94a3b8", fontSize: "12px", fontWeight: 800, cursor: pendingCount ? "pointer" : "not-allowed" }}>
             Clear all pending
-          </button>
+          </button>}
         </div>
       </div>
 
       {inScope.length === 0 ? (
         <div style={{ padding: "28px", textAlign: "center", color: "#64748b", fontSize: "13px" }}>
-          No questions have reached the Scrutinizer yet{subject ? ` for ${subject}` : ""}.
-          {upcoming > 0 ? ` ${upcoming} question${upcoming === 1 ? " is" : "s are"} still with the HOD / Dean.` : ""} Questions appear here after Dean approval.
+          {isCoe ? "No questions have been forwarded by the Scrutinizer yet" : "No questions have reached the Scrutinizer yet"}{subject ? ` for ${subject}` : ""}.
+          {upcoming > 0 ? ` ${upcoming} question${upcoming === 1 ? " is" : "s are"} still with the HOD / Dean / Scrutinizer.` : ""} {isCoe ? "Questions appear here after the Scrutinizer forwards them." : "Questions appear here after Dean approval."}
         </div>
       ) : grouped.length === 0 ? (
         <div style={{ padding: "24px", textAlign: "center", color: "#64748b", fontSize: "13px" }}>No {filter === "All" ? "" : filter.toLowerCase()} questions.</div>
@@ -307,7 +347,7 @@ export default function ScrutinyQuestionReview({ subject, onToast }: { subject?:
           examStore.updateQuestion(editing.id, { ...editing, ...data });
           setQuestions(examStore.getQuestions());
           setEditing(null);
-          toast("Question updated. The COE will receive this version.");
+          toast(isCoe ? "Question updated." : "Question updated. The COE will receive this version.");
         }}
       />
     </div>

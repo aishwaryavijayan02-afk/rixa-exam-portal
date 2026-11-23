@@ -10,6 +10,7 @@ import { SCRUTINY_MENU_ITEMS } from "../lib/scrutinyMenu";
 import RoleGuard from "../components/RoleGuard";
 import ManualQuestionForm from "../components/ManualQuestionForm";
 import ForwardToCoeBar from "../components/ForwardToCoeBar";
+import CoeFinalApprovalBar from "../components/CoeFinalApprovalBar";
 import ScrutinyQuestionReview from "../components/ScrutinyQuestionReview";
 import { StatTile } from "../components/BloomPatternView";
 import { ListChecks, PenLine } from "lucide-react";
@@ -863,7 +864,7 @@ export default function ManualQuestionsPage() {
             <div>
               <div className="mq-kicker">Question bank</div>
               <h1 className="mq-title">Manual Questions</h1>
-              <p className="mq-sub">Add questions by hand and review them with the uploaded question banks before they go to the COE.</p>
+              <p className="mq-sub">{currentUser.role === "COE" ? "Review the questions forwarded by the Scrutinizer and give final approval for question paper printing." : "Add questions by hand and review them with the uploaded question banks before they go to the COE."}</p>
             </div>
             <button type="button" className="approval-model-approve-button approval-model-forward-button mq-add" onClick={() => setIsAddingQuestion(true)}>
               <Plus size={17} strokeWidth={2.6} /> Add New Question
@@ -894,8 +895,8 @@ export default function ManualQuestionsPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
 
               {/* Card 2: Manual Questions List Table */}
-              {currentUser.role === "SCRUTINIZER" ? (
-                <ScrutinyQuestionReview subject={selectedSubject !== "all" ? selectedSubject : undefined} onToast={(message) => setToast(message)} />
+              {currentUser.role === "SCRUTINIZER" || currentUser.role === "COE" ? (
+                <ScrutinyQuestionReview mode={currentUser.role === "COE" ? "coe" : "scrutinizer"} subject={selectedSubject !== "all" ? selectedSubject : undefined} onToast={(message) => setToast(message)} />
               ) : (
               <div
                 className="widget-card-3d"
@@ -1609,6 +1610,9 @@ export default function ManualQuestionsPage() {
               {/* Scrutinizer final step: Verify & Forward to COE (for the selected subject, or all) */}
               {currentUser.role === "SCRUTINIZER" && (
                 <ForwardToCoeBar subject={selectedSubject !== "all" ? selectedSubject : undefined} />
+              )}
+              {currentUser.role === "COE" && (
+                <CoeFinalApprovalBar subject={selectedSubject !== "all" ? selectedSubject : undefined} />
               )}
             </div>
           </div>
