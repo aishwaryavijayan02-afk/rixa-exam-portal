@@ -1558,7 +1558,6 @@ export default function NotificationsApprovalPage() {
           ["Submitted by", item.submittedBy || "—"],
           ["Email", item.submitterEmail || "—"],
           ["Submitted on", item.submittedAt || "—"],
-          ["Syllabus scope", `${item.totalUnits || 5} units · ${item.totalTopics || 20} topics`],
         ];
         return (
           <div className="sdm-overlay" onClick={() => setInspectedItem(null)}>
