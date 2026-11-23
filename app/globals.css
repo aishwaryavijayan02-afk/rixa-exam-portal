@@ -7464,7 +7464,7 @@ html.dark-theme .approval-model-main::after { border-color:rgba(223, 188, 158,.0
 @media (prefers-reduced-motion: reduce) { .vr2-step, .vr2-step-dot, .vr2-bloom-bar span { animation: none !important; } }
 
 /* ===== Scrutinizer: Verify & Forward to COE bar ===== */
-.scr-forward { position: relative; z-index: 1; margin: 0 0 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 16px 20px; border-radius: 16px; border: 1px solid #d9c3a8; background: linear-gradient(120deg, #fffaf3 0%, #f6ead9 100%); box-shadow: 0 14px 34px -10px rgba(74, 47, 29, .35); animation: scrRise .4s cubic-bezier(.2, .8, .2, 1) both; }
+.scr-forward { position: relative; z-index: 1; margin: 20px 0 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 16px 20px; border-radius: 16px; border: 1px solid #d9c3a8; background: linear-gradient(120deg, #fffaf3 0%, #f6ead9 100%); box-shadow: 0 14px 34px -10px rgba(74, 47, 29, .35); animation: scrRise .4s cubic-bezier(.2, .8, .2, 1) both; }
 .scr-forward-info { min-width: 0; }
 .scr-forward-kicker { font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #0e7490; }
 .scr-forward-title { margin-top: 2px; font-size: 16px; font-weight: 800; color: #1f140c; }

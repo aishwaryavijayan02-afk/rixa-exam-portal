@@ -1464,11 +1464,6 @@ export default function ManualQuestionsPage() {
                 </div>
               </div>
 
-              {/* Scrutinizer final step: Verify & Forward to COE (for the selected subject, or all) */}
-              {currentUser.role === "SCRUTINIZER" && (
-                <ForwardToCoeBar subject={selectedSubject !== "all" ? selectedSubject : undefined} onDone={(message) => setToast(message)} />
-              )}
-
               {/* Card 2: Manual Questions List Table */}
               <div
                 className="widget-card-3d"
@@ -2177,6 +2172,11 @@ export default function ManualQuestionsPage() {
                   itemName="questions"
                 />
               </div>
+
+              {/* Scrutinizer final step: Verify & Forward to COE (for the selected subject, or all) */}
+              {currentUser.role === "SCRUTINIZER" && (
+                <ForwardToCoeBar subject={selectedSubject !== "all" ? selectedSubject : undefined} onDone={(message) => setToast(message)} />
+              )}
             </div>
           </div>
 
