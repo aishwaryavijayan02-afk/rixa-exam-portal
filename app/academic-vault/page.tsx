@@ -415,17 +415,17 @@ export default function AcademicVaultPage() {
       route: "/manual-questions",
     },
     {
-      id: "notifications",
-      label: "Notifications",
-      icon: Bell,
-      route: "/notifications",
-    },
-    {
       id: "print-paper",
       label: "Print Question Paper",
       icon: Printer,
       badge: "Print",
       route: "/print-paper",
+    },
+    {
+      id: "notifications",
+      label: "Notifications",
+      icon: Bell,
+      route: "/notifications",
     },
     { id: "settings", label: "Settings", icon: Settings, route: "/settings" },
   ];

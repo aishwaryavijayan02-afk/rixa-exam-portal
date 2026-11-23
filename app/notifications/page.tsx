@@ -106,8 +106,8 @@ export default function NotificationsApprovalPage() {
     { id: "verify-approval", label: "Verify & Approval", icon: CheckSquare, route: "/approval" },
     { id: "reports", label: "Reports", icon: BarChart2, route: "/reports" },
     { id: "manual-questions", label: "Manual Questions", icon: Edit3, badge: "New", route: "/manual-questions" },
-    { id: "notifications", label: "Notifications", icon: Bell, route: "/notifications" },
     { id: "print-paper", label: "Print Question Paper", icon: Printer, badge: "Print", route: "/print-paper" },
+    { id: "notifications", label: "Notifications", icon: Bell, route: "/notifications" },
     { id: "settings", label: "Settings", icon: Settings, hasArrow: true, route: "/settings" },
   ];
 
