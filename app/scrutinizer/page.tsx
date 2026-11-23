@@ -595,13 +595,22 @@ export default function ScrutinizerPage() {
                     </div>
                   )}
                 </div>
+              </>
+            )}
 
-                {/* Verify & Forward to COE (common action for the subject) */}
-                <div className="scr-forward">
-                  <div className="scr-forward-info">
-                    <div className="scr-forward-kicker">Final step · Scrutinizer</div>
-                    <div className="scr-forward-title">Verify &amp; forward {subject} to the COE</div>
-                    <div className="scr-forward-stats">
+            {/* Verify & Forward to COE: always visible; enabled once the Dean has forwarded work */}
+            <div className="scr-forward">
+              <div className="scr-forward-info">
+                <div className="scr-forward-kicker">Final step · Scrutinizer</div>
+                <div className="scr-forward-title">{subjects.length ? <>Verify &amp; forward {subject} to the COE</> : "Verify & forward to the COE"}</div>
+                <div className="scr-forward-stats">
+                  {subjects.length === 0 ? (
+                    <>
+                      <span className="is-warn">Waiting for Dean approval</span>
+                      {upcomingCount > 0 && <span><b>{upcomingCount}</b> question{upcomingCount === 1 ? "" : "s"} still with the HOD / Dean</span>}
+                    </>
+                  ) : (
+                    <>
                       <span><b>{forwardSummary.toForward}</b> question{forwardSummary.toForward === 1 ? "" : "s"} ready</span>
                       {forwardSummary.pending > 0 && <span className="is-warn"><b>{forwardSummary.pending}</b> not yet reviewed</span>}
                       {forwardSummary.flagged > 0 && <span className="is-flag"><b>{forwardSummary.flagged}</b> flagged (stay with you)</span>}
@@ -611,14 +620,14 @@ export default function ScrutinizerPage() {
                           Syllabus: <b>{syllabusForwarded ? "forwarded" : subjectSyllabus.scrutinyStatus === "Flagged" ? "flagged" : "ready"}</b>
                         </span>
                       )}
-                    </div>
-                  </div>
-                  <button type="button" className="scr-forward-btn" onClick={verifyAndForward} disabled={!forwardSummary.toForward && !forwardSummary.syllabusReady}>
-                    <Send size={16} /> Verify &amp; Forward to COE
-                  </button>
+                    </>
+                  )}
                 </div>
-              </>
-            )}
+              </div>
+              <button type="button" className="scr-forward-btn" onClick={verifyAndForward} disabled={subjects.length === 0 || (!forwardSummary.toForward && !forwardSummary.syllabusReady)}>
+                <Send size={16} /> Verify &amp; Forward to COE
+              </button>
+            </div>
             <PortalFooter />
           </main>
         </div>
