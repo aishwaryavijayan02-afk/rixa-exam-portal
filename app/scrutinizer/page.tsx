@@ -515,52 +515,6 @@ export default function ScrutinizerPage() {
                     )}
                   </div>
                 )}
-
-                {/* Question review */}
-                <div style={card}>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
-                    <h3 style={{ fontSize: "15px", fontWeight: 800, margin: 0 }}>Question review — unit-wise</h3>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
-                      <div style={{ position: "relative" }}>
-                        <Search size={14} style={{ position: "absolute", left: "9px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
-                        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search questions" style={{ padding: "7px 10px 7px 28px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "12.5px", width: "190px" }} />
-                      </div>
-                      {(["Pending", "Cleared", "Flagged", "All"] as ScrutinyFilter[]).map((f) => (
-                        <button key={f} type="button" onClick={() => setFilter(f)} style={{ padding: "7px 12px", borderRadius: "8px", border: "1px solid #deba9b", background: filter === f ? "#774c28" : "#ffffff", color: filter === f ? "#ffffff" : "#774c28", fontSize: "12px", fontWeight: 800, cursor: "pointer" }}>
-                          {f}
-                        </button>
-                      ))}
-                      <button type="button" onClick={clearAllPending} disabled={!selectedSubject?.pending} style={{ padding: "7px 12px", borderRadius: "8px", border: "1px solid #86efac", background: selectedSubject?.pending ? "#15803d" : "#f1f5f9", color: selectedSubject?.pending ? "#ffffff" : "#94a3b8", fontSize: "12px", fontWeight: 800, cursor: selectedSubject?.pending ? "pointer" : "not-allowed" }}>
-                        Clear all pending
-                      </button>
-                    </div>
-                  </div>
-
-                  {grouped.length === 0 ? (
-                    <div style={{ padding: "24px", textAlign: "center", color: "#64748b", fontSize: "13px" }}>No {filter === "All" ? "" : filter.toLowerCase()} questions in this subject.</div>
-                  ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                      {grouped.map((group) => (
-                        <section key={group.unit} style={{ border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden" }}>
-                          <div style={{ padding: "10px 14px", background: "linear-gradient(90deg, #ecfeff, #f8fafc)", borderLeft: "4px solid #754b27", color: "#4c311f", fontSize: "14.5px", fontWeight: 800 }}>
-                            {group.unit}
-                            <span style={{ marginLeft: "10px", fontSize: "11.5px", fontWeight: 700, color: "#64748b" }}>
-                              {group.mcq.length} MCQ · {group.descriptive.length} Descriptive
-                            </span>
-                          </div>
-                          {([["Part A — Multiple Choice Questions (MCQ)", group.mcq], ["Part B — Descriptive Questions", group.descriptive]] as const).map(([title, items]) =>
-                            items.length === 0 ? null : (
-                              <div key={title}>
-                                <div style={{ padding: "8px 14px", fontSize: "12px", fontWeight: 800, color: "#774c28", background: "#fffdfa", letterSpacing: "0.02em" }}>{title}</div>
-                                {items.map((q, i) => renderQuestion(q, i))}
-                              </div>
-                            ),
-                          )}
-                        </section>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </>
             )}
 

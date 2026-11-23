@@ -10,6 +10,7 @@ import { SCRUTINY_MENU_ITEMS } from "../lib/scrutinyMenu";
 import RoleGuard from "../components/RoleGuard";
 import ManualQuestionForm from "../components/ManualQuestionForm";
 import ForwardToCoeBar from "../components/ForwardToCoeBar";
+import ScrutinyQuestionReview from "../components/ScrutinyQuestionReview";
 import {
   ViewModal,
   FormModal,
@@ -1465,6 +1466,9 @@ export default function ManualQuestionsPage() {
               </div>
 
               {/* Card 2: Manual Questions List Table */}
+              {currentUser.role === "SCRUTINIZER" ? (
+                <ScrutinyQuestionReview subject={selectedSubject !== "all" ? selectedSubject : undefined} onToast={(message) => setToast(message)} />
+              ) : (
               <div
                 className="widget-card-3d"
                 style={{
@@ -2172,6 +2176,7 @@ export default function ManualQuestionsPage() {
                   itemName="questions"
                 />
               </div>
+              )}
 
               {/* Scrutinizer final step: Verify & Forward to COE (for the selected subject, or all) */}
               {currentUser.role === "SCRUTINIZER" && (
