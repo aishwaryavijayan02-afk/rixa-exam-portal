@@ -81,6 +81,8 @@ export interface QuestionItem {
   uploadedOnBehalfBy?: string;
   /** Scrutinizer's review of the question (set from the Scrutiny dashboard). */
   scrutinyStatus?: "Cleared" | "Flagged";
+  /** Set when the Scrutinizer presses "Verify & Forward to COE". */
+  scrutinyForwarded?: boolean;
   scrutinyRemarks?: string;
   scrutinizedBy?: string;
   scrutinizedAt?: string;
@@ -3043,6 +3045,7 @@ export const examStore = {
         q.verifiedRole = "DEAN";
         // Next step is the Scrutinizer; the COE sees it once it is cleared.
         q.scrutinyStatus = undefined;
+        q.scrutinyForwarded = undefined;
         q.scrutinyRemarks = undefined;
         lastSubject = q.subject || lastSubject;
         count++;
@@ -3077,7 +3080,7 @@ export const examStore = {
     list.forEach((q) => {
       // Workflow: Dean -> Scrutinizer -> COE. Only questions the Scrutinizer has
       // cleared can receive the COE's final approval.
-      if (idSet.has(String(q.id)) && q.scrutinyStatus === "Cleared") {
+      if (idSet.has(String(q.id)) && q.scrutinyStatus === "Cleared" && q.scrutinyForwarded) {
         q.status = "Approved";
         q.verifiedBy = `${verifierName} (COE)`;
         q.verifiedRole = "COE";

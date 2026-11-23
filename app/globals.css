@@ -7463,6 +7463,24 @@ html.dark-theme .approval-model-main::after { border-color:rgba(223, 188, 158,.0
 @media (max-width: 480px) { .vr-card.vr2-card { padding: 22px 16px 18px; } .vr2-step-label { font-size: 10px; } }
 @media (prefers-reduced-motion: reduce) { .vr2-step, .vr2-step-dot, .vr2-bloom-bar span { animation: none !important; } }
 
+/* ===== Scrutinizer: Verify & Forward to COE bar ===== */
+.scr-forward { position: sticky; bottom: 12px; z-index: 5; margin-top: 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 16px 20px; border-radius: 16px; border: 1px solid #d9c3a8; background: linear-gradient(120deg, #fffaf3 0%, #f6ead9 100%); box-shadow: 0 14px 34px -10px rgba(74, 47, 29, .35); animation: scrRise .4s cubic-bezier(.2, .8, .2, 1) both; }
+.scr-forward-info { min-width: 0; }
+.scr-forward-kicker { font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #0e7490; }
+.scr-forward-title { margin-top: 2px; font-size: 16px; font-weight: 800; color: #1f140c; }
+.scr-forward-stats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.scr-forward-stats span { padding: 3px 10px; border-radius: 999px; background: #ffffff; border: 1px solid #e6d6c2; font-size: 12px; color: #5c4634; }
+.scr-forward-stats span b { color: #1f140c; }
+.scr-forward-stats span.is-warn { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+.scr-forward-stats span.is-flag { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
+.scr-forward-stats span.is-done { background: #ecfeff; border-color: #a5f3fc; color: #155e75; }
+.scr-forward-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; border-radius: 12px; border: 1px solid #155e75; background: linear-gradient(135deg, #0e7490 0%, #155e75 100%); color: #ffffff; font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 10px 22px rgba(14, 116, 144, .35); transition: transform .15s ease, filter .15s ease, box-shadow .15s ease; }
+.scr-forward-btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.06); box-shadow: 0 14px 28px rgba(14, 116, 144, .42); }
+.scr-forward-btn:disabled { cursor: not-allowed; background: #e2e8f0; border-color: #cbd5e1; color: #94a3b8; box-shadow: none; }
+@keyframes scrRise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@media (max-width: 640px) { .scr-forward { bottom: 8px; padding: 14px; } .scr-forward-btn { width: 100%; justify-content: center; } }
+@media (prefers-reduced-motion: reduce) { .scr-forward { animation: none; } }
+
 /* ===== Manual question form (components/ManualQuestionForm.tsx) ===== */
 .mqf-overlay { position: fixed; inset: 0; z-index: 1100; display: flex; align-items: center; justify-content: center; padding: 18px; background: rgba(40, 26, 17, .6); backdrop-filter: blur(5px); animation: sdmFade .2s ease-out both; }
 .mqf-card { width: 100%; max-width: 1080px; max-height: 94vh; display: flex; flex-direction: column; overflow: hidden; border-radius: 18px; background: #fffdfa; border: 1px solid #ecdfcc; box-shadow: 0 30px 70px -16px rgba(42, 26, 15, .5); animation: sdmIn .3s cubic-bezier(.2, .9, .25, 1.1) both; color: #1f140c; font-family: 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif; }

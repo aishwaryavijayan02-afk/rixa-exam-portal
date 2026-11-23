@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   AlertTriangle,
   FileText,
+  Send,
 } from "lucide-react";
 import { examStore, QuestionItem, SyllabusApprovalItem } from "../lib/examStore";
 import { authStore, AuthUser } from "../lib/auth";
@@ -217,16 +218,50 @@ export default function ScrutinizerPage() {
   const subjectSyllabus = scrutinySyllabi.find((s) => sameSubject(s.courseName, subject));
   const scrutinyStamp = () => new Date().toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
   const clearSyllabus = (item: SyllabusApprovalItem) => {
-    // Cleared -> goes to the COE for final approval.
-    examStore.updateSyllabusApproval(item.id, { scrutinyStatus: "Cleared", scrutinyName: currentUser.name, scrutinyDate: scrutinyStamp(), scrutinyRemarks: undefined, coeStatus: "Pending" });
+    // Cleared here; it reaches the COE when "Verify & Forward to COE" is pressed.
+    examStore.updateSyllabusApproval(item.id, { scrutinyStatus: "Cleared", scrutinyName: currentUser.name, scrutinyDate: scrutinyStamp(), scrutinyRemarks: undefined });
     setSyllabi(examStore.getSyllabusApprovals());
-    showToast(`Syllabus "${item.courseName}" cleared and sent to the COE.`);
+    showToast(`Syllabus "${item.courseName}" cleared. Press "Verify & Forward to COE" to send it.`);
   };
   const flagSyllabus = (item: SyllabusApprovalItem, remark: string) => {
     examStore.updateSyllabusApproval(item.id, { scrutinyStatus: "Flagged", scrutinyName: currentUser.name, scrutinyDate: scrutinyStamp(), scrutinyRemarks: remark, coeStatus: "Waiting_Scrutiny" });
     setSyllabi(examStore.getSyllabusApprovals());
     setSyllabusFlag(null);
     showToast(`Syllabus "${item.courseName}" flagged.`);
+  };
+
+  // ---- "Verify & Forward to COE" for the selected subject ----
+  const syllabusForwarded = Boolean(subjectSyllabus && subjectSyllabus.scrutinyStatus === "Cleared" && subjectSyllabus.coeStatus !== "Waiting_Scrutiny");
+  const forwardSummary = {
+    toForward: subjectQuestions.filter((q) => !q.scrutinyForwarded && q.scrutinyStatus !== "Flagged").length,
+    pending: subjectQuestions.filter((q) => !q.scrutinyForwarded && !q.scrutinyStatus).length,
+    flagged: subjectQuestions.filter((q) => !q.scrutinyForwarded && q.scrutinyStatus === "Flagged").length,
+    forwarded: subjectQuestions.filter((q) => q.scrutinyForwarded).length,
+    syllabusReady: Boolean(subjectSyllabus && subjectSyllabus.scrutinyStatus !== "Flagged" && subjectSyllabus.coeStatus === "Waiting_Scrutiny"),
+  };
+  const verifyAndForward = async () => {
+    const items = subjectQuestions.filter((q) => !q.scrutinyForwarded && q.scrutinyStatus !== "Flagged");
+    const sendSyllabus = forwardSummary.syllabusReady && subjectSyllabus;
+    if (!items.length && !sendSyllabus) {
+      showToast(forwardSummary.flagged ? "Only flagged items remain. Resolve or reset them first." : "Nothing left to forward for this subject.", "danger");
+      return;
+    }
+    const parts = [items.length ? `${items.length} question${items.length === 1 ? "" : "s"}` : "", sendSyllabus ? "the syllabus" : ""].filter(Boolean).join(" and ");
+    const ok = await confirmDialog(
+      `Verify and forward ${parts} for ${subject} to the COE for final approval?${forwardSummary.pending ? ` ${forwardSummary.pending} unreviewed question${forwardSummary.pending === 1 ? " will be" : "s will be"} marked as cleared.` : ""}${forwardSummary.flagged ? ` ${forwardSummary.flagged} flagged question${forwardSummary.flagged === 1 ? " stays" : "s stay"} with you.` : ""}`,
+      { title: "Verify & forward to COE", confirmLabel: "Verify & Forward" },
+    );
+    if (!ok) return;
+    const stamp = scrutinyStamp();
+    items.forEach((q) =>
+      examStore.updateQuestion(q.id, { ...q, scrutinyStatus: "Cleared", scrutinyForwarded: true, scrutinizedBy: q.scrutinizedBy || currentUser.name, scrutinizedAt: q.scrutinizedAt || stamp }),
+    );
+    if (sendSyllabus) {
+      examStore.updateSyllabusApproval(sendSyllabus.id, { scrutinyStatus: "Cleared", scrutinyName: sendSyllabus.scrutinyName || currentUser.name, scrutinyDate: sendSyllabus.scrutinyDate || stamp, coeStatus: "Pending" });
+    }
+    setQuestions(examStore.getQuestions());
+    setSyllabi(examStore.getSyllabusApprovals());
+    showToast(`${parts.charAt(0).toUpperCase()}${parts.slice(1)} forwarded to the COE.`);
   };
 
   const clearAllPending = async () => {
@@ -317,6 +352,11 @@ export default function ScrutinizerPage() {
             </div>
           )}
         </div>
+        {q.scrutinyForwarded ? (
+          <span style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 10px", borderRadius: "999px", border: "1px solid #a5f3fc", background: "#ecfeff", color: "#0e7490", fontSize: "11.5px", fontWeight: 800, whiteSpace: "nowrap" }}>
+            <Send size={12} /> Forwarded to COE
+          </span>
+        ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "6px", flexShrink: 0 }}>
           {status !== "Cleared" && (
             <button type="button" onClick={() => saveScrutiny(q, "Cleared")} style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "6px 10px", borderRadius: "7px", border: "1px solid #86efac", background: "#f0fdf4", color: "#15803d", fontSize: "11.5px", fontWeight: 800, cursor: "pointer" }}>
@@ -334,6 +374,7 @@ export default function ScrutinizerPage() {
             </button>
           )}
         </div>
+        )}
       </div>
     );
   };
@@ -480,7 +521,7 @@ export default function ScrutinizerPage() {
                         </div>
                       </div>
                       <span style={{ padding: "4px 12px", borderRadius: "999px", fontSize: "12px", fontWeight: 800, border: "1px solid", ...(subjectSyllabus.scrutinyStatus === "Cleared" ? { background: "#ecfdf5", color: "#047857", borderColor: "#a7f3d0" } : subjectSyllabus.scrutinyStatus === "Flagged" ? { background: "#fff7ed", color: "#c2410c", borderColor: "#fed7aa" } : { background: "#fffbeb", color: "#b45309", borderColor: "#fde68a" }) }}>
-                        {subjectSyllabus.scrutinyStatus === "Cleared" ? "Cleared · sent to COE" : subjectSyllabus.scrutinyStatus === "Flagged" ? "Flagged" : "Awaiting scrutiny"}
+                        {subjectSyllabus.scrutinyStatus === "Cleared" ? (subjectSyllabus.coeStatus === "Waiting_Scrutiny" ? "Cleared · ready to forward" : "Forwarded to COE") : subjectSyllabus.scrutinyStatus === "Flagged" ? "Flagged" : "Awaiting scrutiny"}
                       </span>
                     </div>
                     {subjectSyllabus.scrutinyStatus === "Flagged" && subjectSyllabus.scrutinyRemarks && (
@@ -496,7 +537,7 @@ export default function ScrutinizerPage() {
                       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                         {subjectSyllabus.scrutinyStatus !== "Cleared" && (
                           <button type="button" onClick={() => clearSyllabus(subjectSyllabus)} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "7px 12px", borderRadius: "8px", border: "1px solid #86efac", background: "#15803d", color: "#ffffff", fontSize: "12px", fontWeight: 800, cursor: "pointer" }}>
-                            <CheckCircle2 size={14} /> Clear syllabus &amp; send to COE
+                            <CheckCircle2 size={14} /> Clear syllabus
                           </button>
                         )}
                         {subjectSyllabus.scrutinyStatus !== "Flagged" && subjectSyllabus.coeStatus !== "Approved" && (
@@ -553,6 +594,28 @@ export default function ScrutinizerPage() {
                       ))}
                     </div>
                   )}
+                </div>
+
+                {/* Verify & Forward to COE (common action for the subject) */}
+                <div className="scr-forward">
+                  <div className="scr-forward-info">
+                    <div className="scr-forward-kicker">Final step · Scrutinizer</div>
+                    <div className="scr-forward-title">Verify &amp; forward {subject} to the COE</div>
+                    <div className="scr-forward-stats">
+                      <span><b>{forwardSummary.toForward}</b> question{forwardSummary.toForward === 1 ? "" : "s"} ready</span>
+                      {forwardSummary.pending > 0 && <span className="is-warn"><b>{forwardSummary.pending}</b> not yet reviewed</span>}
+                      {forwardSummary.flagged > 0 && <span className="is-flag"><b>{forwardSummary.flagged}</b> flagged (stay with you)</span>}
+                      {forwardSummary.forwarded > 0 && <span className="is-done"><b>{forwardSummary.forwarded}</b> already forwarded</span>}
+                      {subjectSyllabus && (
+                        <span className={syllabusForwarded ? "is-done" : subjectSyllabus.scrutinyStatus === "Flagged" ? "is-flag" : ""}>
+                          Syllabus: <b>{syllabusForwarded ? "forwarded" : subjectSyllabus.scrutinyStatus === "Flagged" ? "flagged" : "ready"}</b>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <button type="button" className="scr-forward-btn" onClick={verifyAndForward} disabled={!forwardSummary.toForward && !forwardSummary.syllabusReady}>
+                    <Send size={16} /> Verify &amp; Forward to COE
+                  </button>
                 </div>
               </>
             )}

@@ -144,7 +144,7 @@ export default function ApprovalPage() {
         const verifiedRole = (q.verifiedRole || "").toUpperCase();
         if (currentUser.role === "HOD") return q.status === "Pending";
         if (currentUser.role === "DEAN") return q.status === "Verified" || (q.status === "Approved" && verifiedRole === "HOD");
-        if (currentUser.role === "COE") return q.status === "Approved" && verifiedRole === "DEAN" && q.scrutinyStatus === "Cleared";
+        if (currentUser.role === "COE") return q.status === "Approved" && verifiedRole === "DEAN" && q.scrutinyStatus === "Cleared" && Boolean(q.scrutinyForwarded);
         return q.status === "Verified";
       })
       .map((q) => q.id);
@@ -290,7 +290,7 @@ export default function ApprovalPage() {
     const verifiedRole = (question.verifiedRole || "").toUpperCase();
     if (currentUser.role === "HOD") return question.status === "Pending";
     if (currentUser.role === "DEAN") return question.status === "Verified" || (question.status === "Approved" && verifiedRole === "HOD");
-    if (currentUser.role === "COE") return question.status === "Approved" && verifiedRole === "DEAN" && question.scrutinyStatus === "Cleared";
+    if (currentUser.role === "COE") return question.status === "Approved" && verifiedRole === "DEAN" && question.scrutinyStatus === "Cleared" && Boolean(question.scrutinyForwarded);
     return question.status === "Verified";
   });
   const normalizeStaffName = (value: string) => value.toLowerCase().replace(/^(mr\.|mrs\.|ms\.|dr\.|prof\.)\s*/i, "").trim();
@@ -434,7 +434,7 @@ export default function ApprovalPage() {
     const verifiedRole = (q.verifiedRole || "").toUpperCase();
     if (currentUser.role === "HOD") return q.status === "Pending";
     if (currentUser.role === "DEAN") return q.status === "Verified" || (q.status === "Approved" && verifiedRole === "HOD");
-    if (currentUser.role === "COE") return q.status === "Approved" && verifiedRole === "DEAN" && q.scrutinyStatus === "Cleared";
+    if (currentUser.role === "COE") return q.status === "Approved" && verifiedRole === "DEAN" && q.scrutinyStatus === "Cleared" && Boolean(q.scrutinyForwarded);
     return q.status === "Verified";
   });
 
