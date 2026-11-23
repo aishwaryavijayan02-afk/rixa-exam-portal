@@ -147,23 +147,8 @@ export default function ScrutinyQuestionReview({ subject, onToast }: { subject?:
             </div>
           )}
           <div style={{ marginTop: "7px", display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center", fontSize: "11px", fontWeight: 700 }}>
-            <select
-              value={BLOOM_LEVELS[level - 1]}
-              onChange={(e) => {
-                examStore.updateQuestion(q.id, { ...q, bloomLevel: e.target.value });
-                setQuestions(examStore.getQuestions());
-                toast(`Bloom's level set to ${e.target.value}.`);
-              }}
-              aria-label="Bloom's level"
-              title="Choose the Bloom's level"
-              style={{ padding: "2px 22px 2px 8px", borderRadius: "999px", border: "none", color: "#ffffff", background: LEVEL_COLORS[level - 1], fontSize: "11px", fontWeight: 700, cursor: "pointer", appearance: "auto" }}
-            >
-              {BLOOM_LEVELS.map((name, i) => (
-                <option key={name} value={name} style={{ color: "#1f140c", background: "#ffffff" }}>
-                  L{i + 1} · {name}
-                </option>
-              ))}
-            </select>
+            {/* Bloom's level as uploaded (read-only here) */}
+            <span style={{ padding: "2px 8px", borderRadius: "999px", color: "#ffffff", background: LEVEL_COLORS[level - 1] }}>L{level} · {BLOOM_LEVELS[level - 1]}</span>
             <span style={{ padding: "2px 8px", borderRadius: "999px", background: "#f1f5f9", color: "#475569" }}>{q.marks || 0} marks</span>
             {q.correctAnswer && isMcq(q) && <span style={{ padding: "2px 8px", borderRadius: "999px", background: "#f1f5f9", color: "#475569" }}>Answer: {q.correctAnswer}</span>}
             <span style={{ padding: "2px 8px", borderRadius: "999px", background: "#fdf4ec", color: "#774c28" }}>Approval: {q.status}</span>
