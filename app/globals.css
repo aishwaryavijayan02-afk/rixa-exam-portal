@@ -7463,6 +7463,32 @@ html.dark-theme .approval-model-main::after { border-color:rgba(223, 188, 158,.0
 @media (max-width: 480px) { .vr-card.vr2-card { padding: 22px 16px 18px; } .vr2-step-label { font-size: 10px; } }
 @media (prefers-reduced-motion: reduce) { .vr2-step, .vr2-step-dot, .vr2-bloom-bar span { animation: none !important; } }
 
+/* ===== Academic Vault: question bank preview popup ===== */
+.qbp-overlay { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(40, 26, 17, .58); backdrop-filter: blur(5px); animation: sdmFade .2s ease-out both; }
+.qbp-card { width: min(1180px, 100%); max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; border-radius: 20px; background: #fbf7f1; border: 1px solid #ecdfcc; box-shadow: 0 30px 80px -18px rgba(42, 26, 15, .5); animation: sdmIn .3s cubic-bezier(.2, .9, .25, 1.1) both; font-family: 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif; }
+.qbp-head { display: flex; align-items: center; gap: 14px; padding: 18px 22px; background: linear-gradient(180deg, #fffaf3 0%, #ffffff 100%); border-bottom: 1px solid #efe5d8; }
+.qbp-head-icon { flex: 0 0 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; background: linear-gradient(135deg, #8b5a2b, #5a3a24); color: #ffffff; box-shadow: 0 6px 14px rgba(90, 58, 36, .3); }
+.qbp-head-text { flex: 1; min-width: 0; }
+.qbp-kicker { font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: #a46937; }
+.qbp-title { margin-top: 2px; font-size: 19px; font-weight: 850; color: #1f140c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qbp-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.qbp-meta span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 2px 10px; border-radius: 999px; background: #f6ebdd; color: #6b4426; font-size: 11.5px; font-weight: 700; }
+.qbp-x { flex: 0 0 36px; height: 36px; border-radius: 50%; border: 1px solid #ecdfcc; background: #ffffff; color: #6b5442; display: grid; place-items: center; cursor: pointer; transition: transform .2s ease, background .2s ease; }
+.qbp-x:hover { background: #f6ebdd; transform: rotate(90deg); }
+.qbp-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 22px; background: #ffffff; border-bottom: 1px solid #efe5d8; }
+.qbp-tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: 12px; background: #f4ece2; border: 1px solid #ecdfcf; }
+.qbp-tabs button { padding: 8px 16px; border: none; border-radius: 9px; background: transparent; color: #6b5442; font-size: 12.5px; font-weight: 800; cursor: pointer; transition: background .15s ease, color .15s ease, box-shadow .15s ease; }
+.qbp-tabs button.is-on { background: #774c28; color: #ffffff; box-shadow: 0 4px 10px rgba(119, 76, 40, .3); }
+.qbp-note { margin: 0; font-size: 12px; color: #8a7462; }
+.qbp-body { flex: 1; min-height: 0; overflow: auto; padding: 18px 22px 24px; }
+@media (max-width: 640px) { .qbp-head, .qbp-toolbar, .qbp-body { padding-left: 14px; padding-right: 14px; } .qbp-title { white-space: normal; } }
+
+/* Bloom's level chooser in the Bloom pattern view */
+.bpv-level.bpv-level-select { padding: 1px 4px 1px 10px; cursor: pointer; }
+.bpv-level-select select { border: none; background: transparent; font: inherit; font-weight: 800; font-size: 11.5px; padding: 2px 2px; cursor: pointer; outline: none; }
+.bpv-level-select select:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 6px; }
+.bpv-level-select select option { color: #1f140c; background: #ffffff; }
+
 /* ===== Manual Questions page: header and summary ===== */
 .mq-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; padding: 22px 24px; border: 1px solid #ecdfcf; border-radius: 18px; background: radial-gradient(circle at 0% 0%, rgba(214, 170, 132, .16), transparent 45%), linear-gradient(180deg, #fffaf3 0%, #ffffff 100%); box-shadow: 0 6px 20px rgba(74, 47, 29, .05); }
 .mq-kicker { font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: #a46937; }

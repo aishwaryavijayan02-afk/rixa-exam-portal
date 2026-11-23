@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { X, Trash2, Edit3, Eye, CheckCircle2, AlertTriangle, Save, Info, Sparkles, Check, FileText, Printer, Layers, School, FileCheck } from "lucide-react";
 import { getQuestionBankDocument } from "../lib/questionBankDocuments";
 import BloomPatternView, { type BloomViewQuestion } from "./BloomPatternView";
+import { examStore, type QuestionItem } from "../lib/examStore";
 
 // ======================== VIEW MODAL ========================
 export interface ViewField {
@@ -625,7 +626,13 @@ export function ViewModal({
 
               {/* ================= WORD DOCUMENT PAPER PREVIEW (Internal Format) ================= */}
               {questionsList && questionsList.length > 0 && groupQuestionsByUnit && viewMode === "original" && (
-                <BloomPatternView questions={questionsList as BloomViewQuestion[]} />
+                <BloomPatternView
+                  questions={questionsList as BloomViewQuestion[]}
+                  onLevelChange={(question, level) => {
+                    const stored = question as unknown as QuestionItem;
+                    if (stored && stored.id !== undefined) examStore.updateQuestion(stored.id, { ...stored, bloomLevel: level });
+                  }}
+                />
               )}
 
               {questionsList && questionsList.length > 0 && viewMode === "word" && (

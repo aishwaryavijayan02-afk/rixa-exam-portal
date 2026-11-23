@@ -47,6 +47,8 @@ export interface BloomViewQuestion {
   bloomLevel?: string;
   options?: string[];
   correctAnswer?: string;
+  /** Internal: position in the list passed to the view. */
+  __index?: number;
 }
 
 const LEVEL_COLORS = ["#64748b", "#0e7490", "#15803d", "#b45309", "#7e22ce", "#be123c"];
@@ -81,8 +83,24 @@ function groupByUnit(questions: BloomViewQuestion[]) {
     .map((g) => ({ ...g, items: [...g.items].sort((a, b) => levelOf(a) - levelOf(b)) }));
 }
 
-function LevelChip({ level, name }: { level: number; name?: string }) {
+function LevelChip({ level, name, onChange }: { level: number; name?: string; onChange?: (level: string) => void }) {
   const color = level ? LEVEL_COLORS[level - 1] : "#94a3b8";
+  if (onChange) {
+    // Choose the Bloom's level yourself.
+    return (
+      <span className="bpv-level bpv-level-select" style={{ color, borderColor: `${color}66`, background: `${color}12` }}>
+        <span className="bpv-level-dot" style={{ background: color }} />
+        <select value={level ? BLOOM_LEVELS[level - 1] : ""} onChange={(e) => onChange(e.target.value)} aria-label="Bloom's level" style={{ color }}>
+          {!level && <option value="">Choose level</option>}
+          {BLOOM_LEVELS.map((levelName, i) => (
+            <option key={levelName} value={levelName}>
+              L{i + 1} · {levelName}
+            </option>
+          ))}
+        </select>
+      </span>
+    );
+  }
   return (
     <span className="bpv-level" style={{ color, borderColor: `${color}55`, background: `${color}12` }}>
       <span className="bpv-level-dot" style={{ background: color }} />
@@ -96,7 +114,22 @@ function LevelChip({ level, name }: { level: number; name?: string }) {
  * original paper: Section A (all MCQ) then Section B (all Descriptive), each
  * arranged unit-wise and ordered L1 Remember → L6 Create.
  */
-export default function BloomPatternView({ questions }: { questions: BloomViewQuestion[] }) {
+export default function BloomPatternView({
+  questions: sourceQuestions,
+  onLevelChange,
+}: {
+  questions: BloomViewQuestion[];
+  /** When given, each question's Bloom's level can be chosen from a dropdown. */
+  onLevelChange?: (question: BloomViewQuestion, level: string) => void;
+}) {
+  // Levels chosen here show immediately (summary, distribution and ordering).
+  const [overrides, setOverrides] = useState<Record<number, string>>({});
+  useEffect(() => setOverrides({}), [sourceQuestions]);
+  const questions = sourceQuestions.map((q, i) => ({ ...q, bloomLevel: overrides[i] ?? q.bloomLevel, __index: i }));
+  const chooseLevel = (q: { __index: number }, level: string) => {
+    setOverrides((prev) => ({ ...prev, [q.__index]: level }));
+    onLevelChange?.(sourceQuestions[q.__index], level);
+  };
   if (!questions.length) return <div className="bpv-empty">No questions were found in this file.</div>;
 
   const mcq = questions.filter(isMcq);
@@ -211,7 +244,7 @@ export default function BloomPatternView({ questions }: { questions: BloomViewQu
                           )}
                         </div>
                         <div className="bpv-q-side">
-                          <LevelChip level={level} name={q.bloomLevel} />
+                          <LevelChip level={level} name={q.bloomLevel} onChange={onLevelChange ? (value) => chooseLevel({ __index: q.__index ?? 0 }, value) : undefined} />
                           <span className="bpv-marks">{q.marks ?? "—"} {q.marks === 1 ? "mark" : "marks"}</span>
                         </div>
                       </li>

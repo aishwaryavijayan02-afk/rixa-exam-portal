@@ -2141,50 +2141,45 @@ export default function AcademicVaultPage() {
       {showBulkPreview && bulkFileName && (
         <div
           onClick={() => setShowBulkPreview(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 1000,
-            background: "rgba(40, 26, 17, 0.56)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "24px",
-          }}
+          className="qbp-overlay"
         >
-          <div
-            onClick={(event) => event.stopPropagation()}
-            style={{
-              width: "min(1180px, 100%)",
-              maxHeight: "90vh",
-              background: "#f8fafc",
-              borderRadius: "18px",
-              boxShadow: "0 24px 80px rgba(40, 26, 17, 0.35)",
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 22px", borderBottom: "1px solid #e2e8f0" }}>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}><span style={{ width: "38px", height: "38px", borderRadius: "11px", display: "grid", placeItems: "center", color: "#774c28", background: "linear-gradient(145deg, #cffafe, #e0f2fe)" }}><FileText size={19} /></span><span style={{ fontSize: "18px", fontWeight: 850, color: "#0f172a" }}>Question Bank Preview</span></div>
-                <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>{bulkFileName} · {parsedBulkCount} questions</div>
+          <div onClick={(event) => event.stopPropagation()} className="qbp-card" role="dialog" aria-modal="true" aria-label="Question bank preview">
+            <header className="qbp-head">
+              <span className="qbp-head-icon"><FileText size={20} /></span>
+              <div className="qbp-head-text">
+                <div className="qbp-kicker">Question bank preview</div>
+                <div className="qbp-title">{bulkSubjectInfo?.name || bulkSubject || "Uploaded question bank"}</div>
+                <div className="qbp-meta">
+                  <span title={bulkFileName}>{bulkFileName}</span>
+                  <span>{parsedBulkCount} questions</span>
+                </div>
               </div>
-              <button type="button" onClick={() => setShowBulkPreview(false)} aria-label="Close preview" style={{ border: "none", background: "#f1f5f9", color: "#475569", borderRadius: "8px", width: "34px", height: "34px", cursor: "pointer", display: "grid", placeItems: "center" }}>
+              <button type="button" onClick={() => setShowBulkPreview(false)} aria-label="Close preview" className="qbp-x">
                 <X size={18} />
               </button>
-            </div>
-            <div style={{ overflow: "auto", padding: "20px 22px 24px" }}>
-              <div style={{ marginBottom: "16px", padding: "12px 15px", borderRadius: "10px", border: "1px solid #dbeafe", background: "linear-gradient(100deg, #eff6ff, #f0fdfa)", color: "#475569", fontSize: "12px" }}><strong style={{ color: "#0f172a" }}>Check before importing.</strong> Questions are arranged in the Bloom&apos;s Taxonomy pattern like the original paper — Section A (MCQ) and Section B (Descriptive), each unit-wise from L1 to L6. You can also view the original file.</div>
-              <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+            </header>
+            <div className="qbp-toolbar">
+              <div className="qbp-tabs" role="tablist" aria-label="Preview">
                 {([["bloom", "Bloom's Taxonomy Pattern"], ["original", "Original File"]] as const).map(([key, label]) => (
-                  <button key={key} type="button" onClick={() => setBulkPreviewTab(key)} style={{ padding: "8px 14px", borderRadius: "8px", border: "1px solid #deba9b", background: bulkPreviewTab === key ? "#774c28" : "#ffffff", color: bulkPreviewTab === key ? "#ffffff" : "#774c28", fontSize: "12px", fontWeight: 800, cursor: "pointer" }}>
+                  <button key={key} type="button" role="tab" aria-selected={bulkPreviewTab === key} className={bulkPreviewTab === key ? "is-on" : ""} onClick={() => setBulkPreviewTab(key)}>
                     {label}
                   </button>
                 ))}
               </div>
+              <p className="qbp-note">
+                {bulkPreviewTab === "bloom"
+                  ? "Section A (MCQ) and Section B (Descriptive), unit-wise from L1 to L6. Use the level dropdown on a question to choose its Bloom's level."
+                  : "The file exactly as it was uploaded."}
+              </p>
+            </div>
+            <div className="qbp-body">
               {bulkPreviewTab === "bloom" ? (
-                <BloomPatternView questions={parsedBulkQuestions} />
+                <BloomPatternView
+                  questions={parsedBulkQuestions}
+                  onLevelChange={(question, level) =>
+                    setParsedBulkQuestions((list) => list.map((item) => (item === question ? { ...item, bloomLevel: level } : item)))
+                  }
+                />
               ) : /* Word question banks: show the original document exactly as uploaded */
               bulkFileUrl && /\.docx$/i.test(bulkFileName) ? (
                 <OriginalQuestionBankPreview name={bulkFileName} url={bulkFileUrl} fileAvailable />
