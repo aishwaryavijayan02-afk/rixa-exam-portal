@@ -1608,7 +1608,7 @@ export default function ManualQuestionsPage() {
 
               {/* Scrutinizer final step: Verify & Forward to COE (for the selected subject, or all) */}
               {currentUser.role === "SCRUTINIZER" && (
-                <ForwardToCoeBar subject={selectedSubject !== "all" ? selectedSubject : undefined} onDone={(message) => setToast(message)} />
+                <ForwardToCoeBar subject={selectedSubject !== "all" ? selectedSubject : undefined} />
               )}
             </div>
           </div>

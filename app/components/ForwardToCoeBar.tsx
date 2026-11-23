@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Check, Sparkles } from "lucide-react";
 import { examStore, QuestionItem, SyllabusApprovalItem } from "../lib/examStore";
 import { alertDialog, confirmDialog } from "./ConfirmDialog";
+import { VerificationResultModal, type VerificationDetails } from "./CrudModal";
 
 const subjectKey = (value?: string) => (value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 const sameSubject = (a?: string, b?: string) => {
@@ -21,6 +22,8 @@ const stamp = () => new Date().toLocaleString("en-GB", { day: "2-digit", month: 
 export default function ForwardToCoeBar({ subject, onDone }: { subject?: string; onDone?: (message: string, ok: boolean) => void }) {
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
   const [syllabi, setSyllabi] = useState<SyllabusApprovalItem[]>([]);
+  // Result popup after forwarding (same as the HOD / Dean verification popup).
+  const [result, setResult] = useState<{ count: number; details: VerificationDetails; questions: { bloomLevel?: string }[]; remarks: string } | null>(null);
 
   useEffect(() => {
     const load = () => {
@@ -95,6 +98,23 @@ export default function ForwardToCoeBar({ subject, onDone }: { subject?: string;
     );
     setQuestions(examStore.getQuestions());
     setSyllabi(examStore.getSyllabusApprovals());
+    const forwardedQuestions = summary.toForward;
+    const subjects = Array.from(new Set([...forwardedQuestions.map((q) => q.subject), ...summary.syllabiToForward.map((s) => s.courseName)].filter(Boolean)));
+    const faculty = Array.from(new Set([...summary.syllabiToForward.map((s) => s.submittedBy), ...forwardedQuestions.map((q) => q.uploadedBy)].filter(Boolean)));
+    const syllabusNames = summary.syllabiToForward.map((s) => s.documentName || s.courseName).filter(Boolean);
+    setResult({
+      count: qCount,
+      questions: forwardedQuestions,
+      details: {
+        stage: "SCRUTINIZER",
+        subject: subject || subjects.join(", ") || undefined,
+        facultyName: faculty.join(", ") || undefined,
+        syllabusName: syllabusNames.join(", ") || undefined,
+        verifierName: user === "Scrutinizer" ? "Scrutinizer" : `Scrutinizer ${user}`,
+        forwardedTo: "COE (final approval)",
+      },
+      remarks: `${parts.charAt(0).toUpperCase()}${parts.slice(1)} verified by the Scrutinizer and forwarded to the COE for final approval.`,
+    });
     onDone?.(`${parts.charAt(0).toUpperCase()}${parts.slice(1)} forwarded to the COE.`, true);
   };
 
@@ -112,6 +132,15 @@ export default function ForwardToCoeBar({ subject, onDone }: { subject?: string;
         <Check size={16} strokeWidth={3} />
         Approve &amp; Forward to COE
       </button>
+      <VerificationResultModal
+        isOpen={Boolean(result)}
+        onClose={() => setResult(null)}
+        title="Scrutiny Complete!"
+        verifiedCount={result?.count ?? 0}
+        details={result?.details}
+        questions={result?.questions}
+        remarks={result?.remarks}
+      />
     </div>
   );
 }
