@@ -82,35 +82,16 @@ export default function ForwardToCoeBar({ subject, onDone }: { subject?: string;
     onDone?.(`${parts.charAt(0).toUpperCase()}${parts.slice(1)} forwarded to the COE.`, true);
   };
 
+  // Just the action: a single "Verify & Forward to COE" button.
   return (
-    <div className="scr-forward">
-      <div className="scr-forward-info">
-        <div className="scr-forward-kicker">Final step · Scrutinizer</div>
-        <div className="scr-forward-title">{subject ? `Verify & forward ${subject} to the COE` : "Verify & forward to the COE"}</div>
-        <div className="scr-forward-stats">
-          {nothingYet ? (
-            <>
-              <span className="is-warn">Waiting for Dean approval</span>
-              {summary.upcoming > 0 && (
-                <span>
-                  <b>{summary.upcoming}</b> question{summary.upcoming === 1 ? "" : "s"} still with the HOD / Dean
-                </span>
-              )}
-            </>
-          ) : (
-            <>
-              <span>
-                <b>{summary.toForward.length}</b> question{summary.toForward.length === 1 ? "" : "s"} ready
-              </span>
-              {summary.pending > 0 && <span className="is-warn"><b>{summary.pending}</b> not yet reviewed</span>}
-              {summary.flagged > 0 && <span className="is-flag"><b>{summary.flagged}</b> flagged</span>}
-              {summary.forwarded > 0 && <span className="is-done"><b>{summary.forwarded}</b> already forwarded</span>}
-              {summary.syllabiToForward.length > 0 && <span><b>{summary.syllabiToForward.length}</b> syllab{summary.syllabiToForward.length === 1 ? "us" : "i"} ready</span>}
-            </>
-          )}
-        </div>
-      </div>
-      <button type="button" className="scr-forward-btn" onClick={forward} disabled={!canForward}>
+    <div className="scr-forward-row">
+      <button
+        type="button"
+        className="scr-forward-btn"
+        onClick={forward}
+        disabled={!canForward}
+        title={canForward ? undefined : nothingYet ? "Waiting for Dean approval" : "Nothing left to forward"}
+      >
         <Send size={16} /> Verify &amp; Forward to COE
       </button>
     </div>
