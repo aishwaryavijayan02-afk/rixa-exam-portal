@@ -707,7 +707,57 @@ export default function NotificationsApprovalPage() {
                   <ArrowRight size={18} strokeWidth={2.5} />
                 </div>
 
-                {/* 4. COE Node */}
+                {/* 4. Scrutinizer Node */}
+                <div className={`vfx-step-node${selectedRole === "scrutinizer" ? " is-active" : ""}`}
+                  onClick={() => setSelectedRole("scrutinizer")}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "8px 16px",
+                    borderRadius: "12px",
+                    background: selectedRole === "scrutinizer" ? "linear-gradient(135deg, #0e7490 0%, #155e75 100%)" : "#f8fafc",
+                    color: selectedRole === "scrutinizer" ? "#ffffff" : "#334155",
+                    border: selectedRole === "scrutinizer" ? "2px solid #67e8f9" : "1px solid #e2e8f0",
+                    boxShadow: selectedRole === "scrutinizer" ? "0 4px 14px rgba(14, 116, 144, 0.35)" : "none",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    transform: selectedRole === "scrutinizer" ? "scale(1.03)" : "scale(1)",
+                  }}
+                >
+                  <div className="vfx-icon-tile"
+                    style={{
+                      width: "30px",
+                      height: "30px",
+                      borderRadius: "8px",
+                      background: selectedRole === "scrutinizer" ? "rgba(255,255,255,0.22)" : "#ecfeff",
+                      color: selectedRole === "scrutinizer" ? "#ffffff" : "#0e7490",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "12px",
+                      fontWeight: 800,
+                    }}
+                  >
+                    <Shield size={16} />
+                  </div>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span style={{ fontSize: "10px", fontWeight: 800, opacity: selectedRole === "scrutinizer" ? 0.9 : 0.6, letterSpacing: "0.04em" }}>04</span>
+                      <span style={{ fontSize: "13.5px", fontWeight: 800 }}>Scrutinizer</span>
+                    </div>
+                    <div style={{ fontSize: "10.5px", opacity: selectedRole === "scrutinizer" ? 0.9 : 0.65 }}>
+                      Quality Scrutiny
+                    </div>
+                  </div>
+                </div>
+
+                {/* Arrow Connector 4 -> 5 */}
+                <div className="vfx-step-arrow" style={{ display: "flex", alignItems: "center", color: selectedRole === "scrutinizer" ? "#0e7490" : "#94a3b8" }}>
+                  <ArrowRight size={18} strokeWidth={2.5} />
+                </div>
+
+                {/* 5. COE Node */}
                 <div className={`vfx-step-node${selectedRole === "coe" ? " is-active" : ""}`}
                   onClick={() => setSelectedRole("coe")}
                   style={{
@@ -743,7 +793,7 @@ export default function NotificationsApprovalPage() {
                   </div>
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ fontSize: "10px", fontWeight: 800, opacity: selectedRole === "coe" ? 0.9 : 0.6, letterSpacing: "0.04em" }}>04</span>
+                      <span style={{ fontSize: "10px", fontWeight: 800, opacity: selectedRole === "coe" ? 0.9 : 0.6, letterSpacing: "0.04em" }}>05</span>
                       <span style={{ fontSize: "13.5px", fontWeight: 800 }}>COE</span>
                     </div>
                     <div style={{ fontSize: "10.5px", opacity: selectedRole === "coe" ? 0.9 : 0.65 }}>
@@ -1521,6 +1571,8 @@ export default function NotificationsApprovalPage() {
                                     ? "Awaiting HOD Review"
                                     : item.stage === "dean"
                                     ? "Awaiting Dean Endorsement"
+                                    : item.coeStatus === "Waiting_Scrutiny"
+                                    ? "Awaiting Scrutinizer Review"
                                     : "Awaiting COE Final Seal"}
                                 </span>
                               </>
