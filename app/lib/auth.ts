@@ -333,9 +333,18 @@ export function showInMenu(role: UserRole, route: string, isSubjectFaculty: bool
  * Scrutinizer the School entry is named "School & Academic Repository".
  */
 export function menuForUser<T extends { route: string; label: string }>(items: T[], user: Pick<AuthUser, "role" | "isSubjectFaculty">): T[] {
+  // COE menu: no Scrutiny Dashboard or Academic Vault, and "Verify & Approval"
+  // + "Manual Questions" become one entry (the Manual Questions page, where the
+  // COE reviews the forwarded questions and gives final approval).
+  const coeHidden = ["/scrutinizer", "/academic-vault", "/approval"];
   return items
     .filter((item) => showInMenu(user.role, item.route, user.isSubjectFaculty))
-    .map((item) => (user.role === "SCRUTINIZER" && item.route === "/subjects" ? { ...item, label: "School & Academic Repository" } : item));
+    .filter((item) => !(user.role === "COE" && coeHidden.includes(item.route)))
+    .map((item) => {
+      if (user.role === "SCRUTINIZER" && item.route === "/subjects") return { ...item, label: "School & Academic Repository" };
+      if (user.role === "COE" && item.route === "/manual-questions") return { ...item, label: "Verify & Approval", badge: undefined };
+      return item;
+    });
 }
 
 /**
