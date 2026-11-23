@@ -230,40 +230,6 @@ export default function ScrutinizerPage() {
     showToast(`Syllabus "${item.courseName}" flagged.`);
   };
 
-  // ---- "Verify & Forward to COE" for the selected subject ----
-  const syllabusForwarded = Boolean(subjectSyllabus && subjectSyllabus.scrutinyStatus === "Cleared" && subjectSyllabus.coeStatus !== "Waiting_Scrutiny");
-  const forwardSummary = {
-    toForward: subjectQuestions.filter((q) => !q.scrutinyForwarded && q.scrutinyStatus !== "Flagged").length,
-    pending: subjectQuestions.filter((q) => !q.scrutinyForwarded && !q.scrutinyStatus).length,
-    flagged: subjectQuestions.filter((q) => !q.scrutinyForwarded && q.scrutinyStatus === "Flagged").length,
-    forwarded: subjectQuestions.filter((q) => q.scrutinyForwarded).length,
-    syllabusReady: Boolean(subjectSyllabus && subjectSyllabus.scrutinyStatus !== "Flagged" && subjectSyllabus.coeStatus === "Waiting_Scrutiny"),
-  };
-  const verifyAndForward = async () => {
-    const items = subjectQuestions.filter((q) => !q.scrutinyForwarded && q.scrutinyStatus !== "Flagged");
-    const sendSyllabus = forwardSummary.syllabusReady && subjectSyllabus;
-    if (!items.length && !sendSyllabus) {
-      showToast(forwardSummary.flagged ? "Only flagged items remain. Resolve or reset them first." : "Nothing left to forward for this subject.", "danger");
-      return;
-    }
-    const parts = [items.length ? `${items.length} question${items.length === 1 ? "" : "s"}` : "", sendSyllabus ? "the syllabus" : ""].filter(Boolean).join(" and ");
-    const ok = await confirmDialog(
-      `Verify and forward ${parts} for ${subject} to the COE for final approval?${forwardSummary.pending ? ` ${forwardSummary.pending} unreviewed question${forwardSummary.pending === 1 ? " will be" : "s will be"} marked as cleared.` : ""}${forwardSummary.flagged ? ` ${forwardSummary.flagged} flagged question${forwardSummary.flagged === 1 ? " stays" : "s stay"} with you.` : ""}`,
-      { title: "Verify & forward to COE", confirmLabel: "Verify & Forward" },
-    );
-    if (!ok) return;
-    const stamp = scrutinyStamp();
-    items.forEach((q) =>
-      examStore.updateQuestion(q.id, { ...q, scrutinyStatus: "Cleared", scrutinyForwarded: true, scrutinizedBy: q.scrutinizedBy || currentUser.name, scrutinizedAt: q.scrutinizedAt || stamp }),
-    );
-    if (sendSyllabus) {
-      examStore.updateSyllabusApproval(sendSyllabus.id, { scrutinyStatus: "Cleared", scrutinyName: sendSyllabus.scrutinyName || currentUser.name, scrutinyDate: sendSyllabus.scrutinyDate || stamp, coeStatus: "Pending" });
-    }
-    setQuestions(examStore.getQuestions());
-    setSyllabi(examStore.getSyllabusApprovals());
-    showToast(`${parts.charAt(0).toUpperCase()}${parts.slice(1)} forwarded to the COE.`);
-  };
-
   const clearAllPending = async () => {
     const pending = subjectQuestions.filter((q) => !q.scrutinyStatus);
     if (!pending.length) return;
@@ -598,36 +564,6 @@ export default function ScrutinizerPage() {
               </>
             )}
 
-            {/* Verify & Forward to COE: always visible; enabled once the Dean has forwarded work */}
-            <div className="scr-forward">
-              <div className="scr-forward-info">
-                <div className="scr-forward-kicker">Final step · Scrutinizer</div>
-                <div className="scr-forward-title">{subjects.length ? <>Verify &amp; forward {subject} to the COE</> : "Verify & forward to the COE"}</div>
-                <div className="scr-forward-stats">
-                  {subjects.length === 0 ? (
-                    <>
-                      <span className="is-warn">Waiting for Dean approval</span>
-                      {upcomingCount > 0 && <span><b>{upcomingCount}</b> question{upcomingCount === 1 ? "" : "s"} still with the HOD / Dean</span>}
-                    </>
-                  ) : (
-                    <>
-                      <span><b>{forwardSummary.toForward}</b> question{forwardSummary.toForward === 1 ? "" : "s"} ready</span>
-                      {forwardSummary.pending > 0 && <span className="is-warn"><b>{forwardSummary.pending}</b> not yet reviewed</span>}
-                      {forwardSummary.flagged > 0 && <span className="is-flag"><b>{forwardSummary.flagged}</b> flagged (stay with you)</span>}
-                      {forwardSummary.forwarded > 0 && <span className="is-done"><b>{forwardSummary.forwarded}</b> already forwarded</span>}
-                      {subjectSyllabus && (
-                        <span className={syllabusForwarded ? "is-done" : subjectSyllabus.scrutinyStatus === "Flagged" ? "is-flag" : ""}>
-                          Syllabus: <b>{syllabusForwarded ? "forwarded" : subjectSyllabus.scrutinyStatus === "Flagged" ? "flagged" : "ready"}</b>
-                        </span>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-              <button type="button" className="scr-forward-btn" onClick={verifyAndForward} disabled={subjects.length === 0 || (!forwardSummary.toForward && !forwardSummary.syllabusReady)}>
-                <Send size={16} /> Verify &amp; Forward to COE
-              </button>
-            </div>
             <PortalFooter />
           </main>
         </div>
