@@ -8,6 +8,7 @@ import { authStore, AuthUser, hasPermission } from "../lib/auth";
 import { menuForUser } from "../lib/auth";
 import { SCRUTINY_MENU_ITEMS } from "../lib/scrutinyMenu";
 import RoleGuard from "../components/RoleGuard";
+import ManualQuestionForm from "../components/ManualQuestionForm";
 import {
   ViewModal,
   FormModal,
@@ -507,19 +508,23 @@ export default function ManualQuestionsPage() {
     },
   ];
 
-  const handleSaveQuestion = (data: Partial<QuestionItem>) => {
+  const handleSaveQuestion = (data: Partial<QuestionItem>, opts: { addAnother: boolean } = { addAnother: false }) => {
+    const submitted = data.status === "Pending";
     if (editingQuestion) {
-      examStore.updateQuestion(editingQuestion.id, data);
-      setToast("Question updated successfully!");
+      // Keep the original uploader; saveQuestion needs the full record.
+      examStore.updateQuestion(editingQuestion.id, { ...editingQuestion, ...data });
+      setToast(submitted ? "Question updated and submitted for HOD review." : "Question saved as draft.");
       setEditingQuestion(null);
     } else {
       examStore.addQuestion({
-        code: `MQ-${Date.now().toString().slice(-4)}`,
-        bloomLevel: "Apply",
+        code: `MQ-${Date.now().toString().slice(-6)}`,
+        uploadedBy: currentUser.name,
+        email: currentUser.email,
+        submittedDate: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
         ...data,
-      } as any);
-      setToast("Question created successfully!");
-      setIsAddingQuestion(false);
+      });
+      setToast(submitted ? "Question added and submitted for HOD review." : "Question saved as draft.");
+      if (!opts.addAnother) setIsAddingQuestion(false);
     }
   };
 
@@ -2182,32 +2187,17 @@ export default function ManualQuestionsPage() {
         data={viewingQuestion || {}}
       />
 
-      <FormModal
+      <ManualQuestionForm
         isOpen={!!editingQuestion}
+        initial={editingQuestion}
         onClose={() => setEditingQuestion(null)}
-        onSubmit={handleSaveQuestion}
-        title="Edit Question"
-        fields={questionFormFields}
-        initialData={editingQuestion || {}}
-        submitLabel="Save Changes"
+        onSave={handleSaveQuestion}
       />
 
-      <FormModal
+      <ManualQuestionForm
         isOpen={isAddingQuestion}
         onClose={() => setIsAddingQuestion(false)}
-        onSubmit={handleSaveQuestion}
-        title="Create New Question"
-        fields={questionFormFields}
-        initialData={{
-          subject: "Viscom & VFX",
-          unit: "Unit I - Introduction",
-          topic: "Core Principles",
-          type: "Descriptive",
-          difficulty: "Medium",
-          marks: 5,
-          status: "Draft",
-        }}
-        submitLabel="Create Question"
+        onSave={handleSaveQuestion}
       />
 
       <DeleteModal
