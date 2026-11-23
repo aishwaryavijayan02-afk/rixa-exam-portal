@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Send } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import { examStore, QuestionItem, SyllabusApprovalItem } from "../lib/examStore";
 import { alertDialog, confirmDialog } from "./ConfirmDialog";
 
@@ -14,7 +14,7 @@ const sameSubject = (a?: string, b?: string) => {
 const stamp = () => new Date().toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 /**
- * Scrutinizer's final step: "Verify & Forward to COE". Forwards the
+ * Scrutinizer's final step: "Approve & Forward to COE". Forwards the
  * Dean-approved questions (and syllabi) that are not flagged; questions not
  * yet reviewed are marked cleared. Limited to `subject` when one is given.
  */
@@ -64,7 +64,7 @@ export default function ForwardToCoeBar({ subject, onDone }: { subject?: string;
             "Nothing has reached the Scrutinizer yet.",
             summary.upcoming ? `${summary.upcoming} question${summary.upcoming === 1 ? " is" : "s are"} still waiting for the HOD / Dean.` : "",
             waitingSyllabi ? `${waitingSyllabi} syllab${waitingSyllabi === 1 ? "us is" : "i are"} still waiting for the Dean.` : "",
-            "The Dean approves them in Verify & Approval. After that, press Verify & Forward to COE here to send them to the COE.",
+            "The Dean approves them in Verify & Approval. After that, press Approve & Forward to COE here to send them to the COE.",
           ]
         : [
             summary.forwarded ? `All ${summary.forwarded} question${summary.forwarded === 1 ? " has" : "s have"} already been forwarded to the COE.` : "",
@@ -75,8 +75,8 @@ export default function ForwardToCoeBar({ subject, onDone }: { subject?: string;
     }
     const parts = [qCount ? `${qCount} question${qCount === 1 ? "" : "s"}` : "", sCount ? `${sCount} syllab${sCount === 1 ? "us" : "i"}` : ""].filter(Boolean).join(" and ");
     const ok = await confirmDialog(
-      `Verify and forward ${parts}${subject ? ` for ${subject}` : ""} to the COE for final approval?${summary.pending ? ` ${summary.pending} unreviewed question${summary.pending === 1 ? " will be" : "s will be"} marked as cleared.` : ""}${summary.flagged ? ` ${summary.flagged} flagged question${summary.flagged === 1 ? " stays" : "s stay"} with the Scrutinizer.` : ""}`,
-      { title: "Verify & forward to COE", confirmLabel: "Verify & Forward" },
+      `Approve and forward ${parts}${subject ? ` for ${subject}` : ""} to the COE for final approval?${summary.pending ? ` ${summary.pending} unreviewed question${summary.pending === 1 ? " will be" : "s will be"} marked as cleared.` : ""}${summary.flagged ? ` ${summary.flagged} flagged question${summary.flagged === 1 ? " stays" : "s stay"} with the Scrutinizer.` : ""}`,
+      { title: "Approve & forward to COE", confirmLabel: "Approve & Forward" },
     );
     if (!ok) return;
     const now = stamp();
@@ -98,17 +98,19 @@ export default function ForwardToCoeBar({ subject, onDone }: { subject?: string;
     onDone?.(`${parts.charAt(0).toUpperCase()}${parts.slice(1)} forwarded to the COE.`, true);
   };
 
-  // Just the action: a single "Verify & Forward to COE" button.
+  // Just the action, styled exactly like the "Approve & Forward to COE" button in Verify & Approval.
   return (
     <div className="scr-forward-row">
       <button
         type="button"
-        className="scr-forward-btn"
+        className="approval-model-approve-button approval-model-forward-button"
         onClick={forward}
         aria-disabled={!canForward}
         title={canForward ? undefined : nothingYet ? "Waiting for Dean approval" : "Nothing left to forward"}
       >
-        <Send size={16} /> Verify &amp; Forward to COE
+        <Sparkles size={16} />
+        <Check size={16} strokeWidth={3} />
+        Approve &amp; Forward to COE
       </button>
     </div>
   );
