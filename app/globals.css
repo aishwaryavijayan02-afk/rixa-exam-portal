@@ -7503,7 +7503,8 @@ html.dark-theme .approval-model-main::after { border-color:rgba(223, 188, 158,.0
 .mq-stat-label { margin-top: 4px; font-size: 11.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: #8a7462; }
 @media (max-width: 980px) { .mq-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 /* Manual Questions: three animated tiles */
-.mq-stats.bpv-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.mq-stats.bpv-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 980px) { .mq-stats.bpv-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .mq-stats .bpv-tile { padding: 20px 18px 18px; border-radius: 16px; text-align: left; display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 14px; align-items: center; }
 .mq-stats .bpv-tile-icon { grid-row: span 2; width: 48px; height: 48px; border-radius: 14px; margin: 0; }
 .mq-stats .bpv-tile-icon svg { width: 22px; height: 22px; }

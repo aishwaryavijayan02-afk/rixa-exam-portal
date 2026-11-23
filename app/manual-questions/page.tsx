@@ -877,6 +877,8 @@ export default function ManualQuestionsPage() {
               { label: "Total questions", value: live.length, icon: FileText, accent: "#774c28" },
               { label: "MCQ", value: live.filter((q) => q.type === "MCQ").length, icon: ListChecks, accent: "#0e7490" },
               { label: "Descriptive", value: live.filter((q) => q.type !== "MCQ").length, icon: PenLine, accent: "#15803d" },
+              // Sum of every question's marks (e.g. 20 MCQ x 1 + 10 Descriptive x 8 = 100).
+              { label: "Overall marks", value: live.reduce((sum, q) => sum + (Number(q.marks) || 0), 0), icon: Award, accent: "#7e22ce" },
             ];
             return (
               <div className="mq-stats bpv-stats">
