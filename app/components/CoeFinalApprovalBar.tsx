@@ -42,13 +42,31 @@ export default function CoeFinalApprovalBar({ subject }: { subject?: string }) {
     const waiting = questions.filter(
       (q) => (q.verifiedRole || "").toUpperCase() !== "COE" && !q.scrutinyForwarded && !["Rejected", "Draft", "Archived"].includes(q.status) && inSubject(q.subject),
     ).length;
-    return { qs, ss, waiting };
+    // Already finalised by the COE.
+    const doneQuestions = questions.filter((q) => (q.verifiedRole || "").toUpperCase() === "COE" && inSubject(q.subject)).length;
+    const doneSyllabi = syllabi.filter((s) => s.coeStatus === "Approved" && inSubject(s.courseName)).length;
+    return { qs, ss, waiting, doneQuestions, doneSyllabi };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questions, syllabi, subject]);
 
   const approve = async () => {
     const qCount = ready.qs.length;
     const sCount = ready.ss.length;
+    if (!qCount && !sCount && (ready.doneQuestions || ready.doneSyllabi) && !ready.waiting) {
+      // Everything already has final approval: say so instead of "waiting".
+      await alertDialog(
+        [
+          `Final approval has already been given${subject ? ` for ${subject}` : ""}.`,
+          ready.doneQuestions ? `${ready.doneQuestions} question${ready.doneQuestions === 1 ? " is" : "s are"} final approved and locked.` : "",
+          ready.doneSyllabi ? `${ready.doneSyllabi} syllab${ready.doneSyllabi === 1 ? "us is" : "i are"} approved.` : "",
+          "They are ready in Print Question Paper.",
+        ]
+          .filter(Boolean)
+          .join("\n"),
+        { title: "Already final approved", confirmLabel: "OK" },
+      );
+      return;
+    }
     if (!qCount && !sCount) {
       await alertDialog(
         [
