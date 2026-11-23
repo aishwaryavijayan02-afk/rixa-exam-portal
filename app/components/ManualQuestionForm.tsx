@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { BookOpen, CheckCircle2, ImagePlus, ListChecks, PenLine, Plus, Send, Sparkles, Trash2, X } from "lucide-react";
+import { BookOpen, CheckCircle2, ImagePlus, ListChecks, PenLine, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { INSTITUTIONAL_SUBJECTS, QuestionItem } from "../lib/examStore";
 import { BLOOM_LEVELS, inferBloomLevel } from "../lib/bloomTaxonomy";
 
@@ -69,8 +69,11 @@ export default function ManualQuestionForm({
   initial,
   onClose,
   onSave,
+  subjects = [],
 }: {
   isOpen: boolean;
+  /** Extra subject names to offer (e.g. subjects of uploaded question banks). */
+  subjects?: string[];
   /** Question being edited; omit to add a new one. */
   initial?: QuestionItem | null;
   onClose: () => void;
@@ -119,7 +122,7 @@ export default function ManualQuestionForm({
     reader.readAsDataURL(file);
   };
 
-  const submit = (status: "Draft" | "Pending", addAnother: boolean) => {
+  const submit = (addAnother: boolean) => {
     const question = draft.question.trim();
     const filledOptions = draft.options.map((o) => o.trim());
     if (!draft.subject) return setError("Please choose the subject.");
@@ -146,7 +149,6 @@ export default function ManualQuestionForm({
         difficulty: draft.difficulty,
         imageUrl: draft.imageUrl,
         diagramTitle: draft.diagramTitle.trim() || undefined,
-        status,
       },
       { addAnother },
     );
@@ -180,10 +182,13 @@ export default function ManualQuestionForm({
                   <span>Subject *</span>
                   <select value={draft.subject} onChange={(e) => set("subject", e.target.value)}>
                     <option value="">Select a subject</option>
+                    {subjects.filter((name) => !INSTITUTIONAL_SUBJECTS.some((s) => s.name === name)).map((name) => (
+                      <option key={`up-${name}`} value={name}>{name} (uploaded question bank)</option>
+                    ))}
                     {INSTITUTIONAL_SUBJECTS.map((s) => (
                       <option key={s.code} value={s.name}>{s.name} ({s.code})</option>
                     ))}
-                    {draft.subject && !subjectInfo && <option value={draft.subject}>{draft.subject}</option>}
+                    {draft.subject && !subjectInfo && !subjects.includes(draft.subject) && <option value={draft.subject}>{draft.subject}</option>}
                   </select>
                 </label>
                 <label className="mqf-field">
@@ -333,9 +338,8 @@ export default function ManualQuestionForm({
         <footer className="mqf-foot">
           {error ? <div className="mqf-error" role="alert">{error}</div> : <div className="mqf-hint">Fields marked * are required.</div>}
           <div className="mqf-actions">
-            <button type="button" className="mqf-btn is-ghost" onClick={() => submit("Draft", false)}>Save as draft</button>
-            {!isEdit && <button type="button" className="mqf-btn is-outline" onClick={() => submit("Pending", true)}><Plus size={14} /> Save &amp; add another</button>}
-            <button type="button" className="mqf-btn is-primary" onClick={() => submit("Pending", false)}><Send size={14} /> {isEdit ? "Save & submit for review" : "Submit for HOD review"}</button>
+            {!isEdit && <button type="button" className="mqf-btn is-outline" onClick={() => submit(true)}><Plus size={14} /> Save &amp; add another</button>}
+            <button type="button" className="mqf-btn is-ghost" onClick={() => submit(false)}>Save</button>
           </div>
         </footer>
       </div>

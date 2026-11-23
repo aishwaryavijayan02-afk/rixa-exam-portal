@@ -511,23 +511,44 @@ export default function ManualQuestionsPage() {
   ];
 
   const handleSaveQuestion = (data: Partial<QuestionItem>, opts: { addAnother: boolean } = { addAnother: false }) => {
-    const submitted = data.status === "Pending";
     if (editingQuestion) {
-      // Keep the original uploader; saveQuestion needs the full record.
+      // Keep the original uploader and workflow stage; saveQuestion needs the full record.
       examStore.updateQuestion(editingQuestion.id, { ...editingQuestion, ...data });
-      setToast(submitted ? "Question updated and submitted for HOD review." : "Question saved as draft.");
+      setToast("Question saved.");
       setEditingQuestion(null);
-    } else {
-      examStore.addQuestion({
-        code: `MQ-${Date.now().toString().slice(-6)}`,
-        uploadedBy: currentUser.name,
-        email: currentUser.email,
-        submittedDate: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
-        ...data,
-      });
-      setToast(submitted ? "Question added and submitted for HOD review." : "Question saved as draft.");
-      if (!opts.addAnother) setIsAddingQuestion(false);
+      return;
     }
+    // A new question joins the subject's uploaded question bank: same file,
+    // subject name and approval stage, so it is reviewed and forwarded to the
+    // COE together with the uploaded questions.
+    const key = (value?: string) => (value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    const sameSubject = (a?: string, b?: string) => Boolean(key(a) && key(b)) && (key(a) === key(b) || key(a).includes(key(b)) || key(b).includes(key(a)));
+    const bank = examStore.getQuestions().filter((q) => q.sourceFile && sameSubject(q.subject, data.subject));
+    const counts = new Map<string, number>();
+    bank.forEach((q) => counts.set(q.sourceFile as string, (counts.get(q.sourceFile as string) || 0) + 1));
+    const sourceFile = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+    const ref = bank.find((q) => q.sourceFile === sourceFile);
+    const atScrutiny = { status: "Approved" as const, verifiedRole: "DEAN", verifiedBy: ref?.verifiedBy };
+    const stage = ref
+      ? (ref.verifiedRole || "").toUpperCase() === "COE"
+        ? atScrutiny // the bank is already with the COE: send the new question through the Scrutinizer
+        : { status: ref.status, verifiedRole: ref.verifiedRole, verifiedBy: ref.verifiedBy }
+      : currentUser.role === "SCRUTINIZER"
+        ? atScrutiny
+        : { status: "Pending" as const };
+    examStore.addQuestion({
+      code: `MQ-${Date.now().toString().slice(-6)}`,
+      uploadedBy: currentUser.name,
+      email: currentUser.email,
+      submittedDate: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+      ...data,
+      ...(ref ? { subject: ref.subject, department: ref.department, sourceFile } : {}),
+      ...stage,
+      scrutinyStatus: undefined,
+      scrutinyForwarded: undefined,
+    });
+    setToast(ref ? `Question saved with the uploaded question bank "${sourceFile}".` : "Question saved.");
+    if (!opts.addAnother) setIsAddingQuestion(false);
   };
 
   const handleDeleteQuestion = () => {
@@ -2203,12 +2224,14 @@ export default function ManualQuestionsPage() {
         initial={editingQuestion}
         onClose={() => setEditingQuestion(null)}
         onSave={handleSaveQuestion}
+        subjects={Array.from(new Set(storeQuestions.filter((q) => q.sourceFile && q.subject).map((q) => q.subject))).sort()}
       />
 
       <ManualQuestionForm
         isOpen={isAddingQuestion}
         onClose={() => setIsAddingQuestion(false)}
         onSave={handleSaveQuestion}
+        subjects={Array.from(new Set(storeQuestions.filter((q) => q.sourceFile && q.subject).map((q) => q.subject))).sort()}
       />
 
       <DeleteModal
