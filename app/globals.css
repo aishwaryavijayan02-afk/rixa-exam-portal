@@ -7475,9 +7475,11 @@ html.dark-theme .approval-model-main::after { border-color:rgba(223, 188, 158,.0
 .scr-forward-stats span.is-warn { background: #fffbeb; border-color: #fde68a; color: #92400e; }
 .scr-forward-stats span.is-flag { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
 .scr-forward-stats span.is-done { background: #ecfeff; border-color: #a5f3fc; color: #155e75; }
+.scr-forward-btn svg { color: #000000; }
 .scr-forward-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; border-radius: 12px; border: 1px solid #a9805a; background: linear-gradient(135deg, #d9b892 0%, #c49a6c 100%); color: #000000 !important; font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 10px 22px rgba(120, 80, 45, .28); transition: transform .15s ease, filter .15s ease, box-shadow .15s ease; }
 .scr-forward-btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.04); box-shadow: 0 14px 28px rgba(120, 80, 45, .36); }
-.scr-forward-btn:disabled { cursor: not-allowed; background: #e8d6c1; border-color: #d6bfa3; color: #000000 !important; opacity: .6; box-shadow: none; }
+.scr-forward-btn:disabled { cursor: not-allowed; background: linear-gradient(135deg, #d9b892 0%, #c49a6c 100%); border-color: #a9805a; color: #000000 !important; opacity: 1; box-shadow: none; }
+.scr-forward-btn:disabled svg { color: #000000; }
 @keyframes scrRise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 @media (max-width: 640px) { .scr-forward { bottom: 8px; padding: 14px; } .scr-forward-row { justify-content: stretch; } .scr-forward-btn { width: 100%; justify-content: center; } }
 @media (prefers-reduced-motion: reduce) { .scr-forward { animation: none; } }
