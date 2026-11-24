@@ -7504,7 +7504,7 @@ html.dark-theme .approval-model-main::after { border-color:rgba(223, 188, 158,.0
 .rp-field select:focus { outline: none; border-color: #b07a4b; box-shadow: 0 0 0 3px rgba(176, 122, 75, .18); }
 .rp-reset { height: 40px; }
 .rp-empty { padding: 40px 24px; text-align: center; color: #8a7462; font-size: 13.5px; }
-.rp-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.rp-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
 .rp-bars { display: flex; flex-direction: column; gap: 11px; }
 .rp-bar-row { display: grid; grid-template-columns: 124px minmax(0, 1fr) 86px; align-items: center; gap: 12px; font-size: 12.5px; }
 .rp-bar-row.is-zero { opacity: .5; }

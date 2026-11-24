@@ -82,8 +82,6 @@ export default function ReportsAnalytics() {
   const finalCount = rows.filter((q) => stageOf(q) === "final").length;
   const inApproval = rows.filter((q) => !["final", "rejected", "draft"].includes(stageOf(q))).length;
 
-  const stageCounts = STAGES.map((s) => ({ ...s, count: rows.filter((q) => stageOf(q) === s.key).length }));
-  const maxStage = Math.max(1, ...stageCounts.map((s) => s.count));
   const levelCounts = BLOOM_LEVELS.map((_, i) => rows.filter((q) => levelOf(q) === i + 1).length);
   const maxLevel = Math.max(1, ...levelCounts);
 
@@ -209,25 +207,6 @@ export default function ReportsAnalytics() {
       ) : (
         <>
           <div className="rp-grid">
-            {/* Approval pipeline */}
-            <section className="rp-card">
-              <h3 className="rp-card-title">Approval pipeline</h3>
-              <p className="rp-card-sub">Where the questions are right now: Staff → HOD → Dean → Scrutinizer → COE.</p>
-              <div className="rp-bars">
-                {stageCounts.map((s) => (
-                  <div key={s.key} className={`rp-bar-row${s.count ? "" : " is-zero"}`}>
-                    <span className="rp-bar-label">{s.label}</span>
-                    <div className="rp-bar-track">
-                      <div className="rp-bar-fill" style={{ width: `${(s.count / maxStage) * 100}%`, background: s.color }} />
-                    </div>
-                    <span className="rp-bar-value">
-                      <b>{s.count}</b> <em>{pct(s.count, rows.length)}%</em>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
             {/* Bloom's levels */}
             <section className="rp-card">
               <h3 className="rp-card-title">Bloom&apos;s level distribution</h3>
