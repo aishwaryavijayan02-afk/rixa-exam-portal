@@ -226,7 +226,7 @@ export default function ApprovalPage() {
   const [units, setUnits] = useState<SyllabusUnit[]>(() => examStore.getUnits());
   const [syllabusApprovals, setSyllabusApprovals] = useState<SyllabusApprovalItem[]>(() => examStore.getSyllabusApprovals());
   const [selectedSyllabus, setSelectedSyllabus] = useState<SyllabusApprovalItem | null>(null);
-  const [managedSubmission, setManagedSubmission] = useState<{ facultyName: string; subject: string; questions: QuestionItem[] } | null>(null);
+  const [managedSubmission, setManagedSubmission] = useState<{ facultyName: string; email?: string; subject: string; questions: QuestionItem[] } | null>(null);
 
   useEffect(() => {
     const loadQuestions = () => {
@@ -409,6 +409,12 @@ export default function ApprovalPage() {
       const updates = buildSyllabusApprovalUpdates();
       if (Object.keys(updates).length > 0) examStore.updateSyllabusApproval(syllabus.id, updates);
     }
+    // Live question bank size for this faculty + subject, read after the
+    // approval so reviewer adds and deletes are always reflected.
+    const subjectKey = featuredSubject.trim().toLowerCase();
+    const bank = examStore
+      .getQuestions()
+      .filter((q) => (q.subject || "").trim().toLowerCase() === subjectKey && examStore.isQuestionUploadedBy(q, { name: facultyName, email: activeSubmission?.email }) && !q.correctionRequested);
     setVerifyPopModal({
       isOpen: true,
       itemName: `${featuredSubject} · ${items}`,
@@ -421,6 +427,8 @@ export default function ApprovalPage() {
         syllabusName: syllabus ? syllabus.documentName || syllabus.courseName : undefined,
         verifierName: verifierLabel(),
         forwardedTo: role === "COE" ? "Question Bank (ready for printing)" : target,
+        questionBankTotal: bank.length,
+        questionBankAddedByReviewers: bank.filter((q) => String(q.id).startsWith("q-rev-")).length,
       },
       questions: featuredSubjectCandidates,
       remarks: `${items.charAt(0).toUpperCase()}${items.slice(1)} ${role === "HOD" ? "verified" : "approved"} by ${verifierLabel()} and forwarded to ${target}.`,
@@ -877,7 +885,7 @@ export default function ApprovalPage() {
                     <span className="approval-model-document-meta"><strong>{featuredQuestion?.sourceFile || (featuredQuestion ? `${/^unit\b/i.test(featuredQuestion.unit) ? "" : "Unit "}${featuredQuestion.unit} · ${featuredQuestion.type}` : featuredSubject)}</strong><small>{featuredSubject} · {featuredSubjectQuestions.length} {featuredSubjectQuestions.length === 1 ? "question" : "questions"} from {facultyName}</small></span>
                     <span style={{ display: "inline-flex", gap: "8px", flexWrap: "wrap" }}>
                       <button type="button" className="approval-model-view-button" onClick={() => handleOpenSubjectModal(featuredSubject, featuredSubjectQuestions.map((question) => question.id))}><Eye size={16} /> View</button>
-                      <button type="button" className="approval-model-view-button" onClick={() => setManagedSubmission({ facultyName, subject: featuredSubject, questions: featuredSubjectQuestions })} title="Edit, delete or mark questions wrong (sends them back to the faculty)"><Edit3 size={16} /> Manage</button>
+                      <button type="button" className="approval-model-view-button" onClick={() => setManagedSubmission({ facultyName, email: activeSubmission?.email, subject: featuredSubject, questions: featuredSubjectQuestions })} title="Edit, delete or mark questions wrong (sends them back to the faculty)"><Edit3 size={16} /> Manage</button>
                     </span>
                     <span className="approval-model-document-status"><span className={`approval-model-status-dot ${featuredSubjectCandidates.length > 0 ? "is-pending" : "is-complete"}`} />{featuredSubjectCandidates.length > 0 ? `${featuredSubjectCandidates.length} awaiting review` : "Reviewed"}</span>
                   </div>
@@ -1011,6 +1019,7 @@ export default function ApprovalPage() {
                 currentUser={currentUser}
                 questions={managedSubmission.questions}
                 subject={managedSubmission.subject}
+                owner={{ name: managedSubmission.facultyName, email: managedSubmission.email }}
                 onToast={triggerToast}
               />
             </div>

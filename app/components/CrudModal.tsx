@@ -1683,6 +1683,10 @@ export interface VerificationDetails {
   syllabusName?: string;
   verifierName?: string;
   forwardedTo?: string;
+  /** Live count of this faculty's questions for the subject (adds / deletes included, returned ones excluded). */
+  questionBankTotal?: number;
+  /** Of those, how many reviewers added on the faculty's behalf. */
+  questionBankAddedByReviewers?: number;
 }
 
 const VR_LEVELS = ["Remember", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
@@ -1732,7 +1736,8 @@ export function VerificationResultModal({
   const rows: [string, string | undefined][] = [
     ["Subject", details?.subject],
     ["Faculty", details?.facultyName],
-    ["Questions", verifiedCount > 0 ? `${verifiedCount} question${verifiedCount === 1 ? "" : "s"}` : undefined],
+    ["Questions approved now", verifiedCount > 0 ? `${verifiedCount} question${verifiedCount === 1 ? "" : "s"}` : undefined],
+    ["Question bank total", typeof details?.questionBankTotal === "number" ? `${details.questionBankTotal} question${details.questionBankTotal === 1 ? "" : "s"}${details.questionBankAddedByReviewers ? ` (incl. ${details.questionBankAddedByReviewers} added by reviewers)` : ""}` : undefined],
     ["Syllabus", details?.syllabusName],
     ["Verified by", details?.verifierName],
     ["Forwarded to", details?.forwardedTo],
@@ -1779,7 +1784,7 @@ export function VerificationResultModal({
 
         {/* Details */}
         <div className="vr2-panel">
-          {(hasDetails ? visibleRows : visibleRows.filter(([label]) => label === "Questions" || label === "Date & time")).map(([label, value]) => (
+          {(hasDetails ? visibleRows : visibleRows.filter(([label]) => label === "Questions approved now" || label === "Date & time")).map(([label, value]) => (
             <div key={label} className="vr2-row">
               <span className="vr2-row-label">{label}</span>
               <span className="vr2-row-value">{value}</span>

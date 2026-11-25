@@ -45,6 +45,7 @@ export default function QuestionCorrectionPanel({
   currentUser,
   questions: givenQuestions,
   subject,
+  owner,
   onToast,
 }: {
   mode: "reviewer" | "faculty";
@@ -52,6 +53,8 @@ export default function QuestionCorrectionPanel({
   /** Reviewer mode: the questions to manage (e.g. one faculty's submission). */
   questions?: QuestionItem[];
   subject?: string;
+  /** Reviewer mode: the faculty whose submission this is. New questions are saved under them. */
+  owner?: { name: string; email?: string };
   onToast?: (message: string, type?: "success" | "error" | "info") => void;
 }) {
   const [all, setAll] = useState<QuestionItem[]>([]);
@@ -73,12 +76,15 @@ export default function QuestionCorrectionPanel({
     if (mode === "faculty") {
       return all.filter((q) => q.correctionRequested && examStore.isQuestionUploadedBy(q, currentUser));
     }
+    // Live: the faculty's whole question bank for this subject, so adds and
+    // deletes (from here or anywhere else) are reflected immediately.
+    if (owner && subject) {
+      const key = subject.trim().toLowerCase();
+      return all.filter((q) => (q.subject || "").trim().toLowerCase() === key && examStore.isQuestionUploadedBy(q, owner));
+    }
     const ids = new Set((givenQuestions || []).map((q) => String(q.id)));
-    const fromGiven = all.filter((q) => ids.has(String(q.id)));
-    // Questions added from this panel for the same subject show up too.
-    const added = subject ? all.filter((q) => !ids.has(String(q.id)) && q.subject === subject && examStore.isQuestionUploadedBy(q, currentUser)) : [];
-    return [...fromGiven, ...added];
-  }, [all, mode, givenQuestions, subject, currentUser]);
+    return all.filter((q) => ids.has(String(q.id)));
+  }, [all, mode, givenQuestions, subject, owner, currentUser]);
 
   const visible = list.filter((q) => (filter === "returned" ? q.correctionRequested : filter === "active" ? !q.correctionRequested : true));
   const returnedCount = list.filter((q) => q.correctionRequested).length;
@@ -263,11 +269,13 @@ export default function QuestionCorrectionPanel({
             ...data,
             id: `q-rev-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
             subject: data.subject || subject || "General",
-            uploadedBy: currentUser.name,
-            email: currentUser.email,
+            // Part of the faculty's submission, so it is counted and approved with it.
+            uploadedBy: owner?.name || currentUser.name,
+            email: owner?.email || currentUser.email,
+            uploadedOnBehalfBy: owner ? currentUser.name : undefined,
             ...newQuestionStage(currentUser.role),
           });
-          toast("Question added.");
+          toast(owner ? `Question added to ${owner.name}'s question bank.` : "Question added.");
           if (!addAnother) setAdding(false);
         }}
       />
