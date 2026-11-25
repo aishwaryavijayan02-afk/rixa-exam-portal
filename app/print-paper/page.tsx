@@ -255,6 +255,20 @@ export default function PrintPaperPage() {
     finalDiagrams = diagPool.slice(0, diagramCount);
   }
   finalOthers = [];
+  // Parts that cannot be printed because the question bank has no such questions.
+  const missingParts = [
+    { part: "Part A", kind: "MCQ", count: mcqPool.length },
+    { part: "Part B", kind: "descriptive", count: descPool.length },
+    { part: "Part C", kind: "diagram", count: diagPool.length },
+  ].filter((p) => p.count === 0);
+
+  // Never keep a saved count above what the question bank has (e.g. 3
+  // diagram questions for a subject with none).
+  useEffect(() => {
+    if (mcqCount > mcqPool.length) setMcqCount(mcqPool.length);
+    if (descriptiveCount > descPool.length) setDescriptiveCount(descPool.length);
+    if (diagramCount > diagPool.length) setDiagramCount(diagPool.length);
+  }, [mcqPool.length, descPool.length, diagPool.length, mcqCount, descriptiveCount, diagramCount]);
 
   const totalQuestionsInPaper = finalMcqs.length + finalDescriptives.length + finalDiagrams.length + finalOthers.length;
 
@@ -555,25 +569,38 @@ export default function PrintPaperPage() {
                 {printMode === "custom" && (
                   <div className="qp-counts">
                     {[
-                      { label: "Multiple choice", hint: `Part A · ${mcqPool.length} available`, value: Math.min(mcqCount, mcqPool.length), set: setMcqCount, max: mcqPool.length },
-                      { label: "Descriptive", hint: `Part B · ${descPool.length} available`, value: Math.min(descriptiveCount, descPool.length), set: setDescriptiveCount, max: descPool.length },
-                      { label: "Diagram / problem", hint: `Part C · ${diagPool.length} available`, value: Math.min(diagramCount, diagPool.length), set: setDiagramCount, max: diagPool.length },
+                      { label: "Multiple choice", part: "Part A", kind: "MCQ", value: Math.min(mcqCount, mcqPool.length), set: setMcqCount, max: mcqPool.length },
+                      { label: "Descriptive", part: "Part B", kind: "descriptive", value: Math.min(descriptiveCount, descPool.length), set: setDescriptiveCount, max: descPool.length },
+                      { label: "Diagram / problem", part: "Part C", kind: "diagram", value: Math.min(diagramCount, diagPool.length), set: setDiagramCount, max: diagPool.length },
                     ].map((row) => (
-                      <div key={row.label} className="qp-count-row">
+                      <div key={row.label} className="qp-count-row" style={row.max === 0 ? { opacity: 0.85, background: "#fff7ed", borderColor: "#fed7aa" } : undefined}>
                         <div className="qp-count-top">
                           <div>
                             <div className="qp-count-label">{row.label}</div>
-                            <div className="qp-count-hint">{row.hint}</div>
+                            <div className="qp-count-hint">{row.part} · {row.max} available</div>
                           </div>
-                          <div className="qp-stepper">
-                            <button type="button" aria-label={`Decrease ${row.label}`} onClick={() => row.set((v) => Math.max(0, Math.min(v, row.max) - 1))}>−</button>
-                            <span>{row.value}</span>
-                            <button type="button" aria-label={`Increase ${row.label}`} disabled={row.value >= row.max} onClick={() => row.set((v) => Math.min(row.max, Math.min(v, row.max) + 1))}>+</button>
-                          </div>
+                          {row.max > 0 && (
+                            <div className="qp-stepper">
+                              <button type="button" aria-label={`Decrease ${row.label}`} onClick={() => row.set((v) => Math.max(0, Math.min(v, row.max) - 1))}>−</button>
+                              <span>{row.value}</span>
+                              <button type="button" aria-label={`Increase ${row.label}`} disabled={row.value >= row.max} onClick={() => row.set((v) => Math.min(row.max, Math.min(v, row.max) + 1))}>+</button>
+                            </div>
+                          )}
                         </div>
-                        <input type="range" min={0} max={Math.max(row.max, 0)} disabled={row.max === 0} value={row.value} onChange={(e) => row.set(Number(e.target.value))} className="qp-range" />
+                        {row.max > 0 ? (
+                          <input type="range" min={0} max={row.max} value={row.value} onChange={(e) => row.set(Number(e.target.value))} className="qp-range" />
+                        ) : (
+                          <div className="qp-part-unavailable" role="status" style={{ marginTop: "8px", fontSize: "12px", fontWeight: 600, color: "#9a3412", lineHeight: 1.45 }}>
+                            No {row.kind} questions in the question bank for this subject, so {row.part} cannot be added.
+                          </div>
+                        )}
                       </div>
                     ))}
+                  </div>
+                )}
+                {printMode === "all" && subjectQs.length > 0 && missingParts.length > 0 && (
+                  <div className="qp-part-unavailable" role="status" style={{ padding: "9px 12px", borderRadius: "10px", background: "#fff7ed", border: "1px solid #fed7aa", color: "#9a3412", fontSize: "12px", fontWeight: 600, lineHeight: 1.5 }}>
+                    {missingParts.map((p) => `No ${p.kind} questions in the question bank, so ${p.part} will not be printed.`).join(" ")}
                   </div>
                 )}
 
