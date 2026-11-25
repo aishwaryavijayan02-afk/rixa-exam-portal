@@ -211,6 +211,20 @@ export function parseStaffNameFromEmail(rawEmail: string): string {
  * with the role selected on the login page; uploads and approvals are recorded
  * under the person's own name taken from the email.
  */
+/**
+ * The login page has no role picker: the role comes from the email ID.
+ * hod@ / hod.viscom@ -> HOD, dean@ -> DEAN, coe@ -> COE,
+ * scrutinizer@ -> SCRUTINIZER, everyone else (staff@, faculty) -> STAFF.
+ */
+export function roleFromEmail(emailInput: string): UserRole {
+  const handle = emailInput.trim().toLowerCase().split("@")[0];
+  if (/^hod\b|^hod[._-]/.test(handle) || handle === "hod") return "HOD";
+  if (/^dean\b|^dean[._-]/.test(handle) || handle === "dean") return "DEAN";
+  if (/^coe\b|^coe[._-]/.test(handle) || handle === "coe") return "COE";
+  if (handle.startsWith("scrutin")) return "SCRUTINIZER";
+  return "STAFF";
+}
+
 export async function authenticateUser(
   emailInput: string,
   passwordInput: string,
@@ -221,7 +235,7 @@ export async function authenticateUser(
 
   if (!cleanEmail) return { user: null, error: "Please enter your email." };
   if (!cleanPassword) return { user: null, error: "Please enter your password." };
-  if (!selectedRole) return { user: null, error: "Please select your role first." };
+  if (!selectedRole) selectedRole = roleFromEmail(cleanEmail);
 
   // "vignesh" is accepted as "vignesh@rathinam.in".
   if (!cleanEmail.includes("@")) cleanEmail = `${cleanEmail}@rathinam.in`;

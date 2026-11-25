@@ -42,7 +42,6 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedPreset, setSelectedPreset] = useState<UserRole | null>(null);
   const [activeInput, setActiveInput] = useState<"email" | "password" | null>(null);
   const [isFieldReadOnly, setIsFieldReadOnly] = useState(true);
   const signInButtonRef = useRef<HTMLButtonElement>(null);
@@ -230,30 +229,13 @@ export default function LoginPage() {
     return () => clearTimeout(animTimer);
   }, []);
 
-  // Selecting a role only chooses the role (click again to clear). The email and
-  // password are never filled in automatically; the user must type them.
-  const selectPresetUser = (role: UserRole) => {
-    const isDeselect = selectedPreset === role;
-    setSelectedPreset(isDeselect ? null : role);
-    if (isDeselect) {
-      // No role selected: the email & password boxes are locked, so clear them.
-      setEmail("");
-      setPassword("");
-    }
-    setIsFieldReadOnly(false);
-    setLoginError(null);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
-    if (!selectedPreset) {
-      setLoginError("Please select your role first.");
-      return;
-    }
     setIsSubmitting(true);
 
-    const { user, error } = await authenticateUser(email, password, selectedPreset);
+    // No role picker: the role comes from the email ID (see roleFromEmail).
+    const { user, error } = await authenticateUser(email, password);
 
     if (error || !user) {
       setTimeout(() => {
@@ -769,57 +751,43 @@ export default function LoginPage() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
-          {/* Role Selection Switcher */}
-          <div className="quick-login-selector-bar mb-1">
-            <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1 mb-2">
-              <User size={12} className="text-blue-600" /> Select Role:
-            </span>
-            <div className="grid grid-cols-5 gap-1.5">
-              {(["STAFF", "HOD", "DEAN", "SCRUTINIZER", "COE"] as UserRole[]).map((role) => {
-                const isSelected = selectedPreset === role;
-                const labels: Record<UserRole, { title: string; icon: string }> = {
-                  STAFF: { title: "Staff", icon: "👨‍🏫" },
-                  HOD: { title: "HOD", icon: "👨‍💼" },
-                  DEAN: { title: "Dean", icon: "🎓" },
-                  COE: { title: "COE", icon: "🏛️" },
-                  SCRUTINIZER: { title: "Scrutinizer", icon: "🔍" },
-                };
-
-                return (
-                  <motion.button
-                    key={role}
-                    type="button"
-                    onClick={() => selectPresetUser(role)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className={`login-role-btn${isSelected ? " is-selected" : ""} py-1.5 px-2 rounded-xl text-[11px] font-bold transition-all duration-200 flex items-center justify-center gap-1 border ${
-                      isSelected
-                        ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/25 ring-2 ring-blue-300"
-                        : "bg-slate-50 hover:bg-blue-50 text-slate-700 border-slate-200"
-                    }`}
-                  >
-                    <span>{labels[role].icon}</span>
-                    <span>{labels[role].title}</span>
-                  </motion.button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Header */}
+          {/* Header: animated RXA logo, then the sign-in title */}
           <div className="card-welcome-header mt-1">
-            <div className="shield-welcome-row">
+            <div style={{ display: "flex", justifyContent: "center", marginTop: "-14px", marginBottom: "-22px" }}>
               <motion.div
-                className="blue-shield-box"
-                whileHover={{ rotate: 15, scale: 1.1 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                initial={{ opacity: 0, scale: 0.55, rotate: -12 }}
+                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 170, damping: 13, delay: 0.15 }}
+                whileHover={{ scale: 1.06 }}
+                style={{ position: "relative", width: "190px", height: "190px" }}
               >
-                <ShieldCheck size={22} />
+                {/* Soft pulsing glow in the logo's colours */}
+                <motion.div
+                  aria-hidden="true"
+                  animate={{ opacity: [0.35, 0.7, 0.35], scale: [0.9, 1.05, 0.9] }}
+                  transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+                  style={{ position: "absolute", inset: "18%", borderRadius: "50%", background: "radial-gradient(circle, rgba(14,165,233,0.28) 0%, rgba(249,115,22,0.18) 45%, rgba(132,204,22,0) 72%)", filter: "blur(10px)" }}
+                />
+                <motion.img
+                  src="/images/rxa-logo.png"
+                  alt="RXA"
+                  draggable={false}
+                  animate={{ y: [0, -6, 0] }}
+                  transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", delay: 0.9 }}
+                  style={{ position: "relative", width: "100%", height: "100%", objectFit: "contain", userSelect: "none" }}
+                />
               </motion.div>
-              <span className="welcome-tracking-label">EXAM CELL PORTAL</span>
             </div>
-            <h2 className="card-title">Sign in to your account</h2>
-            <p className="card-subtitle">
+            <motion.h2
+              className="card-title"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.45 }}
+              style={{ textAlign: "center" }}
+            >
+              Sign in to your account
+            </motion.h2>
+            <p className="card-subtitle" style={{ textAlign: "center" }}>
               Enter your credentials to access the examination portal.
             </p>
 
@@ -878,11 +846,10 @@ export default function LoginPage() {
                   type="text"
                   name="rathinam_portal_username_field"
                   className="light-input-field"
-                  placeholder={selectedPreset ? "Enter your email" : "Select a role first"}
+                  placeholder="Enter your email"
                   value={email}
-                  disabled={!selectedPreset}
                   // Shown as typed; hidden as dots only when the eye button is used.
-                  style={{ ...(showEmail ? {} : ({ WebkitTextSecurity: "disc" } as React.CSSProperties)), cursor: selectedPreset ? undefined : "not-allowed" }}
+                  style={{ ...(showEmail ? {} : ({ WebkitTextSecurity: "disc" } as React.CSSProperties)) }}
                   readOnly={isFieldReadOnly}
                   onChange={(e) => setEmail(e.target.value)}
                   onFocus={(e) => {
@@ -906,7 +873,6 @@ export default function LoginPage() {
                   type="button"
                   className="light-eye-btn"
                   onClick={() => setShowEmail(!showEmail)}
-                  disabled={!selectedPreset}
                   aria-label={showEmail ? "Hide email" : "Show email"}
                   whileHover={{ scale: 1.2 }}
                   whileTap={{ scale: 0.9 }}
@@ -936,10 +902,8 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   name="rathinam_portal_password_field"
                   className="light-input-field"
-                  placeholder={selectedPreset ? "Enter your password" : "Select a role first"}
+                  placeholder="Enter your password"
                   value={password}
-                  disabled={!selectedPreset}
-                  style={{ cursor: selectedPreset ? undefined : "not-allowed" }}
                   readOnly={isFieldReadOnly}
                   onChange={(e) => setPassword(e.target.value)}
                   onFocus={(e) => {
