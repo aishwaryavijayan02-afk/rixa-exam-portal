@@ -270,7 +270,7 @@ export default function StaffFacultyPage() {
       state: "Completed" | "In Progress" | "Pending";
     };
 
-    if (questionsCount >= 25 && (fac.pendingReviews === 0 || verifiedCount >= 20)) {
+    if (questionsCount >= 25 && (examStore.getFacultyQuestionStats(fac).pendingReview === 0 || verifiedCount >= 20)) {
       qbStatus = {
         label: "25/25 Qs Uploaded",
         subtext: "Verified by HOD",
@@ -283,7 +283,7 @@ export default function StaffFacultyPage() {
     } else if (questionsCount >= 20) {
       qbStatus = {
         label: `${questionsCount}/25 Qs Uploaded`,
-        subtext: `${fac.pendingReviews || 5} Questions in Review`,
+        subtext: `${examStore.getFacultyQuestionStats(fac).pendingReview} Questions in Review`,
         badgeBg: "#fefce8",
         badgeColor: "#ca8a04",
         badgeBorder: "1px solid #fef08a",
@@ -1338,7 +1338,7 @@ export default function StaffFacultyPage() {
                           <div>
                             <span style={{ fontSize: "10.5px", color: "#64748b", display: "block" }}>Questions Added:</span>
                             <strong style={{ fontSize: "12px", color: "#ca9261" }}>
-                              {fac.questionsContributed} Questions
+                              {examStore.getFacultyQuestionStats(fac).contributed} Questions
                             </strong>
                           </div>
                         </div>
@@ -2142,8 +2142,8 @@ export default function StaffFacultyPage() {
               "Academic Qualifications": selectedFaculty.qualification,
               "Teaching Experience": selectedFaculty.experience,
               "Assigned Subjects": selectedFaculty.assignedSubjects.join(", "),
-              "Questions Contributed": `${selectedFaculty.questionsContributed} Questions`,
-              "Pending Question Reviews": `${selectedFaculty.pendingReviews} Questions`,
+              "Questions Contributed": `${examStore.getFacultyQuestionStats(selectedFaculty).contributed} Questions`,
+              "Pending Question Reviews": `${examStore.getFacultyQuestionStats(selectedFaculty).pendingReview} Questions`,
               "Account Status": selectedFaculty.status,
             }}
           />

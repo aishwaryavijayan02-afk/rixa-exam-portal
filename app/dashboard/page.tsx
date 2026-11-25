@@ -435,7 +435,7 @@ export default function DashboardPage() {
       state: "Completed" | "In Progress" | "Pending";
     };
 
-    if (questionsCount >= 25 && (fac.pendingReviews === 0 || verifiedCount >= 20)) {
+    if (questionsCount >= 25 && (examStore.getFacultyQuestionStats(fac).pendingReview === 0 || verifiedCount >= 20)) {
       qbStatus = {
         label: "25/25 Qs Uploaded",
         subtext: "Verified by HOD",
@@ -448,7 +448,7 @@ export default function DashboardPage() {
     } else if (questionsCount >= 20) {
       qbStatus = {
         label: `${questionsCount}/25 Qs Uploaded`,
-        subtext: `${fac.pendingReviews || 5} Questions in Review`,
+        subtext: `${examStore.getFacultyQuestionStats(fac).pendingReview} Questions in Review`,
         badgeBg: "#fefce8",
         badgeColor: "#ca8a04",
         badgeBorder: "1px solid #fef08a",
@@ -1808,8 +1808,8 @@ export default function DashboardPage() {
             "Academic Qualifications": selectedFaculty.qualification,
             "Teaching Experience": selectedFaculty.experience,
             "Assigned Subjects": selectedFaculty.assignedSubjects.join(", "),
-            "Questions Contributed": `${selectedFaculty.questionsContributed} Questions`,
-            "Pending Question Reviews": `${selectedFaculty.pendingReviews} Questions`,
+            "Questions Contributed": `${examStore.getFacultyQuestionStats(selectedFaculty).contributed} Questions`,
+            "Pending Question Reviews": `${examStore.getFacultyQuestionStats(selectedFaculty).pendingReview} Questions`,
             "Account Status": selectedFaculty.status,
           }}
         />

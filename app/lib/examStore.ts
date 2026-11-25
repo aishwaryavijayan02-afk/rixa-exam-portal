@@ -2181,6 +2181,44 @@ export const examStore = {
     saveToStorage("users", list);
   },
 
+  /**
+   * Live question counts for one faculty member, computed from the shared
+   * (Supabase-synced) question bank instead of the static numbers saved on
+   * the faculty profile, so HOD / Dean / COE see the same values everywhere.
+   * A question belongs to the faculty when it was uploaded under their email
+   * or name (including uploads a HOD made on their behalf).
+   */
+  getFacultyQuestionStats(faculty: { name?: string; email?: string }): {
+    contributed: number;
+    pendingReview: number;
+    verified: number;
+    finalApproved: number;
+    rejected: number;
+  } {
+    const cleanName = (value: string) =>
+      (value || "").toLowerCase().replace(/^(mr|mrs|ms|dr|prof)\.?\s+/i, "").replace(/\([^)]*\)/g, "").replace(/[^a-z0-9]/g, "");
+    const email = (faculty.email || "").trim().toLowerCase();
+    const handle = email.split("@")[0];
+    const name = cleanName(faculty.name || "");
+    const own = this.getQuestions().filter((q) => {
+      const qEmail = (q.email || "").trim().toLowerCase();
+      if (email && qEmail && (qEmail === email || qEmail.split("@")[0] === handle)) return true;
+      const qName = cleanName(q.uploadedBy || "");
+      return Boolean(name && qName && qName === name);
+    });
+    const role = (q: QuestionItem) => (q.verifiedRole || "").toUpperCase();
+    const isFinal = (q: QuestionItem) => q.status === "Approved" && role(q) === "COE";
+    const isClosed = (q: QuestionItem) => q.status === "Rejected" || q.status === "Archived" || q.status === "Draft";
+    return {
+      contributed: own.length,
+      // Still moving through HOD -> Dean -> Scrutiny -> COE.
+      pendingReview: own.filter((q) => !isFinal(q) && !isClosed(q)).length,
+      verified: own.filter((q) => q.status === "Verified" || q.status === "Approved").length,
+      finalApproved: own.filter(isFinal).length,
+      rejected: own.filter((q) => q.status === "Rejected").length,
+    };
+  },
+
   // ----------------- STAFF / FACULTY CRUD -----------------
   getAllStaffFaculty(): StaffFacultyItem[] {
     // Only staff profiles that were actually added (ids "fac-<timestamp>").
