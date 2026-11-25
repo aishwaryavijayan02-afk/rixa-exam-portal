@@ -46,6 +46,7 @@ import { ToastNotification } from "../components/CrudModal";
 import PortalFooter from "../components/PortalFooter";
 import { confirmDialog } from "../components/ConfirmDialog";
 import PortalHeader from "../components/PortalHeader";
+import QuestionCorrectionPanel from "../components/QuestionCorrectionPanel";
 
 type ApprovalRole = "staff" | "hod" | "dean" | "scrutinizer" | "coe";
 
@@ -529,6 +530,13 @@ export default function NotificationsApprovalPage() {
               gap: "18px",
             }}
           >
+            {/* Questions a reviewer marked wrong and sent back to this user (shown only when there are any) */}
+            <QuestionCorrectionPanel
+              mode="faculty"
+              currentUser={currentUser}
+              onToast={(message, type) => showToast(message, type === "error" ? "danger" : "success")}
+            />
+
             {/* ========================================================================= */}
             {/* CENTERED WORKFLOW PIPELINE FLOW (STAFF ➔ HOD ➔ DEAN ➔ COE)                */}
             {/* ========================================================================= */}

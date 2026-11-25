@@ -86,6 +86,24 @@ export interface QuestionItem {
   scrutinyRemarks?: string;
   scrutinizedBy?: string;
   scrutinizedAt?: string;
+  /** True while a reviewer (HOD / Dean / Scrutinizer / COE) has sent the question back to its uploader. */
+  correctionRequested?: boolean;
+  /** What the reviewer said is wrong. */
+  correctionNote?: string;
+  correctionBy?: string;
+  correctionRole?: string;
+  correctionAt?: string;
+  /** Every return / resubmission, oldest first. */
+  correctionHistory?: CorrectionEntry[];
+}
+
+export interface CorrectionEntry {
+  note: string;
+  by: string;
+  role: string;
+  at: string;
+  resolvedAt?: string;
+  resolution?: "resubmitted";
 }
 
 /** Resolve placeholder upload subjects into the canonical institutional subject. */
@@ -2188,6 +2206,94 @@ export const examStore = {
    * A question belongs to the faculty when it was uploaded under their email
    * or name (including uploads a HOD made on their behalf).
    */
+  /** True when `q` was uploaded by this person (email, email handle or name). */
+  isQuestionUploadedBy(q: QuestionItem, person: { name?: string; email?: string }): boolean {
+    const cleanName = (value: string) =>
+      (value || "").toLowerCase().replace(/^(mr|mrs|ms|dr|prof)\.?\s+/i, "").replace(/\([^)]*\)/g, "").replace(/[^a-z0-9]/g, "");
+    const email = (person.email || "").trim().toLowerCase();
+    const qEmail = (q.email || "").trim().toLowerCase();
+    if (email && qEmail && (qEmail === email || qEmail.split("@")[0] === email.split("@")[0])) return true;
+    const name = cleanName(person.name || "");
+    const qName = cleanName(q.uploadedBy || "");
+    return Boolean(name && qName && qName === name);
+  },
+
+  /**
+   * A reviewer marks a question as wrong: it leaves every review queue
+   * (status "Draft", approvals cleared) and goes back to its uploader with
+   * the reviewer's note. Synced through Supabase, so the faculty sees it on
+   * any device (Notifications -> Returned for correction).
+   */
+  returnQuestionForCorrection(id: number | string, note: string, reviewer: { name: string; role: string }): QuestionItem | null {
+    const current = this.getQuestions().find((q) => String(q.id) === String(id));
+    if (!current) return null;
+    const at = new Date().toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    const entry: CorrectionEntry = { note: note.trim(), by: reviewer.name, role: reviewer.role, at };
+    const updated = this.saveQuestion({
+      ...current,
+      status: "Draft",
+      verifiedBy: undefined,
+      verifiedRole: undefined,
+      scrutinyStatus: undefined,
+      scrutinyForwarded: undefined,
+      scrutinyRemarks: undefined,
+      scrutinizedBy: undefined,
+      scrutinizedAt: undefined,
+      correctionRequested: true,
+      correctionNote: entry.note,
+      correctionBy: reviewer.name,
+      correctionRole: reviewer.role,
+      correctionAt: at,
+      correctionHistory: [...(current.correctionHistory || []), entry],
+    });
+    this.saveNotification({
+      title: `Correction requested: ${current.subject}`,
+      description: `${reviewer.name} (${reviewer.role}) returned a question to ${current.uploadedBy || "the faculty"}: "${entry.note}"`,
+      type: "Approval",
+      priority: "High",
+      relatedTo: current.subject,
+      status: "Unread",
+    });
+    this.logActivity(`${reviewer.role} returned a question for correction`, "Approval Pipeline", `Question ${current.code || current.id}: ${entry.note}`, reviewer.name);
+    notifyUpdate();
+    return updated;
+  },
+
+  /** The uploader fixes a returned question; it restarts at HOD verification. */
+  resubmitCorrectedQuestion(id: number | string, changes: Partial<QuestionItem>, by: string): QuestionItem | null {
+    const current = this.getQuestions().find((q) => String(q.id) === String(id));
+    if (!current) return null;
+    const at = new Date().toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    const history = [...(current.correctionHistory || [])];
+    const open = history.length - 1;
+    if (open >= 0 && !history[open].resolvedAt) history[open] = { ...history[open], resolvedAt: at, resolution: "resubmitted" };
+    const updated = this.saveQuestion({
+      ...current,
+      ...changes,
+      id: current.id,
+      uploadedBy: current.uploadedBy,
+      email: current.email,
+      status: "Pending",
+      correctionRequested: false,
+      correctionNote: undefined,
+      correctionBy: undefined,
+      correctionRole: undefined,
+      correctionAt: undefined,
+      correctionHistory: history,
+    });
+    this.saveNotification({
+      title: `Corrected question resubmitted: ${current.subject}`,
+      description: `${by} corrected a question returned by ${current.correctionBy || "the reviewer"} (${current.correctionRole || "reviewer"}). It is back for HOD verification.`,
+      type: "Approval",
+      priority: "Medium",
+      relatedTo: current.subject,
+      status: "Unread",
+    });
+    this.logActivity("Corrected question resubmitted", "Approval Pipeline", `Question ${current.code || current.id}`, by);
+    notifyUpdate();
+    return updated;
+  },
+
   getFacultyQuestionStats(faculty: { name?: string; email?: string }): {
     contributed: number;
     pendingReview: number;

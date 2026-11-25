@@ -138,7 +138,11 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
         setNotifications(notifs || []);
         setMessages(msgs || []);
         const unread = notifs.filter((n) => n.status === "Unread").length;
-        setUnreadNotifCount(unread);
+        // Questions a reviewer sent back to this user also count (synced, so
+        // they show on the faculty's own device).
+        const me = authStore.getCurrentUser();
+        const returnedToMe = (qs || []).filter((q) => q.correctionRequested && examStore.isQuestionUploadedBy(q, me)).length;
+        setUnreadNotifCount(unread + returnedToMe);
       } catch (err) {
         console.error("Failed to load header data:", err);
       }

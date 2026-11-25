@@ -62,6 +62,7 @@ import { confirmDialog } from "../components/ConfirmDialog";
 import PortalHeader from "../components/PortalHeader";
 import Pagination from "../components/Pagination";
 import SyllabusDocumentPreview from "../components/SyllabusDocumentPreview";
+import QuestionCorrectionPanel from "../components/QuestionCorrectionPanel";
 
 function buildHodSyllabusPreview(item: SyllabusApprovalItem, units: SyllabusUnit[]): string {
   const uploadedText = (item.documentText || "").trim();
@@ -225,6 +226,7 @@ export default function ApprovalPage() {
   const [units, setUnits] = useState<SyllabusUnit[]>(() => examStore.getUnits());
   const [syllabusApprovals, setSyllabusApprovals] = useState<SyllabusApprovalItem[]>(() => examStore.getSyllabusApprovals());
   const [selectedSyllabus, setSelectedSyllabus] = useState<SyllabusApprovalItem | null>(null);
+  const [managedSubmission, setManagedSubmission] = useState<{ facultyName: string; subject: string; questions: QuestionItem[] } | null>(null);
 
   useEffect(() => {
     const loadQuestions = () => {
@@ -873,7 +875,10 @@ export default function ApprovalPage() {
                   <div className="approval-model-document">
                     <span className="approval-model-document-icon question"><Archive size={21} /></span>
                     <span className="approval-model-document-meta"><strong>{featuredQuestion?.sourceFile || (featuredQuestion ? `${/^unit\b/i.test(featuredQuestion.unit) ? "" : "Unit "}${featuredQuestion.unit} · ${featuredQuestion.type}` : featuredSubject)}</strong><small>{featuredSubject} · {featuredSubjectQuestions.length} {featuredSubjectQuestions.length === 1 ? "question" : "questions"} from {facultyName}</small></span>
-                    <button type="button" className="approval-model-view-button" onClick={() => handleOpenSubjectModal(featuredSubject, featuredSubjectQuestions.map((question) => question.id))}><Eye size={16} /> View</button>
+                    <span style={{ display: "inline-flex", gap: "8px", flexWrap: "wrap" }}>
+                      <button type="button" className="approval-model-view-button" onClick={() => handleOpenSubjectModal(featuredSubject, featuredSubjectQuestions.map((question) => question.id))}><Eye size={16} /> View</button>
+                      <button type="button" className="approval-model-view-button" onClick={() => setManagedSubmission({ facultyName, subject: featuredSubject, questions: featuredSubjectQuestions })} title="Edit, delete or mark questions wrong (sends them back to the faculty)"><Edit3 size={16} /> Manage</button>
+                    </span>
                     <span className="approval-model-document-status"><span className={`approval-model-status-dot ${featuredSubjectCandidates.length > 0 ? "is-pending" : "is-complete"}`} />{featuredSubjectCandidates.length > 0 ? `${featuredSubjectCandidates.length} awaiting review` : "Reviewed"}</span>
                   </div>
                 ) : (
@@ -978,6 +983,36 @@ export default function ApprovalPage() {
                 {selectedSyllabus.hodStatus === "Approved" ? "Verified and forwarded in the approval workflow." : "Review the complete Unit 1–5 document before forwarding."}
               </div>
               {/* Read-only preview: approval is done with "Verify & Forward" on the review page. */}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage questions: edit / delete / mark wrong (returns to the faculty) */}
+      {managedSubmission && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={(event) => { if (event.target === event.currentTarget) setManagedSubmission(null); }}
+          style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(15, 23, 42, 0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 16px" }}
+        >
+          <div style={{ width: "min(980px, 100%)", maxHeight: "90vh", overflowY: "auto", borderRadius: "18px", background: "#f8fafc", boxShadow: "0 24px 60px rgba(15,23,42,0.35)", position: "relative" }}>
+            <div style={{ position: "sticky", top: 0, zIndex: 2, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "14px 20px", background: "#ffffff", borderBottom: "1px solid #e2e8f0" }}>
+              <div style={{ fontSize: "13px", color: "#475569" }}>
+                <strong style={{ color: "#0f172a" }}>{managedSubmission.facultyName}</strong> · {managedSubmission.subject}
+              </div>
+              <button type="button" onClick={() => setManagedSubmission(null)} aria-label="Close" style={{ display: "grid", placeItems: "center", width: "32px", height: "32px", borderRadius: "9px", border: "1px solid #e2e8f0", background: "#ffffff", cursor: "pointer" }}>
+                <X size={16} />
+              </button>
+            </div>
+            <div style={{ padding: "16px" }}>
+              <QuestionCorrectionPanel
+                mode="reviewer"
+                currentUser={currentUser}
+                questions={managedSubmission.questions}
+                subject={managedSubmission.subject}
+                onToast={triggerToast}
+              />
             </div>
           </div>
         </div>
