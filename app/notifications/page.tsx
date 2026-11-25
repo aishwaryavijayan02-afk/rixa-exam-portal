@@ -1,4 +1,5 @@
 "use client";
+import ModalPortal from "../components/ModalPortal";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -1777,7 +1778,7 @@ export default function NotificationsApprovalPage() {
           ["Submitted on", item.submittedAt || "—"],
         ];
         return (
-          <div className="sdm-overlay" onClick={() => setInspectedItem(null)}>
+          <ModalPortal><div className="sdm-overlay" onClick={() => setInspectedItem(null)}>
             <div className="sdm-card" role="dialog" aria-modal="true" aria-labelledby="sdm-title" onClick={(e) => e.stopPropagation()}>
               <header className="sdm-head">
                 <div className="sdm-head-text">
@@ -1838,7 +1839,7 @@ export default function NotificationsApprovalPage() {
                 </button>
               </footer>
             </div>
-          </div>
+          </div></ModalPortal>
         );
       })()}
 

@@ -1,4 +1,5 @@
 "use client";
+import ModalPortal from "../components/ModalPortal";
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -2139,7 +2140,7 @@ export default function AcademicVaultPage() {
       </div>
 
       {showBulkPreview && bulkFileName && (
-        <div
+        <ModalPortal><div
           onClick={() => setShowBulkPreview(false)}
           className="qbp-overlay"
         >
@@ -2212,11 +2213,11 @@ export default function AcademicVaultPage() {
               )}
             </div>
           </div>
-        </div>
+        </div></ModalPortal>
       )}
 
       {showSyllabusFilePreview && syllabusFileUrl && syllabusFileName && (
-        <div onClick={() => setShowSyllabusFilePreview(false)} style={{ position: "fixed", inset: 0, zIndex: 1100, background: "rgba(40, 26, 17, 0.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+        <ModalPortal><div onClick={() => setShowSyllabusFilePreview(false)} style={{ position: "fixed", inset: 0, zIndex: 1100, background: "rgba(40, 26, 17, 0.65)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
           <div onClick={(event) => event.stopPropagation()} style={{ width: "min(1080px, 100%)", height: "min(92vh, 900px)", background: "#ffffff", borderRadius: "16px", overflow: "hidden", boxShadow: "0 24px 80px rgba(40, 26, 17, 0.4)", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "12px 18px", borderBottom: "1px solid #e2e8f0" }}>
               <div style={{ fontSize: "14px", fontWeight: 800, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>📄 {syllabusFileName}</div>
@@ -2283,7 +2284,7 @@ export default function AcademicVaultPage() {
               <iframe src={syllabusFileUrl || undefined} title={`Preview ${syllabusFileName}`} style={{ width: "100%", flex: 1, border: "none", background: "#f8fafc" }} />
             ))}
           </div>
-        </div>
+        </div></ModalPortal>
       )}
 
       {/* Toast Notification */}

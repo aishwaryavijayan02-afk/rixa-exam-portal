@@ -1,4 +1,5 @@
 "use client";
+import ModalPortal from "../components/ModalPortal";
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -917,7 +918,7 @@ export default function ApprovalPage() {
       </div>
 
       {selectedSyllabus && (
-        <div className="syllabus-review-overlay" onClick={() => setSelectedSyllabus(null)} style={{ position: "fixed", inset: 0, zIndex: 1200, background: "rgba(40, 26, 17, 0.62)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+        <ModalPortal><div className="syllabus-review-overlay" onClick={() => setSelectedSyllabus(null)} style={{ position: "fixed", inset: 0, zIndex: 1200, background: "rgba(40, 26, 17, 0.62)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
           <div className="syllabus-review-modal" onClick={(event) => event.stopPropagation()} style={{ width: "min(860px, 100%)", height: "86vh", maxHeight: "86vh", minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden", borderRadius: "18px", background: "#ffffff", boxShadow: "0 24px 70px rgba(40, 26, 17, 0.28)" }}>
             <div className="syllabus-review-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "14px", padding: "18px 20px", background: "linear-gradient(135deg, #eff6ff, #f8fafc)", borderBottom: "1px solid #dbeafe" }}>
               <div><div style={{ fontSize: "10px", color: "#c3844d", fontWeight: 850, textTransform: "uppercase", letterSpacing: "0.08em" }}>Syllabus Document Review</div><h2 style={{ margin: "5px 0 0", color: "#4c311f", fontSize: "18px", fontWeight: 850 }}>{selectedSyllabus.courseName}</h2><div style={{ marginTop: "4px", color: "#64748b", fontSize: "11px" }}>Uploaded by {selectedSyllabus.submittedBy}{selectedSyllabus.uploadedOnBehalfBy ? ` (via HOD ${selectedSyllabus.uploadedOnBehalfBy})` : ""} · {selectedSyllabus.documentName || "Syllabus document"}</div></div>
@@ -993,12 +994,12 @@ export default function ApprovalPage() {
               {/* Read-only preview: approval is done with "Verify & Forward" on the review page. */}
             </div>
           </div>
-        </div>
+        </div></ModalPortal>
       )}
 
       {/* Manage questions: edit / delete / mark wrong (returns to the faculty) */}
       {managedSubmission && (
-        <div
+        <ModalPortal><div
           role="dialog"
           aria-modal="true"
           onClick={(event) => { if (event.target === event.currentTarget) setManagedSubmission(null); }}
@@ -1024,7 +1025,7 @@ export default function ApprovalPage() {
               />
             </div>
           </div>
-        </div>
+        </div></ModalPortal>
       )}
 
       {/* ================= CRUD MODALS ================= */}

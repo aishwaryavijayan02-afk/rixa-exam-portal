@@ -1,5 +1,7 @@
 "use client";
 
+import ModalPortal from "./ModalPortal";
+
 import React, { useEffect, useMemo, useState } from "react";
 import { BookOpen, CheckCircle2, ImagePlus, ListChecks, PenLine, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { INSTITUTIONAL_SUBJECTS, QuestionItem } from "../lib/examStore";
@@ -161,6 +163,7 @@ export default function ManualQuestionForm({
   const subjectInfo = INSTITUTIONAL_SUBJECTS.find((s) => s.name === draft.subject);
 
   return (
+    <ModalPortal>
     <div className="mqf-overlay" onClick={onClose}>
       <div className="mqf-card" role="dialog" aria-modal="true" aria-labelledby="mqf-title" onClick={(e) => e.stopPropagation()}>
         <header className="mqf-head">
@@ -339,5 +342,6 @@ export default function ManualQuestionForm({
         </footer>
       </div>
     </div>
+    </ModalPortal>
   );
 }

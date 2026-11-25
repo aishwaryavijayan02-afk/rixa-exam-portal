@@ -1,5 +1,7 @@
 "use client";
 
+import ModalPortal from "./ModalPortal";
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { X, Trash2, Edit3, Eye, CheckCircle2, AlertTriangle, Save, Info, Sparkles, Check, FileText, Printer, Layers, School, FileCheck } from "lucide-react";
 import { getQuestionBankDocument } from "../lib/questionBankDocuments";
@@ -324,6 +326,7 @@ export function ViewModal({
   const detectedSubject = title.split("-")[0]?.trim() || "Question Paper";
 
   return (
+    <ModalPortal>
     <div
       style={{
         position: "fixed",
@@ -997,6 +1000,7 @@ export function ViewModal({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }
 
@@ -1086,6 +1090,7 @@ export function FormModal({
   };
 
   return (
+    <ModalPortal>
     <div
       style={{
         position: "fixed",
@@ -1432,6 +1437,7 @@ export function FormModal({
         </form>
       </div>
     </div>
+    </ModalPortal>
   );
 }
 
@@ -1464,6 +1470,7 @@ export function DeleteModal({
   if (!isOpen) return null;
 
   return (
+    <ModalPortal>
     <div
       style={{
         position: "fixed",
@@ -1577,6 +1584,7 @@ export function DeleteModal({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }
 
@@ -1607,6 +1615,7 @@ export function ToastNotification({
   const edge = isDanger ? "rgba(252, 165, 165, .4)" : "rgba(214, 162, 106, .45)";
 
   return (
+    <ModalPortal>
     <div
       className="no-print exam-toast-pop"
       role="status"
@@ -1669,6 +1678,7 @@ export function ToastNotification({
         <X size={14} />
       </button>
     </div>
+    </ModalPortal>
   );
 }
 
@@ -1747,6 +1757,7 @@ export function VerificationResultModal({
   const hasDetails = Boolean(details);
 
   return (
+    <ModalPortal>
     <div className="vr-overlay" onClick={onClose}>
       <div className="vr-card vr2-card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="vr-title">
         <button type="button" onClick={onClose} className="vr-close" aria-label="Close">
@@ -1833,6 +1844,7 @@ export function VerificationResultModal({
         </button>
       </div>
     </div>
+    </ModalPortal>
   );
 }
 
