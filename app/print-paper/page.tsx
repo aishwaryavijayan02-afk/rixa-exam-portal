@@ -141,7 +141,9 @@ export default function PrintPaperPage() {
 
   // Store Questions
   const [allQuestions, setAllQuestions] = useState<QuestionItem[]>(() => examStore.getQuestions());
-  const [approvedOnly, setApprovedOnly] = useState(false);
+  // Only questions with COE final approval can ever be printed.
+  const isFinalApproved = (q: QuestionItem) => q.status === "Approved" && (q.verifiedRole || "").toUpperCase() === "COE";
+  const printableQuestions = allQuestions.filter(isFinalApproved);
 
   useEffect(() => {
     const loadQs = () => setAllQuestions(examStore.getQuestions());
@@ -153,12 +155,8 @@ export default function PrintPaperPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const subject = params.get("subject");
-    const onlyApproved = params.get("approvedOnly") === "true";
     if (subject) setSelectedSubject(subject);
-    if (onlyApproved) {
-      setApprovedOnly(true);
-      setPrintMode("all");
-    }
+    if (params.get("approvedOnly") === "true") setPrintMode("all");
   }, []);
 
   const STORAGE_KEY = "exam_cell_print_paper_config";
@@ -176,7 +174,7 @@ export default function PrintPaperPage() {
   const initialConfig = typeof window !== "undefined" ? getSavedConfig() : null;
 
   // Form Controls
-  const rawSubjects = Array.from(new Set(allQuestions.map((q) => (q.subject || "ENGINEERING GRAPHICS").trim())));
+  const rawSubjects = Array.from(new Set(printableQuestions.map((q) => (q.subject || "ENGINEERING GRAPHICS").trim())));
   const subjectsList = ["All Subjects (Complete Question Bank)", ...rawSubjects];
   const [selectedSubject, setSelectedSubject] = useState<string>(() => initialConfig?.selectedSubject || "ENGINEERING GRAPHICS");
   const [printMode, setPrintMode] = useState<"all" | "custom">(() => initialConfig?.printMode || "custom");
@@ -224,13 +222,15 @@ export default function PrintPaperPage() {
 
 
   // Filter Questions based on subject selection
-  const subjectQs = allQuestions.filter((q) => {
-    if (approvedOnly && !(q.status === "Approved" && (q.verifiedRole || "").toUpperCase() === "COE")) return false;
+  const inSelectedSubject = (q: QuestionItem) => {
     if (!selectedSubject || selectedSubject.startsWith("All Subjects")) return true;
     const qSubj = (q.subject || "").trim().toLowerCase();
     const target = selectedSubject.trim().toLowerCase();
     return qSubj.includes(target) || target.includes(qSubj);
-  });
+  };
+  const subjectQs = printableQuestions.filter(inSelectedSubject);
+  // Shown so the COE knows why some uploaded questions are not on the paper.
+  const awaitingFinalApproval = allQuestions.filter((q) => !isFinalApproved(q) && !q.correctionRequested && !["Rejected", "Archived"].includes(q.status) && inSelectedSubject(q)).length;
 
   // Categorize questions
   let finalMcqs: QuestionItem[] = [];
@@ -261,6 +261,10 @@ export default function PrintPaperPage() {
 
   // Print Action
   const handleTriggerPrint = () => {
+    if (totalQuestionsInPaper === 0) {
+      showToast(printableQuestions.length === 0 ? "No questions have COE final approval yet. Give final approval before printing." : "No COE final-approved questions are selected for this paper.", "danger");
+      return;
+    }
     window.print();
   };
 
@@ -443,8 +447,13 @@ export default function PrintPaperPage() {
                 <div className="qp-eyebrow">COE · Examination Output</div>
                 <h1 className="qp-title">Question Paper Generator</h1>
                 <p className="qp-subtitle">
-                  {approvedOnly ? "Final COE-approved questions for this subject are ready to print." : "Choose the subject, format and question counts, then print the official paper."}
+                  Only questions with COE final approval are printed. Choose the subject, format and question counts, then print the official paper.
                 </p>
+                {awaitingFinalApproval > 0 && (
+                  <div className="no-print" style={{ marginTop: "10px", display: "inline-block", padding: "8px 12px", borderRadius: "10px", background: "#fffbeb", border: "1px solid #fde68a", color: "#92400e", fontSize: "12.5px", fontWeight: 600, lineHeight: 1.5 }}>
+                    {awaitingFinalApproval} question{awaitingFinalApproval === 1 ? " is" : "s are"} still awaiting COE final approval and {awaitingFinalApproval === 1 ? "is" : "are"} not included in this paper.
+                  </div>
+                )}
               </div>
 
               <div className="qp-hero-side">
@@ -460,7 +469,7 @@ export default function PrintPaperPage() {
                   <span className="qp-stat-value">{duration.replace(" Hours", "h")}</span>
                   <span className="qp-stat-label">Duration</span>
                 </div>
-                <button type="button" onClick={handleTriggerPrint} className="qp-btn-primary">
+                <button type="button" onClick={handleTriggerPrint} className="qp-btn-primary" disabled={totalQuestionsInPaper === 0} style={totalQuestionsInPaper === 0 ? { opacity: 0.5, cursor: "not-allowed" } : undefined}>
                   <Printer size={16} />
                   <span>Print Paper (PDF)</span>
                 </button>
@@ -584,7 +593,7 @@ export default function PrintPaperPage() {
                   )}
                 </div>
 
-                <button type="button" onClick={handleTriggerPrint} className="qp-btn-primary qp-btn-block">
+                <button type="button" onClick={handleTriggerPrint} className="qp-btn-primary qp-btn-block" disabled={totalQuestionsInPaper === 0} style={totalQuestionsInPaper === 0 ? { opacity: 0.5, cursor: "not-allowed" } : undefined}>
                   <Printer size={16} />
                   <span>Print Official Paper</span>
                 </button>
@@ -689,7 +698,11 @@ export default function PrintPaperPage() {
 
                   {totalQuestionsInPaper === 0 && (
                     <div className="no-print qp-empty">
-                      No questions selected yet. Choose “All questions” or increase the counts in the Paper Builder.
+                      {printableQuestions.length === 0
+                        ? "No questions have COE final approval yet. Questions can be printed only after the COE gives final approval."
+                        : subjectQs.length === 0
+                          ? "This subject has no COE final-approved questions yet."
+                          : "No questions selected yet. Choose “All questions” or increase the counts in the Paper Builder."}
                     </div>
                   )}
 
