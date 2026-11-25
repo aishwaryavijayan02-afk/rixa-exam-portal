@@ -894,6 +894,11 @@ export default function ManualQuestionsPage() {
             {/* ================= LEFT COLUMN: Filter & Table ================= */}
             <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
 
+              {/* COE: Final Approval also above the (long) question list, so it is reachable without scrolling */}
+              {currentUser.role === "COE" && (
+                <CoeFinalApprovalBar subject={selectedSubject !== "all" ? selectedSubject : undefined} />
+              )}
+
               {/* Card 2: Manual Questions List Table */}
               {currentUser.role === "SCRUTINIZER" || currentUser.role === "COE" ? (
                 <ScrutinyQuestionReview mode={currentUser.role === "COE" ? "coe" : "scrutinizer"} subject={selectedSubject !== "all" ? selectedSubject : undefined} onToast={(message) => setToast(message)} />
