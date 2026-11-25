@@ -31,6 +31,7 @@ import {
   Users,
 } from "lucide-react";
 import { examStore, QuestionItem } from "../lib/examStore";
+import { sortForPrint } from "../lib/questionCheck";
 import NavIcon from "../components/NavIcon";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
 import { menuForUser } from "../lib/auth";
@@ -238,24 +239,22 @@ export default function PrintPaperPage() {
   let finalDiagrams: QuestionItem[] = [];
   let finalOthers: QuestionItem[] = [];
 
+  // Content check: each question goes only to its own part (MCQ -> A,
+  // Descriptive -> B, Diagram -> C). No filling one part with another type.
+  const { pools: printPools, rejected: failedCheck } = sortForPrint(subjectQs);
+  const mcqPool = printPools.MCQ;
+  const descPool = printPools.Descriptive;
+  const diagPool = printPools.Diagram;
   if (printMode === "all") {
-    finalMcqs = subjectQs.filter((q) => q.type === "MCQ" || q.type === "Short Answer" || (q.options && q.options.length > 0));
-    finalDescriptives = subjectQs.filter((q) => q.type === "Descriptive" && !q.imageUrl && !(q as any).raw?.imageUrl);
-    finalDiagrams = subjectQs.filter((q) => q.imageUrl || (q as any).raw?.imageUrl || q.type === "Problem Solving");
-    
-    // Any question not in the 3 pools
-    const usedIds = new Set([...finalMcqs, ...finalDescriptives, ...finalDiagrams].map((q) => q.id));
-    finalOthers = subjectQs.filter((q) => !usedIds.has(q.id));
+    finalMcqs = mcqPool;
+    finalDescriptives = descPool;
+    finalDiagrams = diagPool;
   } else {
-    const mcqPool = subjectQs.filter((q) => q.type === "MCQ" || q.type === "Short Answer" || (q.options && q.options.length > 0));
-    const descPool = subjectQs.filter((q) => q.type === "Descriptive" && !q.imageUrl && !(q as any).raw?.imageUrl);
-    const diagPool = subjectQs.filter((q) => q.imageUrl || (q as any).raw?.imageUrl || q.type === "Problem Solving");
-
-    finalMcqs = mcqPool.length > 0 ? mcqPool.slice(0, mcqCount) : subjectQs.slice(0, mcqCount);
-    finalDescriptives = descPool.length > 0 ? descPool.slice(0, descriptiveCount) : subjectQs.slice(mcqCount, mcqCount + descriptiveCount);
-    finalDiagrams = diagPool.length > 0 ? diagPool.slice(0, diagramCount) : subjectQs.slice(mcqCount + descriptiveCount, mcqCount + descriptiveCount + diagramCount);
-    finalOthers = [];
+    finalMcqs = mcqPool.slice(0, mcqCount);
+    finalDescriptives = descPool.slice(0, descriptiveCount);
+    finalDiagrams = diagPool.slice(0, diagramCount);
   }
+  finalOthers = [];
 
   const totalQuestionsInPaper = finalMcqs.length + finalDescriptives.length + finalDiagrams.length + finalOthers.length;
 
@@ -449,6 +448,11 @@ export default function PrintPaperPage() {
                 <p className="qp-subtitle">
                   Only questions with COE final approval are printed. Choose the subject, format and question counts, then print the official paper.
                 </p>
+                {failedCheck.length > 0 && (
+                  <div className="no-print" title={failedCheck.slice(0, 12).map((f) => `• ${(f.question.question || "").slice(0, 70)} — ${f.reason}`).join(" | ")} style={{ marginTop: "10px", marginRight: "8px", display: "inline-block", padding: "8px 12px", borderRadius: "10px", background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", fontSize: "12.5px", fontWeight: 600, lineHeight: 1.5 }}>
+                    {failedCheck.length} approved question{failedCheck.length === 1 ? "" : "s"} failed the question check ({Array.from(new Set(failedCheck.map((f) => f.reason))).join("; ")}) and {failedCheck.length === 1 ? "is" : "are"} not printed.
+                  </div>
+                )}
                 {awaitingFinalApproval > 0 && (
                   <div className="no-print" style={{ marginTop: "10px", display: "inline-block", padding: "8px 12px", borderRadius: "10px", background: "#fffbeb", border: "1px solid #fde68a", color: "#92400e", fontSize: "12.5px", fontWeight: 600, lineHeight: 1.5 }}>
                     {awaitingFinalApproval} question{awaitingFinalApproval === 1 ? " is" : "s are"} still awaiting COE final approval and {awaitingFinalApproval === 1 ? "is" : "are"} not included in this paper.
@@ -551,9 +555,9 @@ export default function PrintPaperPage() {
                 {printMode === "custom" && (
                   <div className="qp-counts">
                     {[
-                      { label: "Multiple choice", hint: "Part A", value: mcqCount, set: setMcqCount, max: Math.max(50, subjectQs.length) },
-                      { label: "Descriptive", hint: "Part B", value: descriptiveCount, set: setDescriptiveCount, max: Math.max(50, subjectQs.length) },
-                      { label: "Diagram / problem", hint: "Part C", value: diagramCount, set: setDiagramCount, max: Math.max(30, subjectQs.length) },
+                      { label: "Multiple choice", hint: `Part A · ${mcqPool.length} available`, value: Math.min(mcqCount, mcqPool.length), set: setMcqCount, max: mcqPool.length },
+                      { label: "Descriptive", hint: `Part B · ${descPool.length} available`, value: Math.min(descriptiveCount, descPool.length), set: setDescriptiveCount, max: descPool.length },
+                      { label: "Diagram / problem", hint: `Part C · ${diagPool.length} available`, value: Math.min(diagramCount, diagPool.length), set: setDiagramCount, max: diagPool.length },
                     ].map((row) => (
                       <div key={row.label} className="qp-count-row">
                         <div className="qp-count-top">
@@ -562,12 +566,12 @@ export default function PrintPaperPage() {
                             <div className="qp-count-hint">{row.hint}</div>
                           </div>
                           <div className="qp-stepper">
-                            <button type="button" aria-label={`Decrease ${row.label}`} onClick={() => row.set((v) => Math.max(0, v - 1))}>−</button>
+                            <button type="button" aria-label={`Decrease ${row.label}`} onClick={() => row.set((v) => Math.max(0, Math.min(v, row.max) - 1))}>−</button>
                             <span>{row.value}</span>
-                            <button type="button" aria-label={`Increase ${row.label}`} onClick={() => row.set((v) => v + 1)}>+</button>
+                            <button type="button" aria-label={`Increase ${row.label}`} disabled={row.value >= row.max} onClick={() => row.set((v) => Math.min(row.max, Math.min(v, row.max) + 1))}>+</button>
                           </div>
                         </div>
-                        <input type="range" min={0} max={row.max} value={row.value} onChange={(e) => row.set(Number(e.target.value))} className="qp-range" />
+                        <input type="range" min={0} max={Math.max(row.max, 0)} disabled={row.max === 0} value={row.value} onChange={(e) => row.set(Number(e.target.value))} className="qp-range" />
                       </div>
                     ))}
                   </div>
