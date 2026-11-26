@@ -180,8 +180,10 @@ export default function PrintPaperPage() {
 
   // Form Controls
   const rawSubjects = Array.from(new Set(printableQuestions.map((q) => (q.subject || "ENGINEERING GRAPHICS").trim())));
-  const subjectsList = ["All Subjects (Complete Question Bank)", ...rawSubjects];
-  const [selectedSubject, setSelectedSubject] = useState<string>(() => initialConfig?.selectedSubject || "ENGINEERING GRAPHICS");
+  const [selectedSubject, setSelectedSubject] = useState<string>(() => initialConfig?.selectedSubject || "");
+  // School / department picked in the builder (null = follow the selected subject).
+  const [schoolPick, setSchoolPick] = useState<string | null>(null);
+  const [deptPick, setDeptPick] = useState<string | null>(null);
   const [printMode, setPrintMode] = useState<"all" | "custom">(() => initialConfig?.printMode || "custom");
   const [examType, setExamType] = useState<string>(() => initialConfig?.examType || "End Semester Examination (Regular)");
   const [maxMarks, setMaxMarks] = useState<number>(() => initialConfig?.maxMarks ?? 100);
@@ -264,12 +266,8 @@ export default function PrintPaperPage() {
 
 
   // Filter Questions based on subject selection
-  const inSelectedSubject = (q: QuestionItem) => {
-    if (!selectedSubject || selectedSubject.startsWith("All Subjects")) return true;
-    const qSubj = (q.subject || "").trim().toLowerCase();
-    const target = selectedSubject.trim().toLowerCase();
-    return qSubj.includes(target) || target.includes(qSubj);
-  };
+  // A paper is always for one subject chosen through School -> Department -> Subject.
+  const inSelectedSubject = (q: QuestionItem) => Boolean(selectedSubject) && (q.subject || "").trim() === selectedSubject.trim();
   const subjectQs = printableQuestions.filter(inSelectedSubject);
   // Shown so the COE knows why some uploaded questions are not on the paper.
   const awaitingFinalApproval = allQuestions.filter((q) => !isFinalApproved(q) && !q.correctionRequested && !["Rejected", "Archived"].includes(q.status) && inSelectedSubject(q)).length;
@@ -325,19 +323,78 @@ export default function PrintPaperPage() {
   };
   // Subject code, semester and degree from the subject's own records:
   // subject list, uploaded syllabus, institutional catalogue, its questions.
-  const autoSubjectInfo = (() => {
-    if (!selectedSubject || selectedSubject.startsWith("All Subjects")) return { subjectCode: "", semester: "", degree: "" };
-    const subjectRec = examStore.getSubjects().find((s) => sameSubject(s.name, selectedSubject));
-    const syllabus = examStore.getSyllabusApprovals().find((s) => sameSubject(s.courseName, selectedSubject));
-    const catalogue = INSTITUTIONAL_SUBJECTS.find((s) => sameSubject(s.name, selectedSubject));
-    const questionDept = allQuestions.find((q) => sameSubject(q.subject, selectedSubject) && q.department)?.department || "";
+  const subjectInfoFor = (name: string) => {
+    if (!name || name.startsWith("All Subjects")) return { subjectCode: "", semester: "", degree: "", department: "" };
+    const subjectRec = examStore.getSubjects().find((s) => sameSubject(s.name, name));
+    const syllabus = examStore.getSyllabusApprovals().find((s) => sameSubject(s.courseName, name));
+    const catalogue = INSTITUTIONAL_SUBJECTS.find((s) => sameSubject(s.name, name));
+    const questionDept = allQuestions.find((q) => sameSubject(q.subject, name) && q.department)?.department || "";
     const department = subjectRec?.department || syllabus?.department || catalogue?.department || questionDept;
     return {
       subjectCode: subjectRec?.code || syllabus?.courseCode || catalogue?.code || "",
       semester: toRoman(subjectRec?.semester || syllabus?.semester || catalogue?.semester || ""),
       degree: degreeForDepartment(department),
+      department,
     };
-  })();
+  };
+  const autoSubjectInfo = subjectInfoFor(selectedSubject);
+
+  // ---- School -> Department -> Subject (with code) ----
+  // Every subject that has COE final-approved questions, placed under its
+  // institutional school and department.
+  const hierarchy = examStore.getInstitutionalHierarchy();
+  const subjectCatalog = rawSubjects
+    .map((name) => {
+      const info = subjectInfoFor(name);
+      const dept = info.department ? examStore.getDepartmentByNameOrId(info.department) : undefined;
+      const school = dept ? hierarchy.find((s) => s.departments.some((d) => d.id === dept.id)) : undefined;
+      return {
+        name,
+        code: subjectMeta[name]?.subjectCode || info.subjectCode,
+        count: printableQuestions.filter((q) => (q.subject || "").trim() === name).length,
+        schoolId: school?.id || "other",
+        deptId: dept?.id || `other:${info.department || "unassigned"}`,
+        deptName: dept?.name || (info.department ? `${info.department} (not in school list)` : "Department not set"),
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const otherDepts = Array.from(new Map(subjectCatalog.filter((e) => e.schoolId === "other").map((e) => [e.deptId, { id: e.deptId, name: e.deptName }])).values());
+  const schoolOptions = [
+    ...hierarchy.map((s) => ({ id: s.id, name: s.name, departments: s.departments.map((d) => ({ id: d.id, name: d.name })) })),
+    ...(otherDepts.length ? [{ id: "other", name: "Other / school not set", departments: otherDepts }] : []),
+  ];
+  const activeEntry = subjectCatalog.find((e) => e.name === selectedSubject);
+  const schoolValue = schoolPick ?? activeEntry?.schoolId ?? subjectCatalog[0]?.schoolId ?? schoolOptions[0]?.id ?? "";
+  const activeSchool = schoolOptions.find((s) => s.id === schoolValue);
+  const deptValue = deptPick ?? activeEntry?.deptId ?? activeSchool?.departments.find((d) => subjectCatalog.some((e) => e.deptId === d.id))?.id ?? activeSchool?.departments[0]?.id ?? "";
+  const deptSubjects = subjectCatalog.filter((e) => e.deptId === deptValue);
+  const subjectsInSchool = (schoolId: string) => subjectCatalog.filter((e) => e.schoolId === schoolId).length;
+  const subjectsInDept = (deptId: string) => subjectCatalog.filter((e) => e.deptId === deptId).length;
+  const chooseSchool = (id: string) => {
+    setSchoolPick(id);
+    const school = schoolOptions.find((s) => s.id === id);
+    const dept = school?.departments.find((d) => subjectsInDept(d.id) > 0) || school?.departments[0];
+    setDeptPick(dept?.id ?? null);
+    // No subject in that department: show an empty paper, not the old subject.
+    setSelectedSubject(subjectCatalog.find((e) => e.deptId === dept?.id)?.name || "");
+  };
+  const chooseDept = (id: string) => {
+    setDeptPick(id);
+    setSelectedSubject(subjectCatalog.find((e) => e.deptId === id)?.name || "");
+  };
+  // Saved subject no longer has approved questions (or none chosen yet): start with the first one.
+  const firstCatalogSubject = subjectCatalog[0]?.name || "";
+  useEffect(() => {
+    if (schoolPick === null && deptPick === null && firstCatalogSubject && !rawSubjects.includes(selectedSubject)) {
+      setSelectedSubject(firstCatalogSubject);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firstCatalogSubject, selectedSubject, schoolPick, deptPick]);
+  const chooseSubject = (name: string) => {
+    setSelectedSubject(name);
+    setSchoolPick(null);
+    setDeptPick(null);
+  };
   const meta = subjectMeta[selectedSubject] || {};
   const degree = meta.degree || autoSubjectInfo.degree;
   const subjectCode = meta.subjectCode || autoSubjectInfo.subjectCode;
@@ -683,12 +740,43 @@ export default function PrintPaperPage() {
                 <div className="qp-section-label">Paper details</div>
 
                 <label className="qp-field">
-                  <span className="qp-label">Subject</span>
-                  <select value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)} className="qp-select qp-select-strong">
-                    {subjectsList.map((subj) => (
-                      <option key={subj} value={subj}>{subj}</option>
+                  <span className="qp-label">School</span>
+                  <select value={schoolValue} onChange={(e) => chooseSchool(e.target.value)} className="qp-select" aria-label="School">
+                    {schoolOptions.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({subjectsInSchool(s.id)} subject{subjectsInSchool(s.id) === 1 ? "" : "s"})
+                      </option>
                     ))}
                   </select>
+                </label>
+
+                <label className="qp-field">
+                  <span className="qp-label">Department</span>
+                  <select value={deptValue} onChange={(e) => chooseDept(e.target.value)} className="qp-select" aria-label="Department">
+                    {(activeSchool?.departments || []).map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name} ({subjectsInDept(d.id)})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="qp-field">
+                  <span className="qp-label">Subject &amp; code</span>
+                  {deptSubjects.length > 0 ? (
+                    <select value={activeEntry && activeEntry.deptId === deptValue ? selectedSubject : ""} onChange={(e) => chooseSubject(e.target.value)} className="qp-select qp-select-strong" aria-label="Subject">
+                      {!(activeEntry && activeEntry.deptId === deptValue) && <option value="">Select a subject</option>}
+                      {deptSubjects.map((e) => (
+                        <option key={e.name} value={e.name}>
+                          {e.name} ({e.code || "code not set"}) · {e.count} Qs
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="qp-part-unavailable" role="status" style={{ padding: "9px 12px", borderRadius: "10px", background: "#fff7ed", border: "1px solid #fed7aa", color: "#9a3412", fontSize: "12px", fontWeight: 600, lineHeight: 1.45 }}>
+                      No subject in this department has COE final-approved questions yet.
+                    </div>
+                  )}
                 </label>
 
                 <label className="qp-field">
