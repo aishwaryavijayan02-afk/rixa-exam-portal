@@ -206,6 +206,26 @@ export default function PrintPaperPage() {
   const [qpCode, setQpCode] = useState<string>(() => initialConfig?.qpCode || "");
   const [isFormatChooserOpen, setIsFormatChooserOpen] = useState(false);
 
+  // Live preview is an A4 page (210mm) zoomed to fit the column, so lines
+  // wrap exactly as they will on the printed paper.
+  // Callback ref: the stage mounts only after RoleGuard lets the page render.
+  const [stageEl, setStageEl] = useState<HTMLDivElement | null>(null);
+  const [previewZoom, setPreviewZoom] = useState(1);
+  useEffect(() => {
+    const stage = stageEl;
+    if (!stage || typeof ResizeObserver === "undefined") return;
+    const A4_PX = (210 / 25.4) * 96;
+    const fit = () => {
+      const style = getComputedStyle(stage);
+      const available = stage.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      setPreviewZoom(Math.min(1, Math.max(0.4, available / A4_PX)));
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, [stageEl]);
+
   // Sync to localStorage
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -497,6 +517,7 @@ export default function PrintPaperPage() {
             /* The paper keeps its own layout (flex/grid rows, rules); only the
                screen card styling is removed. */
             #official-printable-paper {
+              zoom: 1 !important;
               width: 100% !important;
               margin: 0 !important;
               padding: 5mm 6mm !important;
@@ -825,13 +846,13 @@ export default function PrintPaperPage() {
               </div>
 
               {/* Right: live paper preview */}
-              <div className="qp-stage">
+              <div className="qp-stage" ref={setStageEl}>
                 <div className="no-print qp-stage-bar">
                   <span className="qp-live-dot" /> Live preview
                   <span className="qp-stage-meta">A4 · Portrait</span>
                 </div>
 
-                <div id="official-printable-paper" className="qp-paper">
+                <div id="official-printable-paper" className="qp-paper" style={{ zoom: previewZoom }}>
                   {/* Dotted page border, repeated on every printed page */}
                   <div className="qp-page-border" aria-hidden="true" />
                   <QuestionPaperFormat format={paperFormat} header={paperHeader} sections={paperSections} />

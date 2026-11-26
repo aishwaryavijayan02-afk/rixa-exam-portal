@@ -32,16 +32,35 @@ export interface PaperHeaderInfo {
 
 const FONT = "'Bookman Old Style', 'Times New Roman', Times, serif";
 
+/**
+ * Point sizes of the official Word question paper (Bookman Old Style).
+ * pt is used on screen and in print, so the live preview matches the paper.
+ */
+const PT = {
+  qpCode: "9pt",
+  regNo: "11pt",
+  university: "13pt",
+  headerLine: "12pt",
+  meta: "12pt",
+  section: "12pt",
+  answerAll: "11pt",
+  tableHead: "11pt",
+  tableBody: "11pt",
+  plainBody: "12pt",
+  or: "11pt",
+  caption: "9pt",
+} as const;
+
 function PaperHeader({ info }: { info: PaperHeaderInfo }) {
-  const line: React.CSSProperties = { fontWeight: 700, fontSize: "12.5px", lineHeight: 1.45, textTransform: "uppercase" };
+  const line: React.CSSProperties = { fontWeight: 700, fontSize: PT.headerLine, lineHeight: 1.35, textTransform: "uppercase" };
   return (
     <div style={{ fontFamily: FONT, color: "#000" }}>
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "2px" }}>
-        <span style={{ border: "1px dashed #000", padding: "1px 8px", fontSize: "10px", fontWeight: 700 }}>QP CODE{info.qpCode ? `: ${info.qpCode}` : ""}</span>
+        <span style={{ border: "1px dashed #000", padding: "1px 8px", fontSize: PT.qpCode, fontWeight: 700 }}>QP CODE{info.qpCode ? `: ${info.qpCode}` : ""}</span>
       </div>
-      <div style={{ textAlign: "right", fontSize: "12px", fontWeight: 700, marginBottom: "6px" }}>Reg. No.: ........................</div>
+      <div style={{ textAlign: "right", fontSize: PT.regNo, fontWeight: 700, margin: "4pt 0 6pt" }}>Reg. No.: ........................</div>
       <div style={{ textAlign: "center" }}>
-        <div style={{ ...line, fontSize: "13.5px" }}>RATHINAM GLOBAL (DEEMED TO BE UNIVERSITY)</div>
+        <div style={{ ...line, fontSize: PT.university }}>RATHINAM GLOBAL (DEEMED TO BE UNIVERSITY)</div>
         <div style={{ ...line, textTransform: "none" }}>Eachanari, Coimbatore - 21</div>
         <div style={line}>{info.examTitle}</div>
         <div style={line}>SEMESTER- {info.semester || "—"}</div>
@@ -49,7 +68,7 @@ function PaperHeader({ info }: { info: PaperHeaderInfo }) {
         <div style={line}>SUBJECT: {info.subject || "—"}</div>
         <div style={line}>SUBJECT CODE: {info.subjectCode || "—"}</div>
       </div>
-      <div className="paper-meta-row" style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "12.5px", margin: "8px 0 6px" }}>
+      <div className="paper-meta-row" style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: PT.meta, margin: "8pt 0 4pt" }}>
         <span>Time: {info.duration}</span>
         <span>Maximum: {info.maxMarks} Marks</span>
       </div>
@@ -59,9 +78,9 @@ function PaperHeader({ info }: { info: PaperHeaderInfo }) {
 
 function SectionHeading({ heading }: { heading: string }) {
   return (
-    <div className="part-header" style={{ textAlign: "center", fontFamily: FONT, color: "#000", margin: "10px 0 8px" }}>
-      <div style={{ fontWeight: 700, fontSize: "12.5px", textDecoration: "underline" }}>{heading}</div>
-      <div style={{ fontWeight: 700, fontSize: "12px" }}>(ANSWER ALL QUESTIONS)</div>
+    <div className="part-header" style={{ textAlign: "center", fontFamily: FONT, color: "#000", margin: "8pt 0 6pt", lineHeight: 1.35 }}>
+      <div style={{ fontWeight: 700, fontSize: PT.section, textDecoration: "underline" }}>{heading}</div>
+      <div style={{ fontWeight: 700, fontSize: PT.answerAll }}>(ANSWER ALL QUESTIONS)</div>
     </div>
   );
 }
@@ -80,46 +99,62 @@ function QuestionBody({ row }: { row: Extract<PaperRow, { kind: "q" }> }) {
       {row.image && (
         <figure style={{ margin: "6px 0 0", textAlign: "center" }}>
           <img src={row.image} alt={row.caption || "Figure"} style={{ maxWidth: "100%", maxHeight: "170px", objectFit: "contain" }} />
-          {row.caption && <figcaption style={{ fontSize: "11px", fontStyle: "italic" }}>{row.caption}</figcaption>}
+          {row.caption && <figcaption style={{ fontSize: PT.caption, fontStyle: "italic" }}>{row.caption}</figcaption>}
         </figure>
       )}
     </>
   );
 }
 
+/** Groups rows into "A (OR) B" pairs (single questions stay alone). */
+function groupPairs(rows: PaperRow[]): PaperRow[][] {
+  const groups: PaperRow[][] = [];
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i].kind === "q" && rows[i + 1]?.kind === "or" && rows[i + 2]) {
+      groups.push([rows[i], rows[i + 1], rows[i + 2]]);
+      i += 2;
+    } else groups.push([rows[i]]);
+  }
+  return groups;
+}
+
 /** Format 1: ruled table with Q.No / Question / Course Outcome / Knowledge Level. */
 function TableSection({ section }: { section: PaperSection }) {
-  const cell: React.CSSProperties = { border: "1px solid #000", padding: "5px 7px", verticalAlign: "top", background: "#ffffff", color: "#000" };
+  const cell: React.CSSProperties = { border: "1px solid #000", padding: "3pt 5pt", verticalAlign: "top", background: "white", color: "#000", fontSize: PT.tableBody, lineHeight: 1.3 };
   // Plain ruled lines: override the app theme (beige header cells, rounded tables).
-  const head: React.CSSProperties = { ...cell, fontWeight: 700, textAlign: "center", verticalAlign: "middle", background: "#ffffff", color: "#000" };
+  // "white" (not #ffffff): the theme repaints inline rgb(255, 255, 255) backgrounds cream.
+  const head: React.CSSProperties = { ...cell, fontWeight: 700, fontSize: PT.tableHead, textAlign: "center", verticalAlign: "middle", background: "white", color: "#000" };
   return (
     <section style={{ marginBottom: "10px" }}>
       <SectionHeading heading={section.heading} />
-      <table style={{ width: "100%", maxWidth: "100%", minWidth: 0, borderCollapse: "collapse", borderRadius: 0, overflow: "visible", background: "#ffffff", fontFamily: FONT, fontSize: "12px", color: "#000" }}>
-        <thead>
-          <tr style={{ background: "#ffffff" }}>
+      <table style={{ width: "100%", maxWidth: "100%", minWidth: 0, borderCollapse: "collapse", borderRadius: 0, overflow: "visible", background: "white", fontFamily: FONT, fontSize: PT.tableBody, color: "#000" }}>
+        <thead style={{ background: "white" }}>
+          <tr style={{ background: "white" }}>
             <th style={{ ...head, width: "10%" }}>Q. No.</th>
             <th style={head}>Question</th>
             <th style={{ ...head, width: "12%" }}>Course Outcome</th>
             <th style={{ ...head, width: "12%" }}>Knowledge Level</th>
           </tr>
         </thead>
-        <tbody>
-          {section.rows.map((row) =>
-            row.kind === "or" ? (
-              <tr key={row.key} className="question-block" style={{ background: "#ffffff" }}>
-                <td colSpan={4} style={{ ...cell, textAlign: "center", fontWeight: 700, padding: "3px" }}>(OR)</td>
-              </tr>
-            ) : (
-              <tr key={row.key} className="question-block" style={{ background: "#ffffff" }}>
-                <td style={{ ...cell, textAlign: "center" }}>{row.no}</td>
-                <td style={cell}><QuestionBody row={row} /></td>
-                <td style={{ ...cell, textAlign: "center" }}>{row.co}</td>
-                <td style={{ ...cell, textAlign: "center" }}>{row.k}</td>
-              </tr>
-            ),
-          )}
-        </tbody>
+        {groupPairs(section.rows).map((group) => (
+          // One tbody per either/or pair so "1.A (OR) 1.B" is never split across pages.
+          <tbody key={group[0].key} style={{ breakInside: "avoid", pageBreakInside: "avoid", background: "white" }}>
+            {group.map((row) =>
+              row.kind === "or" ? (
+                <tr key={row.key} className="question-block" style={{ background: "white" }}>
+                  <td colSpan={4} style={{ ...cell, textAlign: "center", fontWeight: 700, fontSize: PT.or, padding: "1pt 3pt" }}>(OR)</td>
+                </tr>
+              ) : (
+                <tr key={row.key} className="question-block" style={{ background: "white" }}>
+                  <td style={{ ...cell, textAlign: "center" }}>{row.no}</td>
+                  <td style={cell}><QuestionBody row={row} /></td>
+                  <td style={{ ...cell, textAlign: "center" }}>{row.co}</td>
+                  <td style={{ ...cell, textAlign: "center" }}>{row.k}</td>
+                </tr>
+              ),
+            )}
+          </tbody>
+        ))}
       </table>
     </section>
   );
@@ -128,23 +163,28 @@ function TableSection({ section }: { section: PaperSection }) {
 /** Format 2: running text, "(CO1) [K2]" after each question, (OR) on the right. */
 function PlainSection({ section }: { section: PaperSection }) {
   return (
-    <section style={{ marginBottom: "10px", fontFamily: FONT, fontSize: "12.5px", color: "#000" }}>
+    <section style={{ marginBottom: "10px", fontFamily: FONT, fontSize: PT.plainBody, color: "#000" }}>
       <SectionHeading heading={section.heading} />
-      {section.rows.map((row) =>
-        row.kind === "or" ? (
-          <div key={row.key} style={{ textAlign: "right", fontWeight: 700, margin: "2px 0 6px" }}>(OR)</div>
-        ) : (
-          <div key={row.key} className="question-block" style={{ display: "flex", gap: "6px", paddingBottom: row.no.endsWith(".A") ? "2px" : "12px", lineHeight: 1.5 }}>
-            <span style={{ flex: "0 0 auto", minWidth: "34px" }}>{row.no}</span>
-            <div style={{ flex: 1 }}>
-              <div style={{ textAlign: "justify" }}>
-                {row.text} ({row.co}) [{row.k}]
+      {groupPairs(section.rows).map((group) => (
+        // Keep "1.A (OR) 1.B" together on one page.
+        <div key={group[0].key} style={{ breakInside: "avoid", pageBreakInside: "avoid", paddingBottom: "10pt" }}>
+          {group.map((row) =>
+            row.kind === "or" ? (
+              <div key={row.key} style={{ textAlign: "right", fontWeight: 700, fontSize: PT.or, margin: "0 0 4pt" }}>(OR)</div>
+            ) : (
+              <div key={row.key} className="question-block" style={{ display: "flex", gap: "6pt", paddingBottom: "2pt", lineHeight: 1.35 }}>
+                <span style={{ flex: "0 0 auto", minWidth: "30pt" }}>{row.no}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ textAlign: "justify" }}>
+                    {row.text} ({row.co}) [{row.k}]
+                  </div>
+                  {(row.options.length > 0 || row.image) && <QuestionBody row={{ ...row, text: "" }} />}
+                </div>
               </div>
-              {(row.options.length > 0 || row.image) && <QuestionBody row={{ ...row, text: "" }} />}
-            </div>
-          </div>
-        ),
-      )}
+            ),
+          )}
+        </div>
+      ))}
     </section>
   );
 }
