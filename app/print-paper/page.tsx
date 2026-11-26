@@ -32,6 +32,8 @@ import {
 } from "lucide-react";
 import { examStore, QuestionItem, INSTITUTIONAL_SUBJECTS } from "../lib/examStore";
 import { sortForPrint } from "../lib/questionCheck";
+import { unitNumber } from "../lib/bloomTaxonomy";
+import { degreeForDepartment } from "../lib/programmes";
 import NavIcon from "../components/NavIcon";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
 import { menuForUser } from "../lib/auth";
@@ -194,9 +196,12 @@ export default function PrintPaperPage() {
   // Official paper header + layout (Format 1 table / Format 2 plain)
   const defaultSession = () => `${new Date().toLocaleString("en-US", { month: "long" }).toUpperCase()} - ${new Date().getFullYear()}`;
   const [paperFormat, setPaperFormat] = useState<PaperFormat>(() => (initialConfig?.paperFormat === "plain" ? "plain" : "table"));
-  const [degree, setDegree] = useState<string>(() => initialConfig?.degree || "");
-  const [subjectCode, setSubjectCode] = useState<string>(() => initialConfig?.subjectCode || "");
-  const [semesterNo, setSemesterNo] = useState<string>(() => initialConfig?.semesterNo || "III");
+  // Degree / subject code / semester are kept per subject: changing the
+  // subject shows that subject's values. Empty = filled automatically.
+  type SubjectMeta = { degree?: string; subjectCode?: string; semester?: string };
+  const [subjectMeta, setSubjectMeta] = useState<Record<string, SubjectMeta>>(() => initialConfig?.subjectMeta || {});
+  const updateSubjectMeta = (field: keyof SubjectMeta, value: string) =>
+    setSubjectMeta((prev) => ({ ...prev, [selectedSubject]: { ...prev[selectedSubject], [field]: value } }));
   const [examSession, setExamSession] = useState<string>(() => initialConfig?.examSession || defaultSession());
   const [qpCode, setQpCode] = useState<string>(() => initialConfig?.qpCode || "");
   const [isFormatChooserOpen, setIsFormatChooserOpen] = useState(false);
@@ -218,16 +223,14 @@ export default function PrintPaperPage() {
             descriptiveCount,
             diagramCount,
             paperFormat,
-            degree,
-            subjectCode,
-            semesterNo,
+            subjectMeta,
             examSession,
             qpCode,
           })
         );
       } catch (e) {}
     }
-  }, [selectedSubject, printMode, examType, maxMarks, duration, semesterYear, mcqCount, descriptiveCount, diagramCount, paperFormat, degree, subjectCode, semesterNo, examSession, qpCode]);
+  }, [selectedSubject, printMode, examType, maxMarks, duration, semesterYear, mcqCount, descriptiveCount, diagramCount, paperFormat, subjectMeta, examSession, qpCode]);
 
   const [toast, setToast] = useState<{ message: string; isVisible: boolean; type?: "success" | "danger" }>({
     message: "",
@@ -288,19 +291,56 @@ export default function PrintPaperPage() {
     const i = KNOWLEDGE.indexOf((level || "").trim().toLowerCase().replace("analyse", "analyze"));
     return i >= 0 ? `K${i + 1}` : "–";
   };
+  // Subject names differ slightly between uploads ("Material Animation" vs
+  // "Material Animation Theory – Core"), so match loosely.
+  const subjectKey = (value: string) => (value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const sameSubject = (a: string, b: string) => {
+    const x = subjectKey(a);
+    const y = subjectKey(b);
+    return Boolean(x && y) && (x === y || (Math.min(x.length, y.length) >= 6 && (x.includes(y) || y.includes(x))));
+  };
+  const toRoman = (semester: string) => {
+    const n = Number(String(semester || "").replace(/[^0-9]/g, ""));
+    return n >= 1 && n <= 10 ? ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"][n - 1] : /^[ivx]+$/i.test((semester || "").trim()) ? semester.trim().toUpperCase() : "";
+  };
+  // Subject code, semester and degree from the subject's own records:
+  // subject list, uploaded syllabus, institutional catalogue, its questions.
+  const autoSubjectInfo = (() => {
+    if (!selectedSubject || selectedSubject.startsWith("All Subjects")) return { subjectCode: "", semester: "", degree: "" };
+    const subjectRec = examStore.getSubjects().find((s) => sameSubject(s.name, selectedSubject));
+    const syllabus = examStore.getSyllabusApprovals().find((s) => sameSubject(s.courseName, selectedSubject));
+    const catalogue = INSTITUTIONAL_SUBJECTS.find((s) => sameSubject(s.name, selectedSubject));
+    const questionDept = allQuestions.find((q) => sameSubject(q.subject, selectedSubject) && q.department)?.department || "";
+    const department = subjectRec?.department || syllabus?.department || catalogue?.department || questionDept;
+    return {
+      subjectCode: subjectRec?.code || syllabus?.courseCode || catalogue?.code || "",
+      semester: toRoman(subjectRec?.semester || syllabus?.semester || catalogue?.semester || ""),
+      degree: degreeForDepartment(department),
+    };
+  })();
+  const meta = subjectMeta[selectedSubject] || {};
+  const degree = meta.degree || autoSubjectInfo.degree;
+  const subjectCode = meta.subjectCode || autoSubjectInfo.subjectCode;
+  const semesterNo = meta.semester || autoSubjectInfo.semester;
+
+  // CO is always printed: from the question text, else the syllabus unit's
+  // CO mapping, else the unit number (Unit III / Unit 3 -> CO3).
+  const syllabusUnits = examStore.getUnits();
   const courseOutcome = (q: QuestionItem, p: { co: string; unit: string }) => {
     if (p.co) return p.co;
-    const roman = ROMAN_UNITS.indexOf(p.unit) + 1;
-    const n = roman || Number(String(q.unit || "").replace(/[^0-9]/g, ""));
-    return n >= 1 && n <= 6 ? `CO${n}` : "–";
-  };
-  const lookupSubjectCode = () => {
-    const key = selectedSubject.trim().toLowerCase();
-    return (
-      examStore.getSubjects().find((s) => s.name.trim().toLowerCase() === key)?.code ||
-      INSTITUTIONAL_SUBJECTS.find((s) => s.name.trim().toLowerCase() === key)?.code ||
-      ""
+    let n = unitNumber(q.unit);
+    if (n === 99) n = ROMAN_UNITS.indexOf(p.unit) + 1 || unitNumber(p.unit);
+    if (n !== 99 && n > 0) {
+      const unit = syllabusUnits.find((u) => sameSubject(u.subject, q.subject) && unitNumber(String(u.num)) === n);
+      const mapped = (unit?.coMapping || []).find((co) => /^CO\s*\d+$/i.test(co || ""));
+      return mapped ? mapped.replace(/\s+/g, "").toUpperCase() : `CO${n}`;
+    }
+    // No unit on the question: use the syllabus unit whose topics mention it.
+    const text = subjectKey(`${q.topic || ""} ${q.question || ""}`);
+    const byTopic = syllabusUnits.find(
+      (u) => sameSubject(u.subject, q.subject) && [u.name, ...(u.subtopics || [])].some((t) => subjectKey(t).length > 4 && text.includes(subjectKey(t))),
     );
+    return (byTopic?.coMapping || [])[0] || "CO1";
   };
   const examTitleBase = examType.replace(/\s*\(.*\)\s*/, "").trim().toUpperCase();
   const paperHeader = {
@@ -309,7 +349,7 @@ export default function PrintPaperPage() {
     semester: semesterNo,
     degree,
     subject: selectedSubject.startsWith("All Subjects") ? "" : selectedSubject,
-    subjectCode: subjectCode || lookupSubjectCode(),
+    subjectCode,
     duration,
     maxMarks,
   };
@@ -680,19 +720,20 @@ export default function PrintPaperPage() {
                   </label>
                   <label className="qp-field">
                     <span className="qp-label">Semester</span>
-                    <select value={semesterNo} onChange={(e) => setSemesterNo(e.target.value)} className="qp-select">
+                    <select value={semesterNo} onChange={(e) => updateSubjectMeta("semester", e.target.value)} className="qp-select">
+                      {!semesterNo && <option value="">Select</option>}
                       {["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"].map((n) => <option key={n} value={n}>{n}</option>)}
                     </select>
                   </label>
                 </div>
                 <label className="qp-field">
-                  <span className="qp-label">Degree</span>
-                  <input className="qp-select" value={degree} onChange={(e) => setDegree(e.target.value)} placeholder="e.g. MA Journalism and Mass Communication" />
+                  <span className="qp-label">Degree {meta.degree ? "" : autoSubjectInfo.degree ? "· from subject" : ""}</span>
+                  <input className="qp-select" value={degree} onChange={(e) => updateSubjectMeta("degree", e.target.value)} placeholder="e.g. MA Journalism and Mass Communication" />
                 </label>
                 <div className="qp-field-row">
                   <label className="qp-field">
-                    <span className="qp-label">Subject code</span>
-                    <input className="qp-select" value={subjectCode} onChange={(e) => setSubjectCode(e.target.value)} placeholder={lookupSubjectCode() || "e.g. 25MJC3CA"} />
+                    <span className="qp-label">Subject code {meta.subjectCode ? "" : autoSubjectInfo.subjectCode ? "· from subject" : ""}</span>
+                    <input className="qp-select" value={subjectCode} onChange={(e) => updateSubjectMeta("subjectCode", e.target.value)} placeholder="e.g. 25MJC3CA" />
                   </label>
                   <label className="qp-field">
                     <span className="qp-label">QP code</span>
