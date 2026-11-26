@@ -7,7 +7,7 @@ import {
   Archive, BarChart2, Bell, BookOpen, Briefcase, CheckCircle2, CheckSquare, Download, Edit3, FileUp, Home, Layers, Plus,
   Printer, School, Search, Settings, Shield, Trash2, Upload, X,
 } from "lucide-react";
-import { examStore, SubjectMasterItem, SubjectMasterInput } from "../lib/examStore";
+import { examStore, SubjectMasterItem, SubjectMasterInput, ExistingSubject } from "../lib/examStore";
 import { authStore, AuthUser, menuForUser } from "../lib/auth";
 import { SCRUTINY_MENU_ITEMS } from "../lib/scrutinyMenu";
 import RoleGuard from "../components/RoleGuard";
@@ -99,6 +99,10 @@ export default function SubjectMasterPage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<AuthUser>(() => authStore.getCurrentUser());
   const [subjects, setSubjects] = useState<SubjectMasterItem[]>([]);
+  // Subjects already used in the app (built-in list, uploads) that are not in the master yet.
+  const [existingSubjects, setExistingSubjects] = useState<ExistingSubject[]>([]);
+  // Name of the existing subject being edited (saving adds it to the master).
+  const [editingExisting, setEditingExisting] = useState<string | null>(null);
   const [form, setForm] = useState<SubjectMasterInput>(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -116,7 +120,10 @@ export default function SubjectMasterPage() {
   };
 
   useEffect(() => {
-    const load = () => setSubjects(examStore.getSubjectMaster());
+    const load = () => {
+      setSubjects(examStore.getSubjectMaster());
+      setExistingSubjects(examStore.getExistingSubjects());
+    };
     const auth = () => setCurrentUser(authStore.getCurrentUser());
     load();
     window.addEventListener("exam-cell-store-update", load);
@@ -154,12 +161,39 @@ export default function SubjectMasterPage() {
       setFormError(result.error);
       return;
     }
-    showToast(editingId ? `Updated ${result.item!.name} (${result.item!.code}).` : `Added ${result.item!.name} (${result.item!.code}).`);
+    // Editing a built-in / uploaded subject with a new name and code: hide the old entry too.
+    if (editingExisting) {
+      const old = examStore.getExistingSubjects().find((x) => x.name === editingExisting);
+      if (old) examStore.retireExistingSubject(old, currentUser.name);
+    }
+    showToast(editingId || editingExisting ? `Updated ${result.item!.name} (${result.item!.code}).` : `Added ${result.item!.name} (${result.item!.code}).`);
     setForm({ ...EMPTY_FORM, school: form.school, department: form.department });
     setEditingId(null);
+    setEditingExisting(null);
     setFormError(null);
   };
+  const startEditExisting = (s: ExistingSubject) => {
+    setEditingId(null);
+    setEditingExisting(s.name);
+    setForm({ name: s.name, code: s.code, school: s.school, department: s.department, semester: s.semester || "" });
+    setFormError(null);
+    document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const removeExisting = async (s: ExistingSubject) => {
+    const ok = await confirmDialog(`Delete ${s.name}${s.code ? ` (${s.code})` : ""} from the subject lists? It will no longer be offered for uploads or question papers. Uploaded questions and syllabi are not deleted.`, { title: "Delete subject", confirmLabel: "Delete", danger: true });
+    if (!ok) return;
+    examStore.retireExistingSubject(s, currentUser.name);
+    if (editingExisting === s.name) { setEditingExisting(null); setForm(EMPTY_FORM); }
+    showToast(`Deleted ${s.name}.`, "danger");
+  };
+  const importAllExisting = async () => {
+    const ok = await confirmDialog(`Add the ${existingSubjects.length} existing subject(s) to the subject master? Subjects without a code or a known department are skipped; you can edit them one by one.`, { title: "Add existing subjects", confirmLabel: "Add to master" });
+    if (!ok) return;
+    const result = examStore.importExistingSubjects(currentUser.name);
+    showToast(`${result.added} added to the master${result.skipped ? `, ${result.skipped} need a code or department (edit them below)` : ""}.`, result.skipped ? "danger" : "success");
+  };
   const startEdit = (s: SubjectMasterItem) => {
+    setEditingExisting(null);
     setEditingId(s.id);
     setForm({ name: s.name, code: s.code, school: s.school, department: s.department, semester: s.semester || "" });
     setFormError(null);
@@ -167,11 +201,11 @@ export default function SubjectMasterPage() {
     document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
   };
   const removeSubject = async (s: SubjectMasterItem) => {
-    const ok = await confirmDialog(`Remove ${s.name} (${s.code}) from the subject list? Uploaded questions and syllabi are not deleted.`, { title: "Remove subject", confirmLabel: "Remove", danger: true });
+    const ok = await confirmDialog(`Delete ${s.name} (${s.code}) from the subject list? Uploaded questions and syllabi are not deleted.`, { title: "Delete subject", confirmLabel: "Delete", danger: true });
     if (!ok) return;
     examStore.deleteSubjectMaster(s.id);
     if (editingId === s.id) { setEditingId(null); setForm(EMPTY_FORM); }
-    showToast(`Removed ${s.name}.`, "danger");
+    showToast(`Deleted ${s.name}.`, "danger");
   };
 
   // ---------- bulk upload ----------
@@ -235,14 +269,19 @@ export default function SubjectMasterPage() {
   };
 
   // ---------- list ----------
-  const visible = subjects.filter((s) => {
+  type ListRow = { kind: "master"; item: SubjectMasterItem } | { kind: "existing"; item: ExistingSubject };
+  const allRows: ListRow[] = [
+    ...subjects.map((item) => ({ kind: "master" as const, item })),
+    ...existingSubjects.map((item) => ({ kind: "existing" as const, item })),
+  ].sort((a, b) => a.item.name.localeCompare(b.item.name));
+  const visible = allRows.filter(({ item: s }) => {
     const term = search.trim().toLowerCase();
     if (schoolFilter && s.school !== schoolFilter) return false;
     if (deptFilter && s.department !== deptFilter) return false;
-    return !term || [s.name, s.code, s.department, s.school].some((v) => v.toLowerCase().includes(term));
+    return !term || [s.name, s.code, s.department, s.school].some((v) => (v || "").toLowerCase().includes(term));
   });
-  const deptCount = new Set(subjects.map((s) => s.department)).size;
-  const schoolCount = new Set(subjects.map((s) => s.school)).size;
+  const deptCount = new Set(allRows.map((r) => r.item.department).filter(Boolean)).size;
+  const schoolCount = new Set(allRows.map((r) => r.item.school).filter(Boolean)).size;
 
   const card: React.CSSProperties = { background: "#fffdf9", border: "1px solid #ecdfcc", borderRadius: "16px", padding: "18px 20px", boxShadow: "0 4px 16px rgba(74,47,29,0.05)" };
   const label: React.CSSProperties = { display: "block", fontSize: "12px", fontWeight: 700, color: "#5b3a22", marginBottom: "5px" };
@@ -285,7 +324,7 @@ export default function SubjectMasterPage() {
                 <p style={{ margin: 0, fontSize: "13px", color: "#7a6250", maxWidth: "640px" }}>Register each subject with its code, department and school. When staff upload a syllabus or question bank, these details are filled in automatically, and the question paper uses them.</p>
               </div>
               <div style={{ display: "flex", gap: "10px" }}>
-                {[["Subjects", subjects.length], ["Departments", deptCount], ["Schools", schoolCount]].map(([k, v]) => (
+                {[["Subjects", allRows.length], ["Departments", deptCount], ["Schools", schoolCount]].map(([k, v]) => (
                   <div key={k} style={{ minWidth: "92px", textAlign: "center", padding: "10px 12px", borderRadius: "12px", background: "#fdf4ec", border: "1px solid #ecdfcc" }}>
                     <div style={{ fontSize: "22px", fontWeight: 800, color: "#5b3a22" }}>{v}</div>
                     <div style={{ fontSize: "10.5px", fontWeight: 800, color: "#a0663a", letterSpacing: "0.06em", textTransform: "uppercase" }}>{k}</div>
@@ -298,7 +337,7 @@ export default function SubjectMasterPage() {
               {/* Add / edit */}
               <form onSubmit={submitForm} style={card} aria-label="Add subject">
                 <h2 style={{ margin: "0 0 12px", fontSize: "15px", fontWeight: 800, color: "#2b1a10", display: "flex", alignItems: "center", gap: "8px" }}>
-                  {editingId ? <Edit3 size={16} /> : <Plus size={16} />} {editingId ? "Edit subject" : "Add subject"}
+                  {editingId || editingExisting ? <Edit3 size={16} /> : <Plus size={16} />} {editingId || editingExisting ? "Edit subject" : "Add subject"}
                 </h2>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                   <label style={{ gridColumn: "1 / -1" }}>
@@ -332,8 +371,8 @@ export default function SubjectMasterPage() {
                 </div>
                 {formError && <div role="alert" style={{ marginTop: "10px", padding: "8px 11px", borderRadius: "9px", background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c", fontSize: "12.5px", fontWeight: 600 }}>{formError}</div>}
                 <div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
-                  <button type="submit" style={btn("#5b3a22")}>{editingId ? <CheckCircle2 size={14} /> : <Plus size={14} />} {editingId ? "Save changes" : "Add subject"}</button>
-                  {editingId && <button type="button" style={btn("#ffffff", "#5b3a22", "#deba9b")} onClick={() => { setEditingId(null); setForm(EMPTY_FORM); setFormError(null); }}><X size={14} /> Cancel</button>}
+                  <button type="submit" style={btn("#5b3a22")}>{editingId || editingExisting ? <CheckCircle2 size={14} /> : <Plus size={14} />} {editingId || editingExisting ? "Save changes" : "Add subject"}</button>
+                  {(editingId || editingExisting) && <button type="button" style={btn("#ffffff", "#5b3a22", "#deba9b")} onClick={() => { setEditingId(null); setEditingExisting(null); setForm(EMPTY_FORM); setFormError(null); }}><X size={14} /> Cancel</button>}
                 </div>
               </form>
 
@@ -384,7 +423,14 @@ export default function SubjectMasterPage() {
             {/* List */}
             <div style={card}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-                <h2 style={{ margin: 0, fontSize: "15px", fontWeight: 800, color: "#2b1a10", display: "flex", alignItems: "center", gap: "8px" }}><BookOpen size={16} /> Subject list ({visible.length})</h2>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                  <h2 style={{ margin: 0, fontSize: "15px", fontWeight: 800, color: "#2b1a10", display: "flex", alignItems: "center", gap: "8px" }}><BookOpen size={16} /> Subject list ({visible.length})</h2>
+                  {existingSubjects.length > 0 && (
+                    <button type="button" onClick={() => void importAllExisting()} style={{ ...btn("#ffffff", "#5b3a22", "#deba9b"), padding: "6px 11px" }} title="Copy the built-in and uploaded subjects into the master so they can be managed here">
+                      <Upload size={13} /> Add all existing to master ({existingSubjects.length})
+                    </button>
+                  )}
+                </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                   <div style={{ position: "relative" }}>
                     <Search size={14} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#a0663a" }} />
@@ -401,29 +447,35 @@ export default function SubjectMasterPage() {
                 </div>
               </div>
               {visible.length === 0 ? (
-                <div style={{ padding: "26px", textAlign: "center", color: "#7a6250", fontSize: "13px" }}>{subjects.length ? "No subjects match the filters." : "No subjects yet. Add one above or upload a spreadsheet."}</div>
+                <div style={{ padding: "26px", textAlign: "center", color: "#7a6250", fontSize: "13px" }}>{allRows.length ? "No subjects match the filters." : "No subjects yet. Add one above or upload a spreadsheet."}</div>
               ) : (
                 <div style={{ overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", minWidth: "760px" }}>
                     <thead>
                       <tr>
-                        {["Subject", "Code", "Department", "School", "Sem.", ""].map((h) => <th key={h} style={{ textAlign: "left", padding: "9px 10px", fontSize: "11px", fontWeight: 800, color: "#a0663a", letterSpacing: "0.05em", textTransform: "uppercase", borderBottom: "1px solid #ecdfcc" }}>{h}</th>)}
+                        {["Subject", "Code", "Department", "School", "Sem.", "Source", ""].map((h) => <th key={h} style={{ textAlign: "left", padding: "9px 10px", fontSize: "11px", fontWeight: 800, color: "#a0663a", letterSpacing: "0.05em", textTransform: "uppercase", borderBottom: "1px solid #ecdfcc" }}>{h}</th>)}
                       </tr>
                     </thead>
                     <tbody>
-                      {visible.map((s) => (
-                        <tr key={s.id}>
-                          <td style={{ padding: "10px", borderBottom: "1px solid #f3e9dc", fontWeight: 700, color: "#2b1a10" }}>{s.name}</td>
-                          <td style={{ padding: "10px", borderBottom: "1px solid #f3e9dc" }}><span style={{ padding: "2px 8px", borderRadius: "6px", background: "#fdf4ec", border: "1px solid #ecdfcc", fontWeight: 800, color: "#5b3a22", fontSize: "12px" }}>{s.code}</span></td>
-                          <td style={{ padding: "10px", borderBottom: "1px solid #f3e9dc", color: "#5b3a22" }}>{s.department}</td>
-                          <td style={{ padding: "10px", borderBottom: "1px solid #f3e9dc", color: "#7a6250" }}>{s.school}</td>
-                          <td style={{ padding: "10px", borderBottom: "1px solid #f3e9dc", color: "#7a6250" }}>{s.semester || "—"}</td>
-                          <td style={{ padding: "10px", borderBottom: "1px solid #f3e9dc", whiteSpace: "nowrap", textAlign: "right" }}>
-                            <button type="button" onClick={() => startEdit(s)} style={{ ...btn("#ffffff", "#5b3a22", "#deba9b"), padding: "6px 10px", marginRight: "6px" }} aria-label={`Edit ${s.name}`}><Edit3 size={13} /> Edit</button>
-                            <button type="button" onClick={() => void removeSubject(s)} style={{ ...btn("#fff1f2", "#be123c", "#fecaca"), padding: "6px 10px" }} aria-label={`Delete ${s.name}`}><Trash2 size={13} /> Delete</button>
-                          </td>
-                        </tr>
-                      ))}
+                      {visible.map((row) => {
+                        const s = row.item;
+                        const td: React.CSSProperties = { padding: "10px", borderBottom: "1px solid #f3e9dc" };
+                        const badge = row.kind === "master" ? { label: "Master", bg: "#ecfdf5", color: "#047857", border: "#a7f3d0" } : row.item.source === "Built-in" ? { label: "Built-in", bg: "#eff6ff", color: "#1d4ed8", border: "#bfdbfe" } : { label: "From uploads", bg: "#fff7ed", color: "#c2410c", border: "#fed7aa" };
+                        return (
+                          <tr key={row.kind === "master" ? row.item.id : `existing-${s.name}`}>
+                            <td style={{ ...td, fontWeight: 700, color: "#2b1a10" }}>{s.name}</td>
+                            <td style={td}>{s.code ? <span style={{ padding: "2px 8px", borderRadius: "6px", background: "#fdf4ec", border: "1px solid #ecdfcc", fontWeight: 800, color: "#5b3a22", fontSize: "12px" }}>{s.code}</span> : <span style={{ color: "#b91c1c", fontSize: "12px", fontWeight: 700 }}>No code</span>}</td>
+                            <td style={{ ...td, color: "#5b3a22" }}>{s.department || "—"}</td>
+                            <td style={{ ...td, color: "#7a6250" }}>{s.school || "—"}</td>
+                            <td style={{ ...td, color: "#7a6250" }}>{s.semester || "—"}</td>
+                            <td style={td}><span style={{ padding: "2px 8px", borderRadius: "999px", fontSize: "11px", fontWeight: 800, background: badge.bg, color: badge.color, border: `1px solid ${badge.border}`, whiteSpace: "nowrap" }}>{badge.label}</span></td>
+                            <td style={{ ...td, whiteSpace: "nowrap", textAlign: "right" }}>
+                              <button type="button" onClick={() => (row.kind === "master" ? startEdit(row.item) : startEditExisting(row.item))} style={{ ...btn("#ffffff", "#5b3a22", "#deba9b"), padding: "6px 10px", marginRight: "6px" }} aria-label={`Edit ${s.name}`}><Edit3 size={13} /> Edit</button>
+                              <button type="button" onClick={() => void (row.kind === "master" ? removeSubject(row.item) : removeExisting(row.item))} style={{ ...btn("#fff1f2", "#be123c", "#fecaca"), padding: "6px 10px" }} aria-label={`Delete ${s.name}`}><Trash2 size={13} /> Delete</button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

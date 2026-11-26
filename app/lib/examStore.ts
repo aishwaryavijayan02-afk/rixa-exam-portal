@@ -593,6 +593,18 @@ export interface SubjectMasterItem {
   createdBy?: string;
   createdAt?: string;
   updatedAt?: string;
+  /** Deleted by the COE: hidden from every subject list, kept so a built-in / uploaded subject stays hidden. */
+  retired?: boolean;
+}
+
+/** A subject the app already knows that is not in the subject master yet. */
+export interface ExistingSubject {
+  name: string;
+  code: string;
+  department: string;
+  school: string;
+  semester?: string;
+  source: "Built-in" | "From uploads";
 }
 
 export type SubjectMasterInput = Pick<SubjectMasterItem, "name" | "code" | "department" | "school"> & { semester?: string };
@@ -3610,7 +3622,13 @@ export const examStore = {
   },
 
   // ----------------- SUBJECT MASTER (COE) -----------------
+  /** Active subjects of the master (deleted / retired ones left out). */
   getSubjectMaster(): SubjectMasterItem[] {
+    return this.getAllSubjectMasterRecords().filter((s) => !s.retired);
+  },
+
+  /** Every master record, including retired ones. */
+  getAllSubjectMasterRecords(): SubjectMasterItem[] {
     return [...getFromStorage<SubjectMasterItem[]>("subject_master", [])].sort((a, b) => a.name.localeCompare(b.name));
   },
 
@@ -3660,9 +3678,12 @@ export const examStore = {
     const resolved = this.resolveSchoolDepartment(input.school, input.department)!;
     const list = getFromStorage<SubjectMasterItem[]>("subject_master", []);
     const now = new Date().toISOString();
-    const existing = input.id ? list.find((s) => s.id === input.id) : undefined;
+    const existing =
+      (input.id ? list.find((s) => s.id === input.id) : undefined) ||
+      list.find((s) => s.retired && s.code && s.code.trim().toLowerCase() === input.code.trim().toLowerCase());
     const item: SubjectMasterItem = {
       ...(existing || {}),
+      retired: false,
       id: existing?.id || `subm-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
       name: input.name.trim(),
       code: input.code.trim().toUpperCase(),
@@ -3677,8 +3698,81 @@ export const examStore = {
     return { item };
   },
 
+  /**
+   * Delete = retire: the record stays (hidden) so a built-in or uploaded
+   * subject with the same code / name does not come back in the lists.
+   * Questions and syllabi are never touched.
+   */
   deleteSubjectMaster(id: string): void {
-    saveToStorage("subject_master", getFromStorage<SubjectMasterItem[]>("subject_master", []).filter((s) => s.id !== id));
+    const now = new Date().toISOString();
+    saveToStorage("subject_master", getFromStorage<SubjectMasterItem[]>("subject_master", []).map((s) => (s.id === id ? { ...s, retired: true, updatedAt: now } : s)));
+  },
+
+  /** Hide an existing (built-in / uploaded) subject from every subject list. */
+  retireExistingSubject(subject: ExistingSubject, by = ""): void {
+    const list = getFromStorage<SubjectMasterItem[]>("subject_master", []);
+    const now = new Date().toISOString();
+    saveToStorage("subject_master", [
+      ...list,
+      {
+        id: `subm-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+        name: subject.name,
+        code: (subject.code || "").toUpperCase(),
+        department: subject.department,
+        school: subject.school,
+        semester: subject.semester,
+        retired: true,
+        createdBy: by || undefined,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+  },
+
+  /**
+   * Subjects the app already uses that are not in the master: the built-in
+   * catalogue and subjects named in uploaded questions / syllabi. The COE can
+   * edit (adds them to the master) or delete (hides them) each one.
+   */
+  getExistingSubjects(): ExistingSubject[] {
+    const key = (v: string) => (v || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    const records = this.getAllSubjectMasterRecords();
+    const known = (name: string, code: string) =>
+      records.some((r) => (code && r.code && r.code.toLowerCase() === code.toLowerCase()) || key(r.name) === key(name));
+    const out: ExistingSubject[] = [];
+    const seen = new Set<string>();
+    const add = (row: Omit<ExistingSubject, "school"> & { school?: string }) => {
+      const k = key(row.name);
+      if (!k || seen.has(k) || known(row.name, row.code)) return;
+      seen.add(k);
+      const resolved = row.department ? this.resolveSchoolDepartment(row.school || "", row.department) : null;
+      out.push({ ...row, department: resolved?.department || row.department, school: resolved?.school || row.school || "" });
+    };
+    const roman = (sem?: string) => {
+      const n = Number(String(sem || "").replace(/[^0-9]/g, ""));
+      return n >= 1 && n <= 10 ? ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"][n - 1] : undefined;
+    };
+    INSTITUTIONAL_SUBJECTS.forEach((s) => add({ name: s.name, code: s.code, department: s.department, semester: roman(s.semester), source: "Built-in" }));
+    const approvals = this.getSyllabusApprovals();
+    approvals.forEach((a) => add({ name: a.courseName, code: a.courseCode || "", department: a.department || "", semester: roman(a.semester), source: "From uploads" }));
+    this.getQuestions().forEach((q) => {
+      const syllabus = approvals.find((a) => key(a.courseName) === key(q.subject));
+      add({ name: q.subject, code: syllabus?.courseCode || "", department: q.department || syllabus?.department || "", source: "From uploads" });
+    });
+    return out.sort((a, b) => a.name.localeCompare(b.name));
+  },
+
+  /** Add every existing subject that has a code and a known department to the master. */
+  importExistingSubjects(by = ""): { added: number; skipped: number } {
+    let added = 0;
+    let skipped = 0;
+    this.getExistingSubjects().forEach((s) => {
+      const result = this.saveSubjectMaster({ name: s.name, code: s.code, department: s.department, school: s.school, semester: s.semester }, by);
+      if (result.error) skipped += 1;
+      else added += 1;
+    });
+    if (added) this.logActivity(`Added ${added} existing subject(s) to the subject master`, "Subject Master", `${skipped} skipped (no code or department)`, by || "COE");
+    return { added, skipped };
   },
 
   /**
@@ -3696,8 +3790,10 @@ export const examStore = {
       credits: 0,
       semester: s.semester && romanToNum(s.semester) ? `Semester ${romanToNum(s.semester)}` : undefined,
     }));
-    const codes = new Set(master.map((s) => s.code.toLowerCase()));
-    const names = new Set(master.map((s) => s.name.trim().toLowerCase()));
+    // Built-ins replaced or deleted (retired) in the master are left out.
+    const records = this.getAllSubjectMasterRecords();
+    const codes = new Set(records.map((s) => (s.code || "").toLowerCase()).filter(Boolean));
+    const names = new Set(records.map((s) => s.name.trim().toLowerCase()));
     return [...master, ...INSTITUTIONAL_SUBJECTS.filter((s) => !codes.has(s.code.toLowerCase()) && !names.has(s.name.trim().toLowerCase()))];
   },
 

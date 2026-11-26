@@ -288,8 +288,8 @@ export function hasPermission(role: UserRole, route: string, isSubjectFaculty: b
       return role === "COE"; // COE can also follow the scrutiny progress
 
     case "/subject-master":
-      // Subject master (name, code, department, school): COE, HOD and Dean
-      return role === "COE" || role === "HOD" || role === "DEAN";
+      // Subject master (name, code, department, school): add / edit / delete is for the COE only
+      return role === "COE";
 
     case "/dashboard":
     case "":
