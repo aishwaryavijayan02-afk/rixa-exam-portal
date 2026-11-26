@@ -30,7 +30,7 @@ import {
   Archive,
   Users,
 } from "lucide-react";
-import { examStore, QuestionItem } from "../lib/examStore";
+import { examStore, QuestionItem, INSTITUTIONAL_SUBJECTS } from "../lib/examStore";
 import { sortForPrint } from "../lib/questionCheck";
 import NavIcon from "../components/NavIcon";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
@@ -40,6 +40,8 @@ import RoleGuard from "../components/RoleGuard";
 import PortalHeader from "../components/PortalHeader";
 import PortalFooter from "../components/PortalFooter";
 import { ToastNotification } from "../components/CrudModal";
+import ModalPortal from "../components/ModalPortal";
+import QuestionPaperFormat, { FormatThumbnail, PAPER_FORMATS, type PaperFormat, type PaperRow, type PaperSection } from "../components/QuestionPaperFormats";
 
 const BLOOM_NAMES: Record<string, string> = {
   L1: "Remember",
@@ -189,6 +191,16 @@ export default function PrintPaperPage() {
   const [descriptiveCount, setDescriptiveCount] = useState<number>(() => initialConfig?.descriptiveCount ?? 0);
   const [diagramCount, setDiagramCount] = useState<number>(() => initialConfig?.diagramCount ?? 0);
 
+  // Official paper header + layout (Format 1 table / Format 2 plain)
+  const defaultSession = () => `${new Date().toLocaleString("en-US", { month: "long" }).toUpperCase()} - ${new Date().getFullYear()}`;
+  const [paperFormat, setPaperFormat] = useState<PaperFormat>(() => (initialConfig?.paperFormat === "plain" ? "plain" : "table"));
+  const [degree, setDegree] = useState<string>(() => initialConfig?.degree || "");
+  const [subjectCode, setSubjectCode] = useState<string>(() => initialConfig?.subjectCode || "");
+  const [semesterNo, setSemesterNo] = useState<string>(() => initialConfig?.semesterNo || "III");
+  const [examSession, setExamSession] = useState<string>(() => initialConfig?.examSession || defaultSession());
+  const [qpCode, setQpCode] = useState<string>(() => initialConfig?.qpCode || "");
+  const [isFormatChooserOpen, setIsFormatChooserOpen] = useState(false);
+
   // Sync to localStorage
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -205,11 +217,17 @@ export default function PrintPaperPage() {
             mcqCount,
             descriptiveCount,
             diagramCount,
+            paperFormat,
+            degree,
+            subjectCode,
+            semesterNo,
+            examSession,
+            qpCode,
           })
         );
       } catch (e) {}
     }
-  }, [selectedSubject, printMode, examType, maxMarks, duration, semesterYear, mcqCount, descriptiveCount, diagramCount]);
+  }, [selectedSubject, printMode, examType, maxMarks, duration, semesterYear, mcqCount, descriptiveCount, diagramCount, paperFormat, degree, subjectCode, semesterNo, examSession, qpCode]);
 
   const [toast, setToast] = useState<{ message: string; isVisible: boolean; type?: "success" | "danger" }>({
     message: "",
@@ -262,6 +280,78 @@ export default function PrintPaperPage() {
     { part: "Part C", kind: "diagram", count: diagPool.length },
   ].filter((p) => p.count === 0);
 
+  // ---- Official paper (Format 1 / Format 2) ----
+  const KNOWLEDGE = ["remember", "understand", "apply", "analyze", "evaluate", "create"];
+  const knowledgeLevel = (level: string) => {
+    const l = /^L\s*([1-6])$/i.exec(level || "")?.[1];
+    if (l) return `K${l}`;
+    const i = KNOWLEDGE.indexOf((level || "").trim().toLowerCase().replace("analyse", "analyze"));
+    return i >= 0 ? `K${i + 1}` : "–";
+  };
+  const courseOutcome = (q: QuestionItem, p: { co: string; unit: string }) => {
+    if (p.co) return p.co;
+    const roman = ROMAN_UNITS.indexOf(p.unit) + 1;
+    const n = roman || Number(String(q.unit || "").replace(/[^0-9]/g, ""));
+    return n >= 1 && n <= 6 ? `CO${n}` : "–";
+  };
+  const lookupSubjectCode = () => {
+    const key = selectedSubject.trim().toLowerCase();
+    return (
+      examStore.getSubjects().find((s) => s.name.trim().toLowerCase() === key)?.code ||
+      INSTITUTIONAL_SUBJECTS.find((s) => s.name.trim().toLowerCase() === key)?.code ||
+      ""
+    );
+  };
+  const examTitleBase = examType.replace(/\s*\(.*\)\s*/, "").trim().toUpperCase();
+  const paperHeader = {
+    qpCode,
+    examTitle: `${/EXAMINATION$/.test(examTitleBase) ? `${examTitleBase}S` : examTitleBase}${examSession ? `, ${examSession.toUpperCase()}` : ""}`,
+    semester: semesterNo,
+    degree,
+    subject: selectedSubject.startsWith("All Subjects") ? "" : selectedSubject,
+    subjectCode: subjectCode || lookupSubjectCode(),
+    duration,
+    maxMarks,
+  };
+  const paperSections: PaperSection[] = (() => {
+    let counter = 0;
+    const letters = "ABCDEF";
+    const toRow = (q: QuestionItem, no: string): PaperRow => {
+      const p = parseQuestion(q);
+      const image = q.imageUrl || (q as { raw?: { imageUrl?: string } }).raw?.imageUrl;
+      return { kind: "q", key: `${q.id}-${no}`, no, text: p.text, options: p.options, image, caption: image ? q.diagramTitle || "Diagram" : undefined, co: courseOutcome(q, p), k: knowledgeLevel(p.level) };
+    };
+    return [
+      { items: finalMcqs, paired: false },
+      { items: finalDescriptives, paired: true },
+      { items: finalDiagrams, paired: true },
+    ]
+      .filter((g) => g.items.length > 0)
+      .map((g, index) => {
+        const rows: PaperRow[] = [];
+        let answerCount = 0;
+        if (!g.paired) {
+          g.items.forEach((q) => rows.push(toRow(q, `${++counter}.`)));
+          answerCount = g.items.length;
+        } else {
+          // Either / or: 1.A (OR) 1.B
+          for (let i = 0; i < g.items.length; i += 2) {
+            counter += 1;
+            const pair = g.items.slice(i, i + 2);
+            rows.push(toRow(pair[0], pair.length > 1 ? `${counter}.A` : `${counter}.`));
+            if (pair[1]) {
+              rows.push({ kind: "or", key: `or-${counter}-${index}` });
+              rows.push(toRow(pair[1], `${counter}.B`));
+            }
+            answerCount += 1;
+          }
+        }
+        const marksEach = Number(g.items[0].marks) || (g.paired ? 10 : 1);
+        const letter = letters[index];
+        return { letter, heading: `SECTION ${letter} - (${answerCount} x ${marksEach} = ${answerCount * marksEach})`, rows };
+      });
+  })();
+
   // Never keep a saved count above what the question bank has (e.g. 3
   // diagram questions for a subject with none).
   useEffect(() => {
@@ -278,7 +368,15 @@ export default function PrintPaperPage() {
       showToast(printableQuestions.length === 0 ? "No questions have COE final approval yet. Give final approval before printing." : "No COE final-approved questions are selected for this paper.", "danger");
       return;
     }
-    window.print();
+    // Ask which official format to print in.
+    setIsFormatChooserOpen(true);
+  };
+
+  const printInFormat = (format: PaperFormat) => {
+    setPaperFormat(format);
+    setIsFormatChooserOpen(false);
+    // Let the preview re-render in the chosen format before the print dialog opens.
+    window.setTimeout(() => window.print(), 350);
   };
 
   return (
@@ -297,6 +395,8 @@ export default function PrintPaperPage() {
         }}
       >
         <style>{`
+          .qp-page-border { display: none; }
+
           @media print {
             @page {
               size: A4 portrait;
@@ -325,7 +425,20 @@ export default function PrintPaperPage() {
 
             /* Wrappers around the paper: plain block flow, no fixed heights or
                scroll containers that would clip or pad the printout. */
+            @page {
+              @bottom-center { content: "- " counter(page) " -"; font-family: "Times New Roman", serif; font-size: 10pt; }
+            }
+            .qp-page-border {
+              display: block !important;
+              position: fixed !important;
+              inset: 0 !important;
+              border: 1.5px dotted #000 !important;
+              pointer-events: none;
+            }
             body *:has(#official-printable-paper) {
+              transform: none !important;
+              filter: none !important;
+              perspective: none !important;
               display: block !important;
               position: static !important;
               width: auto !important;
@@ -346,7 +459,7 @@ export default function PrintPaperPage() {
             #official-printable-paper {
               width: 100% !important;
               margin: 0 !important;
-              padding: 0 !important;
+              padding: 5mm 6mm !important;
               border: none !important;
               border-radius: 0 !important;
               box-shadow: none !important;
@@ -547,6 +660,46 @@ export default function PrintPaperPage() {
                   </label>
                 </div>
 
+                <div className="qp-section-label">Paper format</div>
+                <div className="qp-mode-group" role="radiogroup" aria-label="Paper format">
+                  {PAPER_FORMATS.map((fmt) => (
+                    <label key={fmt.id} className={`qp-mode ${paperFormat === fmt.id ? "is-active" : ""}`}>
+                      <input type="radio" name="paperFormat" checked={paperFormat === fmt.id} onChange={() => setPaperFormat(fmt.id)} />
+                      <div>
+                        <div className="qp-mode-title">{fmt.name}</div>
+                        <div className="qp-mode-sub">{fmt.description}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+
+                <div className="qp-field-row">
+                  <label className="qp-field">
+                    <span className="qp-label">Exam month &amp; year</span>
+                    <input className="qp-select" value={examSession} onChange={(e) => setExamSession(e.target.value)} placeholder="NOVEMBER - 2026" />
+                  </label>
+                  <label className="qp-field">
+                    <span className="qp-label">Semester</span>
+                    <select value={semesterNo} onChange={(e) => setSemesterNo(e.target.value)} className="qp-select">
+                      {["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"].map((n) => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                  </label>
+                </div>
+                <label className="qp-field">
+                  <span className="qp-label">Degree</span>
+                  <input className="qp-select" value={degree} onChange={(e) => setDegree(e.target.value)} placeholder="e.g. MA Journalism and Mass Communication" />
+                </label>
+                <div className="qp-field-row">
+                  <label className="qp-field">
+                    <span className="qp-label">Subject code</span>
+                    <input className="qp-select" value={subjectCode} onChange={(e) => setSubjectCode(e.target.value)} placeholder={lookupSubjectCode() || "e.g. 25MJC3CA"} />
+                  </label>
+                  <label className="qp-field">
+                    <span className="qp-label">QP code</span>
+                    <input className="qp-select" value={qpCode} onChange={(e) => setQpCode(e.target.value)} placeholder="Optional" />
+                  </label>
+                </div>
+
                 <div className="qp-section-label">Question selection</div>
 
                 <div className="qp-mode-group" role="radiogroup">
@@ -638,94 +791,9 @@ export default function PrintPaperPage() {
                 </div>
 
                 <div id="official-printable-paper" className="qp-paper">
-                  <div className="qp-paper-top">
-                    <div>QP Code: <strong>252S099</strong></div>
-                    <div className="qp-regno">
-                      <span>Reg. No.</span>
-                      {Array.from({ length: 10 }).map((_, i) => <i key={i} />)}
-                    </div>
-                  </div>
-
-                  <div className="qp-paper-head">
-                    <div className="qp-uni">RATHINAM GLOBAL (DEEMED TO BE UNIVERSITY)</div>
-                    <div className="qp-uni-sub">Eachanari, Coimbatore – 641021 · Approved by UGC &amp; AICTE</div>
-                    <div className="qp-exam">{examType}</div>
-                    <div className="qp-sem">{semesterYear}</div>
-                  </div>
-
-                  <div className="paper-meta-row qp-meta">
-                    <div><span>Subject</span><strong>{selectedSubject}</strong></div>
-                    <div><span>Time</span><strong>{duration}</strong></div>
-                    <div><span>Maximum Marks</span><strong>{maxMarks}</strong></div>
-                  </div>
-
-                  <div className="qp-instructions">
-                    <strong>Instructions:</strong> Answer all questions. Figures to the right indicate full marks. CO – Course Outcome, BL – Bloom&apos;s Level.
-                  </div>
-
-                  {[
-                    { key: "A", title: "Multiple Choice & Short Answer", items: finalMcqs, start: 0, marks: () => 2 },
-                    { key: "B", title: "Descriptive & Analytical", items: finalDescriptives, start: finalMcqs.length, marks: () => 5 },
-                    { key: "C", title: "Problem Solving & Diagram Based", items: finalDiagrams, start: finalMcqs.length + finalDescriptives.length, marks: (q: QuestionItem) => q.marks || 10 },
-                    { key: "D", title: "Additional Questions", items: finalOthers, start: finalMcqs.length + finalDescriptives.length + finalDiagrams.length, marks: (q: QuestionItem) => q.marks || 5 },
-                  ]
-                    .filter((part) => part.items.length > 0)
-                    .map((part) => {
-                      const partTotal = part.items.reduce((sum, q) => sum + Number(part.marks(q)), 0);
-                      const uniform = part.items.every((q) => part.marks(q) === part.marks(part.items[0]));
-                      return (
-                        <section key={part.key} className="qp-part">
-                          <div className="part-header qp-part-head">
-                            <div className="qp-part-title">PART – {part.key}</div>
-                            <div className="qp-part-sub">{part.title}</div>
-                            <div className="qp-part-marks">
-                              {uniform ? `(${part.items.length} × ${part.marks(part.items[0])} = ${partTotal} Marks)` : `(${partTotal} Marks)`}
-                            </div>
-                          </div>
-
-                          <div className="qp-qhead">
-                            <span>Q.No</span>
-                            <span>Question</span>
-                            <span>CO</span>
-                            <span>BL</span>
-                            <span>Marks</span>
-                          </div>
-
-                          {part.items.map((q, idx) => {
-                            const p = parseQuestion(q);
-                            const number = part.start + idx + 1;
-                            const image = q.imageUrl || (q as { raw?: { imageUrl?: string } }).raw?.imageUrl;
-                            return (
-                              <div key={q.id || `${part.key}-${idx}`} className="question-block qp-q">
-                                <span className="qp-qno">{number}.</span>
-                                <div className="qp-qbody">
-                                  <div className="qp-qtext">{p.text}</div>
-                                  {p.options.length > 0 && (
-                                    <div className="qp-options">
-                                      {p.options.map((opt, optIdx) => (
-                                        <div key={optIdx}>
-                                          <b>({String.fromCharCode(97 + optIdx)})</b> {opt}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                  {image && (
-                                    <figure className="qp-figure">
-                                      <img src={image} alt={`Figure for question ${number}`} />
-                                      <figcaption>Fig. {number}: {q.diagramTitle || "Diagram"}</figcaption>
-                                    </figure>
-                                  )}
-                                  {p.unit && <div className="qp-unit">Unit {p.unit}</div>}
-                                </div>
-                                <span className="qp-cell">{p.co || "–"}</span>
-                                <span className="qp-cell" title={BLOOM_NAMES[p.level] || ""}>{p.level || "–"}</span>
-                                <span className="qp-cell qp-mark">{part.marks(q)}</span>
-                              </div>
-                            );
-                          })}
-                        </section>
-                      );
-                    })}
+                  {/* Dotted page border, repeated on every printed page */}
+                  <div className="qp-page-border" aria-hidden="true" />
+                  <QuestionPaperFormat format={paperFormat} header={paperHeader} sections={paperSections} />
 
                   {totalQuestionsInPaper === 0 && (
                     <div className="no-print qp-empty">
@@ -747,6 +815,36 @@ export default function PrintPaperPage() {
             <PortalFooter />
           </div>
         </div>
+
+        {isFormatChooserOpen && (
+          <ModalPortal>
+            <div className="no-print" role="dialog" aria-modal="true" aria-labelledby="qp-format-title" onClick={(e) => { if (e.target === e.currentTarget) setIsFormatChooserOpen(false); }} style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(30, 20, 12, 0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+              <div style={{ width: "min(640px, 100%)", background: "#fffdf9", borderRadius: "18px", boxShadow: "0 24px 60px rgba(0,0,0,0.3)", padding: "22px 24px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+                  <div>
+                    <h2 id="qp-format-title" style={{ margin: 0, fontSize: "18px", fontWeight: 800, color: "#3b2414" }}>Which format do you want to print?</h2>
+                    <p style={{ margin: "4px 0 0", fontSize: "12.5px", color: "#7a6250" }}>{totalQuestionsInPaper} COE-approved question{totalQuestionsInPaper === 1 ? "" : "s"} · {selectedSubject}</p>
+                  </div>
+                  <button type="button" aria-label="Close" onClick={() => setIsFormatChooserOpen(false)} style={{ border: "1px solid #e7d6c6", background: "#fff", borderRadius: "9px", width: "32px", height: "32px", cursor: "pointer", fontSize: "16px" }}>×</button>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px", marginTop: "16px" }}>
+                  {PAPER_FORMATS.map((fmt) => (
+                    <button key={fmt.id} type="button" onClick={() => printInFormat(fmt.id)} style={{ textAlign: "left", border: paperFormat === fmt.id ? "2px solid #8b5a2b" : "1.5px solid #e7d6c6", background: paperFormat === fmt.id ? "#fdf4ec" : "#ffffff", borderRadius: "14px", padding: "12px", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px" }}>
+                      <div style={{ width: "120px", alignSelf: "center" }}><FormatThumbnail format={fmt.id} /></div>
+                      <div>
+                        <div style={{ fontSize: "14px", fontWeight: 800, color: "#3b2414" }}>{fmt.name}</div>
+                        <div style={{ fontSize: "12px", color: "#7a6250", marginTop: "3px", lineHeight: 1.45 }}>{fmt.description}</div>
+                      </div>
+                      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "8px 10px", borderRadius: "9px", background: "#5b3a22", color: "#fff", fontSize: "12.5px", fontWeight: 800 }}>
+                        <Printer size={14} /> Print in this format
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </ModalPortal>
+        )}
 
         <ToastNotification
           message={toast.message}
