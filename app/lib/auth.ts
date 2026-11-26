@@ -287,6 +287,10 @@ export function hasPermission(role: UserRole, route: string, isSubjectFaculty: b
     case "/scrutinizer":
       return role === "COE"; // COE can also follow the scrutiny progress
 
+    case "/subject-master":
+      // Subject master (name, code, department, school): COE, HOD and Dean
+      return role === "COE" || role === "HOD" || role === "DEAN";
+
     case "/dashboard":
     case "":
       return true; // All roles
@@ -351,7 +355,13 @@ export function menuForUser<T extends { route: string; label: string }>(items: T
   // + "Manual Questions" become one entry (the Manual Questions page, where the
   // COE reviews the forwarded questions and gives final approval).
   const coeHidden = ["/scrutinizer", "/academic-vault", "/approval"];
-  return items
+  // "Subject" (subject master) sits right under School on every page's sidebar.
+  const withSubject = items.flatMap((item) =>
+    item.route === "/subjects" && !items.some((i) => i.route === "/subject-master")
+      ? [item, { ...item, id: "subject-master", label: "Subject", route: "/subject-master", badge: undefined, hasArrow: undefined } as T]
+      : [item],
+  );
+  return withSubject
     .filter((item) => showInMenu(user.role, item.route, user.isSubjectFaculty))
     .filter((item) => !(user.role === "COE" && coeHidden.includes(item.route)))
     .map((item) => {

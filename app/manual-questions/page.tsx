@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { examStore, QuestionItem, INSTITUTIONAL_SUBJECTS } from "../lib/examStore";
+import { examStore, QuestionItem } from "../lib/examStore";
 import NavIcon from "../components/NavIcon";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
 import { menuForUser } from "../lib/auth";
@@ -443,7 +443,7 @@ export default function ManualQuestionsPage() {
       name: "subject",
       label: "Subject",
       type: "select",
-      options: INSTITUTIONAL_SUBJECTS.map((s) => ({
+      options: examStore.getSubjectCatalog().map((s) => ({
         value: s.name,
         label: `${s.name} (${s.code})`,
       })),

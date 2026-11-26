@@ -35,6 +35,17 @@ const ICONS: Record<string, () => React.ReactElement> = {
       <rect className="ni-blink ni-d3" x="14.7" y="12.5" width="2" height="2" rx=".4" fill="currentColor" />
     </svg>
   ),
+  // Subject master: open book with a code tag
+  "/subject-master": () => (
+    <svg viewBox="0 0 24 24">
+      <path d="M12 6.5C10.2 5 7.6 4.5 4 4.8v13.4c3.6-.3 6.2.2 8 1.7 1.8-1.5 4.4-2 8-1.7V4.8c-3.6-.3-6.2.2-8 1.7z" {...s} />
+      <line x1="12" y1="6.5" x2="12" y2="19.9" {...s} />
+      <line className="ni-blink ni-d1" x1="6.5" y1="9" x2="9.6" y2="9" {...s} />
+      <line className="ni-blink ni-d2" x1="6.5" y1="12" x2="9.6" y2="12" {...s} />
+      <line className="ni-blink ni-d3" x1="14.4" y1="9" x2="17.5" y2="9" {...s} />
+      <line className="ni-blink ni-d4" x1="14.4" y1="12" x2="17.5" y2="12" {...s} />
+    </svg>
+  ),
   // Staff Work Status: people with a progress bar filling
   "/staff-work-status": () => (
     <svg viewBox="0 0 24 24">

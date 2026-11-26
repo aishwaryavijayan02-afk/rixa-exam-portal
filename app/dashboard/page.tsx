@@ -48,7 +48,7 @@ import {
   Send,
   AlertTriangle,
 } from "lucide-react";
-import { examStore, SubjectItem, StaffFacultyItem, SyllabusApprovalItem, INSTITUTIONAL_SUBJECTS } from "../lib/examStore";
+import { examStore, SubjectItem, StaffFacultyItem, SyllabusApprovalItem } from "../lib/examStore";
 import NavIcon from "../components/NavIcon";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
 import { menuForUser, roleDisplayName } from "../lib/auth";
@@ -290,7 +290,7 @@ export default function DashboardPage() {
       key: "name",
       label: "Subject Name (Select from Curriculum)",
       type: "select",
-      options: INSTITUTIONAL_SUBJECTS.map((s) => ({
+      options: examStore.getSubjectCatalog().map((s) => ({
         value: s.name,
         label: `${s.name} (${s.code})`,
       })),
@@ -301,7 +301,7 @@ export default function DashboardPage() {
       key: "code",
       label: "Subject Code",
       type: "select",
-      options: INSTITUTIONAL_SUBJECTS.map((s) => ({
+      options: examStore.getSubjectCatalog().map((s) => ({
         value: s.code,
         label: `${s.code} — ${s.name}`,
       })),

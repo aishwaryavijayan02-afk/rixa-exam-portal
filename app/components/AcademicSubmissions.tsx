@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, BookOpen, Download, Eye, FileText, Layers, Loader2, Search, X } from "lucide-react";
-import { examStore, INSTITUTIONAL_SUBJECTS, QuestionItem, StaffFacultyItem, SyllabusApprovalItem } from "../lib/examStore";
+import { examStore, QuestionItem, StaffFacultyItem, SyllabusApprovalItem } from "../lib/examStore";
 import { fetchQuestionBankDocument } from "../lib/questionBankDocuments";
 import { unitNumber } from "../lib/bloomTaxonomy";
 import BloomPatternView, { type BloomViewQuestion } from "./BloomPatternView";
@@ -272,7 +272,7 @@ export default function AcademicSubmissions({ schools, initialSchool, onClose }:
       if (!entries.has(normalize(label))) entries.set(normalize(label), label);
       map.set(owner, entries);
     };
-    INSTITUTIONAL_SUBJECTS.forEach((s) => add(s.department));
+    examStore.getSubjectCatalog().forEach((s) => add(s.department));
     staffDirectory.forEach((s) => add(s.department));
     [...syllabusRows, ...questionBankRows].forEach((r) => add(r.department, r.school));
     return map;

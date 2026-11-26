@@ -30,7 +30,7 @@ import {
   Download,
   X,
 } from "lucide-react";
-import { examStore, QuestionItem, SyllabusUnit, SubjectItem, SyllabusApprovalItem, INSTITUTIONAL_SUBJECTS } from "../lib/examStore";
+import { examStore, QuestionItem, SyllabusUnit, SubjectItem, SyllabusApprovalItem } from "../lib/examStore";
 import NavIcon from "../components/NavIcon";
 import { getQuestionBankDocument, saveQuestionBankDocument, syncLocalQuestionBankDocuments, uploadQuestionBankDocumentToCloud } from "../lib/questionBankDocuments";
 import { authStore, AuthUser, hasPermission } from "../lib/auth";
@@ -474,14 +474,14 @@ export default function AcademicVaultPage() {
   // Staff users may upload work only for subjects assigned to their profile.
   // Leadership roles retain the complete institutional subject catalogue.
   const availableSubjects = React.useMemo(() => {
-    if (currentUser.role !== "STAFF") return INSTITUTIONAL_SUBJECTS;
+    if (currentUser.role !== "STAFF") return examStore.getSubjectCatalog();
 
     const assigned = examStore.getStaffAssignedSubjects(currentUser.email, currentUser.name).subjects;
     const normalize = (value: string) => value.toLowerCase().replace(/\s*\([^)]*\)\s*/g, " ").replace(/[^a-z0-9]+/g, "");
     const assignedKeys = assigned.map(normalize).filter(Boolean);
 
     // Staff see the subjects a HOD/Dean allocated to them (name + code).
-    const allocated = INSTITUTIONAL_SUBJECTS.filter((subject) => {
+    const allocated = examStore.getSubjectCatalog().filter((subject) => {
       const subjectName = normalize(subject.name);
       const subjectCode = subject.code.toLowerCase().replace(/[^a-z0-9]+/g, "");
       return assignedKeys.some((key) => key.includes(subjectName) || subjectName.includes(key) || key.includes(subjectCode));
@@ -493,7 +493,7 @@ export default function AcademicVaultPage() {
     const departmentKey = (value: string) => value.toLowerCase().replace(/^department of\s+/, "").replace(/[^a-z0-9]+/g, "");
     const ownDepartment = departmentKey(currentUser.department || "");
     if (!ownDepartment) return [];
-    return INSTITUTIONAL_SUBJECTS.filter((subject) => {
+    return examStore.getSubjectCatalog().filter((subject) => {
       const subjectDepartment = departmentKey(subject.department);
       return subjectDepartment === ownDepartment || subjectDepartment.includes(ownDepartment) || ownDepartment.includes(subjectDepartment);
     });
@@ -588,7 +588,7 @@ export default function AcademicVaultPage() {
     // Pick the subject (name + code) the uploaded syllabus belongs to: a known
     // catalogue subject first, otherwise the document's own name and code.
     setCustomSyllabusSubject(null);
-    const detected = detectSubjectFromDocument(file.name, documentText, INSTITUTIONAL_SUBJECTS);
+    const detected = detectSubjectFromDocument(file.name, documentText, examStore.getSubjectCatalog());
     const allowed = detected && availableSubjects.find((subject) => subject.code === detected.code);
     if (allowed) {
       setCustomSyllabusSubject({ name: allowed.name, code: allowed.code, department: allowed.department, semester: allowed.semester });
@@ -903,8 +903,8 @@ export default function AcademicVaultPage() {
 
         // 2) Otherwise a catalogue subject, 3) otherwise the file's own name/code.
         const detected =
-          detectSubjectFromDocument(file.name, subjectColumn, INSTITUTIONAL_SUBJECTS) ||
-          detectSubjectFromDocument("", questionText, INSTITUTIONAL_SUBJECTS);
+          detectSubjectFromDocument(file.name, subjectColumn, examStore.getSubjectCatalog()) ||
+          detectSubjectFromDocument("", questionText, examStore.getSubjectCatalog());
         const allowed = detected && availableSubjects.find((subject) => subject.code === detected.code);
         if (allowed) {
           setBulkUploadedSubject({ name: allowed.name, code: allowed.code, department: allowed.department, semester: allowed.semester });

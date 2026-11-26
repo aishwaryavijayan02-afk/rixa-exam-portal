@@ -24,7 +24,7 @@ import {
   LayoutGrid,
   List,
 } from "lucide-react";
-import { examStore, SubjectAllocationItem, INSTITUTIONAL_SUBJECTS } from "../lib/examStore";
+import { examStore, SubjectAllocationItem } from "../lib/examStore";
 import { authStore, AuthUser } from "../lib/auth";
 import RoleGuard from "../components/RoleGuard";
 import PortalHeader from "../components/PortalHeader";
@@ -138,7 +138,7 @@ export default function SubjectAllocationPage() {
     const list: { label: string; value: string; code: string; dept: string; credits: number; sem?: string }[] = [];
     const seenNames = new Set<string>();
 
-    INSTITUTIONAL_SUBJECTS.forEach((s) => {
+    examStore.getSubjectCatalog().forEach((s) => {
       if (!seenNames.has(s.name)) {
         seenNames.add(s.name);
         const deptShort = s.department.replace("Department of ", "");
@@ -174,7 +174,7 @@ export default function SubjectAllocationPage() {
     const list: { label: string; value: string; name: string; dept: string; credits: number; sem?: string }[] = [];
     const seenCodes = new Set<string>();
 
-    INSTITUTIONAL_SUBJECTS.forEach((s) => {
+    examStore.getSubjectCatalog().forEach((s) => {
       if (!seenCodes.has(s.code)) {
         seenCodes.add(s.code);
         const deptShort = s.department.replace("Department of ", "");

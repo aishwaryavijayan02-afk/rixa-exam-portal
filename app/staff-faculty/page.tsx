@@ -54,7 +54,6 @@ import {
   examStore,
   StaffFacultyItem,
   INSTITUTIONAL_HIERARCHY,
-  INSTITUTIONAL_SUBJECTS,
   InstitutionalSchool,
   InstitutionalDepartment,
   FacultyAllocationHierarchyResult,
@@ -499,7 +498,7 @@ export default function StaffFacultyPage() {
       label: "Assigned Subject",
       type: "select",
       required: true,
-      options: INSTITUTIONAL_SUBJECTS.map((s) => ({
+      options: examStore.getSubjectCatalog().map((s) => ({
         value: `${s.name} (${s.code})`,
         label: `${s.name} (${s.code}) — ${s.department.replace("Department of ", "")}`,
       })),
@@ -2614,7 +2613,7 @@ export default function StaffFacultyPage() {
                     ))}
                     {/* All Curriculum Subjects */}
                     <optgroup label="All Institutional Curriculum Papers">
-                      {INSTITUTIONAL_SUBJECTS.map((s) => (
+                      {examStore.getSubjectCatalog().map((s) => (
                         <option key={s.code} value={`${s.name} (${s.code})`}>
                           {s.name} ({s.code}) — {s.department.replace("Department of ", "")}
                         </option>

@@ -30,7 +30,7 @@ import {
   Archive,
   Users,
 } from "lucide-react";
-import { examStore, QuestionItem, INSTITUTIONAL_SUBJECTS } from "../lib/examStore";
+import { examStore, QuestionItem } from "../lib/examStore";
 import { sortForPrint } from "../lib/questionCheck";
 import { unitNumber } from "../lib/bloomTaxonomy";
 import { degreeForDepartment } from "../lib/programmes";
@@ -324,17 +324,21 @@ export default function PrintPaperPage() {
   // Subject code, semester and degree from the subject's own records:
   // subject list, uploaded syllabus, institutional catalogue, its questions.
   const subjectInfoFor = (name: string) => {
-    if (!name || name.startsWith("All Subjects")) return { subjectCode: "", semester: "", degree: "", department: "" };
+    if (!name || name.startsWith("All Subjects")) return { subjectCode: "", semester: "", degree: "", department: "", school: "" };
+    // COE subject master first (official code / department / school), then
+    // the subject list, the uploaded syllabus, the catalogue and the questions.
+    const master = examStore.findSubjectMaster(name);
     const subjectRec = examStore.getSubjects().find((s) => sameSubject(s.name, name));
     const syllabus = examStore.getSyllabusApprovals().find((s) => sameSubject(s.courseName, name));
-    const catalogue = INSTITUTIONAL_SUBJECTS.find((s) => sameSubject(s.name, name));
+    const catalogue = examStore.getSubjectCatalog().find((s) => sameSubject(s.name, name));
     const questionDept = allQuestions.find((q) => sameSubject(q.subject, name) && q.department)?.department || "";
-    const department = subjectRec?.department || syllabus?.department || catalogue?.department || questionDept;
+    const department = master?.department || subjectRec?.department || syllabus?.department || catalogue?.department || questionDept;
     return {
-      subjectCode: subjectRec?.code || syllabus?.courseCode || catalogue?.code || "",
-      semester: toRoman(subjectRec?.semester || syllabus?.semester || catalogue?.semester || ""),
+      subjectCode: master?.code || subjectRec?.code || syllabus?.courseCode || catalogue?.code || "",
+      semester: master?.semester || toRoman(subjectRec?.semester || syllabus?.semester || catalogue?.semester || ""),
       degree: degreeForDepartment(department),
       department,
+      school: master?.school || "",
     };
   };
   const autoSubjectInfo = subjectInfoFor(selectedSubject);
@@ -346,8 +350,9 @@ export default function PrintPaperPage() {
   const subjectCatalog = rawSubjects
     .map((name) => {
       const info = subjectInfoFor(name);
-      const dept = info.department ? examStore.getDepartmentByNameOrId(info.department) : undefined;
-      const school = dept ? hierarchy.find((s) => s.departments.some((d) => d.id === dept.id)) : undefined;
+      const masterSchool = info.school ? hierarchy.find((s) => s.name === info.school) : undefined;
+      const dept = info.department ? examStore.getDepartmentByNameOrId(info.department, masterSchool?.id) : undefined;
+      const school = masterSchool || (dept ? hierarchy.find((s) => s.departments.some((d) => d.id === dept.id)) : undefined);
       return {
         name,
         code: subjectMeta[name]?.subjectCode || info.subjectCode,

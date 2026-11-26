@@ -4,7 +4,7 @@ import ModalPortal from "./ModalPortal";
 
 import React, { useEffect, useMemo, useState } from "react";
 import { BookOpen, CheckCircle2, ImagePlus, ListChecks, PenLine, Plus, Sparkles, Trash2, X } from "lucide-react";
-import { INSTITUTIONAL_SUBJECTS, QuestionItem } from "../lib/examStore";
+import { examStore, QuestionItem } from "../lib/examStore";
 import { BLOOM_LEVELS, inferBloomLevel } from "../lib/bloomTaxonomy";
 
 const LEVEL_COLORS = ["#64748b", "#0e7490", "#15803d", "#b45309", "#7e22ce", "#be123c"];
@@ -160,7 +160,7 @@ export default function ManualQuestionForm({
     }
   };
 
-  const subjectInfo = INSTITUTIONAL_SUBJECTS.find((s) => s.name === draft.subject);
+  const subjectInfo = examStore.getSubjectCatalog().find((s) => s.name === draft.subject);
 
   return (
     <ModalPortal>
@@ -185,10 +185,10 @@ export default function ManualQuestionForm({
                   <span>Subject *</span>
                   <select value={draft.subject} onChange={(e) => set("subject", e.target.value)}>
                     <option value="">Select a subject</option>
-                    {subjects.filter((name) => !INSTITUTIONAL_SUBJECTS.some((s) => s.name === name)).map((name) => (
+                    {subjects.filter((name) => !examStore.getSubjectCatalog().some((s) => s.name === name)).map((name) => (
                       <option key={`up-${name}`} value={name}>{name} (uploaded question bank)</option>
                     ))}
-                    {INSTITUTIONAL_SUBJECTS.map((s) => (
+                    {examStore.getSubjectCatalog().map((s) => (
                       <option key={s.code} value={s.name}>{s.name} ({s.code})</option>
                     ))}
                     {draft.subject && !subjectInfo && !subjects.includes(draft.subject) && <option value={draft.subject}>{draft.subject}</option>}

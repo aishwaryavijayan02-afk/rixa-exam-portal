@@ -469,6 +469,8 @@ export interface InstitutionalSubjectDef {
   department: string;
   credits: number;
   semester?: string;
+  /** Set for subjects that come from the COE subject master. */
+  school?: string;
 }
 
 export const INSTITUTIONAL_SUBJECTS: InstitutionalSubjectDef[] = [
@@ -574,6 +576,26 @@ export interface SubjectAllocationItem {
   createdAt?: string;
   updatedAt?: string;
 }
+
+/**
+ * COE-managed subject master: one row per subject with its official code,
+ * department and school. Staff uploads and the question paper read the
+ * code / department / school from here. Synced to Supabase
+ * (exam_subject_master). Deleting a master row never deletes questions.
+ */
+export interface SubjectMasterItem {
+  id: string;
+  name: string;
+  code: string;
+  department: string;
+  school: string;
+  semester?: string;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type SubjectMasterInput = Pick<SubjectMasterItem, "name" | "code" | "department" | "school"> & { semester?: string };
 
 export const defaultSubjectAllocations: SubjectAllocationItem[] = [];
 
@@ -719,7 +741,7 @@ function saveToStorage<T>(key: string, value: T): void {
 // a periodic pull brings in changes made by other users. A per-device snapshot
 // (id -> content hash) tells "changed here, not yet pushed" apart from
 // "changed or deleted on the server".
-type SyncedCollectionKey = "questions" | "syllabus_approvals";
+type SyncedCollectionKey = "questions" | "syllabus_approvals" | "subject_master";
 type SyncRow = Record<string, unknown>;
 
 interface CollectionSyncConfig {
@@ -826,6 +848,20 @@ const SYNCED_COLLECTIONS: Record<SyncedCollectionKey, CollectionSyncConfig> = {
       if (local?.documentData) item.documentData = local.documentData;
       return item;
     },
+  },
+  subject_master: {
+    table: "exam_subject_master",
+    pullColumns: "*",
+    toRow: (s: SubjectMasterItem) => ({
+      id: s.id,
+      name: s.name,
+      code: s.code,
+      department: s.department,
+      school: s.school,
+      semester: s.semester || null,
+      payload: s,
+    }),
+    fromRow: (row: any): SubjectMasterItem => (row.payload && typeof row.payload === "object" ? { ...row.payload, id: row.id } : { id: row.id, name: row.name, code: row.code, department: row.department, school: row.school, semester: row.semester || undefined }),
   },
 };
 
@@ -1687,6 +1723,9 @@ export const examStore = {
     const list = this.getQuestions();
     const subjects = this.getSubjects();
     const normalizedSubject = inferQuestionSubject(question);
+    // The COE subject master is the source of truth for department / school.
+    const master = this.findSubjectMaster(normalizedSubject);
+    if (master) question = { ...question, department: master.department, school: master.school };
     let resolvedDept = question.department || "";
     if (!resolvedDept) {
       const match = subjects.find(
@@ -2608,7 +2647,7 @@ export const examStore = {
   },
 
   getDepartmentSubjects(deptIdentifier?: string): { code: string; name: string; display: string }[] {
-    let list = INSTITUTIONAL_SUBJECTS;
+    let list = this.getSubjectCatalog();
     if (deptIdentifier && deptIdentifier !== "All") {
       const cleanDept = deptIdentifier.toLowerCase().replace("department of ", "").trim();
       const filtered = list.filter(
@@ -2980,6 +3019,11 @@ export const examStore = {
   },
 
   saveSyllabusApproval(item: Partial<SyllabusApprovalItem> & { id?: string }): SyllabusApprovalItem {
+    // New uploads take the official code / department from the subject master.
+    if (item.courseName || item.courseCode) {
+      const master = this.findSubjectMaster(item.courseCode || "") || this.findSubjectMaster(item.courseName || "");
+      if (master) item = { ...item, courseCode: master.code, department: master.department, semester: item.semester || (master.semester ? `Semester ${master.semester}` : undefined) };
+    }
     const list = this.getSyllabusApprovals();
     let savedItem: SyllabusApprovalItem;
     if (item.id) {
@@ -3428,7 +3472,7 @@ export const examStore = {
   /** Pull questions and syllabus approvals shared by all users of the pipeline. */
   async syncApprovalCollections(): Promise<void> {
     if (!isSupabaseConfigured()) return;
-    await Promise.all([pullCollection("questions"), pullCollection("syllabus_approvals")]);
+    await Promise.all([pullCollection("questions"), pullCollection("syllabus_approvals"), pullCollection("subject_master")]);
   },
 
   /**
@@ -3563,6 +3607,138 @@ export const examStore = {
     } catch (err) {
       console.warn("Supabase initial fetch sync warning:", err);
     }
+  },
+
+  // ----------------- SUBJECT MASTER (COE) -----------------
+  getSubjectMaster(): SubjectMasterItem[] {
+    return [...getFromStorage<SubjectMasterItem[]>("subject_master", [])].sort((a, b) => a.name.localeCompare(b.name));
+  },
+
+  /**
+   * Canonical school + department names from the institutional hierarchy.
+   * Accepts short forms ("Visual Communication") and infers the school from
+   * the department when the school is blank.
+   */
+  resolveSchoolDepartment(school: string, department: string): { school: string; department: string } | null {
+    // Spreadsheets often drop commas or spell "&" as "and": compare loosely.
+    const loose = (v: string) => (v || "").toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "");
+    const schoolRec = school ? this.getSchoolByNameOrId(school) || INSTITUTIONAL_HIERARCHY.find((s) => loose(s.name) === loose(school) || loose(s.code) === loose(school)) : undefined;
+    if (school && !schoolRec) return null;
+    const dept = department ? this.getDepartmentByNameOrId(department, schoolRec?.id) : undefined;
+    if (!dept) return null;
+    const owner = INSTITUTIONAL_HIERARCHY.find((s) => s.departments.some((d) => d.id === dept.id));
+    return owner ? { school: owner.name, department: dept.name } : null;
+  },
+
+  /** Error message for an invalid subject, or null when it can be saved. */
+  validateSubjectMaster(input: Partial<SubjectMasterInput>, ignoreId?: string): string | null {
+    const name = (input.name || "").trim();
+    const code = (input.code || "").trim();
+    if (name.length < 2) return "Enter the subject name.";
+    if (!code) return "Enter the subject code.";
+    if (!/^[A-Za-z0-9][A-Za-z0-9\-/ .]{1,24}$/.test(code)) return `Subject code "${code}" can use letters, numbers, - / . and spaces (2-25 characters).`;
+    if (!input.department) return input.school ? "Select the department." : "Select the school and department.";
+    const resolved = this.resolveSchoolDepartment(input.school || "", input.department);
+    if (!resolved) {
+      return input.school && !this.resolveSchoolDepartment("", input.department)
+        ? `"${input.department}" is not a department in the school list.`
+        : input.school
+          ? `"${input.department}" is not a department of "${input.school}".`
+          : `"${input.department}" is not a department in the school list.`;
+    }
+    const others = this.getSubjectMaster().filter((s) => s.id !== ignoreId);
+    const sameCode = others.find((s) => s.code.trim().toLowerCase() === code.toLowerCase());
+    if (sameCode) return `Subject code ${code} is already used for "${sameCode.name}".`;
+    const sameName = others.find((s) => s.name.trim().toLowerCase() === name.toLowerCase() && s.department === resolved.department);
+    if (sameName) return `"${name}" already exists in ${resolved.department} (${sameName.code}).`;
+    return null;
+  },
+
+  saveSubjectMaster(input: SubjectMasterInput & { id?: string }, by = ""): { item?: SubjectMasterItem; error?: string } {
+    const error = this.validateSubjectMaster(input, input.id);
+    if (error) return { error };
+    const resolved = this.resolveSchoolDepartment(input.school, input.department)!;
+    const list = getFromStorage<SubjectMasterItem[]>("subject_master", []);
+    const now = new Date().toISOString();
+    const existing = input.id ? list.find((s) => s.id === input.id) : undefined;
+    const item: SubjectMasterItem = {
+      ...(existing || {}),
+      id: existing?.id || `subm-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+      name: input.name.trim(),
+      code: input.code.trim().toUpperCase(),
+      school: resolved.school,
+      department: resolved.department,
+      semester: (input.semester || "").trim() || undefined,
+      createdBy: existing?.createdBy || by || undefined,
+      createdAt: existing?.createdAt || now,
+      updatedAt: now,
+    };
+    saveToStorage("subject_master", existing ? list.map((s) => (s.id === item.id ? item : s)) : [...list, item]);
+    return { item };
+  },
+
+  deleteSubjectMaster(id: string): void {
+    saveToStorage("subject_master", getFromStorage<SubjectMasterItem[]>("subject_master", []).filter((s) => s.id !== id));
+  },
+
+  /**
+   * Subject list for every picker in the app: the COE subject master first,
+   * then the built-in institutional list for subjects not yet in the master
+   * (same code or name in the master wins).
+   */
+  getSubjectCatalog(): InstitutionalSubjectDef[] {
+    const romanToNum = (r: string) => ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"].indexOf((r || "").toUpperCase()) + 1;
+    const master: InstitutionalSubjectDef[] = this.getSubjectMaster().map((s) => ({
+      code: s.code,
+      name: s.name,
+      department: s.department,
+      school: s.school,
+      credits: 0,
+      semester: s.semester && romanToNum(s.semester) ? `Semester ${romanToNum(s.semester)}` : undefined,
+    }));
+    const codes = new Set(master.map((s) => s.code.toLowerCase()));
+    const names = new Set(master.map((s) => s.name.trim().toLowerCase()));
+    return [...master, ...INSTITUTIONAL_SUBJECTS.filter((s) => !codes.has(s.code.toLowerCase()) && !names.has(s.name.trim().toLowerCase()))];
+  },
+
+  /** Master row for a subject name or code (loose name match, like the print page). */
+  findSubjectMaster(nameOrCode: string): SubjectMasterItem | undefined {
+    const raw = (nameOrCode || "").trim().toLowerCase();
+    if (!raw) return undefined;
+    const key = (v: string) => (v || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    const k = key(raw);
+    const list = this.getSubjectMaster();
+    return (
+      list.find((s) => s.code.toLowerCase() === raw) ||
+      list.find((s) => key(s.name) === k) ||
+      list.find((s) => Math.min(key(s.name).length, k.length) >= 6 && (key(s.name).includes(k) || k.includes(key(s.name))))
+    );
+  },
+
+  /**
+   * Bulk add / update from a spreadsheet. A row whose code already exists
+   * updates that subject; other rows are added. Invalid rows are reported
+   * and skipped; valid rows are saved together.
+   */
+  importSubjectMaster(rows: Partial<SubjectMasterInput>[], by = ""): { added: number; updated: number; errors: { row: number; message: string }[] } {
+    const errors: { row: number; message: string }[] = [];
+    let added = 0;
+    let updated = 0;
+    rows.forEach((row, index) => {
+      const code = (row.code || "").trim();
+      const existing = code ? this.getSubjectMaster().find((s) => s.code.toLowerCase() === code.toLowerCase()) : undefined;
+      // School may be blank in the sheet: take it from the department.
+      const resolved = row.department ? this.resolveSchoolDepartment(row.school || "", row.department) : null;
+      const result = this.saveSubjectMaster(
+        { id: existing?.id, name: row.name || "", code, school: resolved?.school || row.school || "", department: resolved?.department || row.department || "", semester: row.semester },
+        by,
+      );
+      if (result.error) errors.push({ row: index + 2, message: result.error });
+      else if (existing) updated += 1;
+      else added += 1;
+    });
+    if (added || updated) this.logActivity(`Subject master import: ${added} added, ${updated} updated`, "Subject Master", `${errors.length} row(s) skipped`, by || "COE");
+    return { added, updated, errors };
   },
 
   // ----------------- SUBJECT ALLOCATION CRUD -----------------
