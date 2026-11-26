@@ -84,6 +84,15 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
 
   // Header shows the signed-in person's own name (from their login email).
   const cleanUserName = (currentUser?.name || "").replace(/^Mr\.\/Ms\.\s*/i, "") || roleDisplayName(currentUser?.role);
+  // School the user's department belongs to, e.g. Visual Communication ->
+  // "School of Fashion Design, Media and Performing Arts" (profile affiliation).
+  const affiliationSchool = (() => {
+    const department = currentUser?.department || "";
+    if (!department) return "";
+    const dept = examStore.getDepartmentByNameOrId(department);
+    const owner = dept ? examStore.getInstitutionalHierarchy().find((s) => s.departments.some((d) => d.id === dept.id)) : undefined;
+    return owner?.name || examStore.getSchoolByNameOrId(department)?.name || "";
+  })();
   const getAvatarInitial = (name: string) => {
     const stripped = name.replace(/^(Mr\.\/Ms\.|Mr\.|Mrs\.|Ms\.|Dr\.|Prof\.|Mr|Mrs|Ms|Dr|Prof)\s*/gi, "").trim();
     return (stripped || name || "U").charAt(0).toUpperCase();
@@ -742,7 +751,7 @@ export default function PortalHeader({ activeRoute, onCustomSearch }: PortalHead
                   {currentUser.department || "Visual Communication"}
                 </div>
                 <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>
-                  {currentUser.roleTitle} • Rathinam Global University
+                  {affiliationSchool || "Rathinam Global University"}
                 </div>
               </div>
 
