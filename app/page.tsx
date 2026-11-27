@@ -313,7 +313,7 @@ export default function LoginPage() {
           >
             {/* Official Rathinam Exam Cell logo on a light card (the navy "EXAM CELL" text needs a light background) */}
             <div className="login-brand-logo-card">
-              <img src="/images/rathinam-exam-cell-logo.png" alt="Rathinam Exam Cell" className="login-brand-logo" draggable={false} />
+              <img src="/images/rathinam-exam-cell-logo.png?v=2" alt="Rathinam Exam Cell" className="login-brand-logo" draggable={false} />
             </div>
           </motion.div>
 
