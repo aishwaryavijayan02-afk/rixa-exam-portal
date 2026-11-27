@@ -311,9 +311,9 @@ export default function LoginPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="login-brand-lockup" aria-label="Rathinam Global Exam Cell">
-              <span className="login-brand-mark">RG</span>
-              <span className="login-brand-name">Rathinam Global<span>EXAM CELL PORTAL</span></span>
+            {/* Official Rathinam Exam Cell logo on a light card (the navy "EXAM CELL" text needs a light background) */}
+            <div className="login-brand-logo-card">
+              <img src="/images/rathinam-exam-cell-logo.png" alt="Rathinam Exam Cell" className="login-brand-logo" draggable={false} />
             </div>
           </motion.div>
 

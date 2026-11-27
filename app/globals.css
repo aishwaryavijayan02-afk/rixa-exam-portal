@@ -6864,6 +6864,14 @@ input:focus, select:focus, textarea:focus {
     linear-gradient(145deg, #3a2618 0%, #2c1c12 58%, #25180f 100%);
 }
 .left-brand-logo { width: fit-content; max-width: 100%; max-height: none; filter: none; }
+.login-brand-logo-card {
+  display: inline-flex; align-items: center; padding: 8px 16px; border-radius: 14px;
+  background: #fffdf9; border: 1px solid rgba(232, 206, 185, .7);
+  box-shadow: 0 8px 22px rgba(38, 24, 15, .35), inset 0 1px rgba(255,255,255,.8);
+}
+/* Beats the older .left-brand-logo img { width: 100% } rule */
+.left-brand-logo .login-brand-logo-card .login-brand-logo { display: block; height: 60px; width: auto; max-width: none; user-select: none; }
+@media (max-width: 640px) { .left-brand-logo .login-brand-logo-card .login-brand-logo { height: 44px; } }
 .login-brand-lockup { display: inline-flex; align-items: center; gap: 12px; min-height: 48px; color: #fdfaf6; }
 .login-brand-mark {
   display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px;
